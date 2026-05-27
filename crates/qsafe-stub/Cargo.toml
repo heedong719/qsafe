@@ -1,0 +1,33 @@
+[package]
+name = "qsafe-stub"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "qsafe self-extracting (SFX) stub — minimal extractor for `qsafe pack --sfx` outputs"
+
+[[bin]]
+name = "qsafe-stub"
+path = "src/main.rs"
+
+# library part — SFX file format helpers (used by qsafe-cli when assembling --sfx outputs)
+[lib]
+name = "qsafe_stub"
+path = "src/lib.rs"
+
+[dependencies]
+qsafe-core.workspace = true
+qsafe-crypto.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+rpassword.workspace = true
+zeroize.workspace = true
+
+# stub size 최적화는 workspace root의 [profile.release]를 따른다.
+# 별도 stub 전용 profile이 필요하면 cargo custom profile (예: profile.release-stub) 사용.

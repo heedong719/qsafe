@@ -20,7 +20,19 @@ qsafe extract foo.7z
 
 # BIP39 종이 백업
 qsafe mnemonic generate
+
+# X25519 + ML-KEM-768 하이브리드 공개키 (PQ-안전, v0.1.5+)
+qsafe identity generate -o me.json                 # 나의 키쌍
+qsafe identity export-pubkey me.json               # 공유용 공개키 추출
+qsafe pack secret.pdf --pubkey friend.pub.json     # 친구만 풀 수 있음
+qsafe unpack secret.pdf.qs --identity me.json      # 내 secret 키로 풀기
+
+# 자기압축해제(SFX) 실행파일 (v0.1.5+, 패스워드 수신자 필요)
+qsafe pack secret.pdf --sfx --password mypw        # → secret.pdf.run (1.3MB 자체 추출 실행파일)
+./secret.pdf.run                                   # 받은 사람이 더블 클릭만으로 풀기
 ```
+
+> ⚠️ SFX 출력은 unsigned 실행파일이라 macOS Gatekeeper / Windows SmartScreen이 차단할 수 있습니다. 배포 전 codesign / notarization 권장.
 
 ## ✨ 차별점
 

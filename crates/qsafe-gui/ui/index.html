@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>qsafe</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      background: #1a1a1a;
+      color: #e8e8e8;
+      height: 100%;
+    }
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #303030;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    header h1 { margin: 0; font-size: 18px; letter-spacing: 0.04em; }
+    header .ver { font-size: 12px; color: #888; }
+    main { padding: 24px; max-width: 880px; margin: 0 auto; }
+    section { margin-bottom: 32px; }
+    section h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #999;
+      margin: 0 0 12px;
+    }
+    .card {
+      background: #242424;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .row { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+    .row > label { width: 120px; color: #aaa; }
+    .row > code { color: #6cf; }
+    button {
+      background: #2c5dff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { background: #4f7aff; }
+    button.secondary { background: #404040; }
+    button.secondary:hover { background: #505050; }
+    .features { display: flex; flex-wrap: wrap; gap: 6px; }
+    .features span {
+      background: #1f3a5f;
+      color: #9cf;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .empty { color: #666; font-style: italic; }
+    pre {
+      background: #111;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      color: #cfc;
+      font-size: 12px;
+    }
+    .danger { color: #f88; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>qsafe</h1>
+    <span class="ver" id="version">loading…</span>
+  </header>
+
+  <main>
+    <section>
+      <h2>About this build</h2>
+      <div class="card">
+        <div class="row">
+          <label>Cipher suite</label>
+          <code id="cipher-suite"></code>
+        </div>
+        <div class="row">
+          <label>Features</label>
+          <div class="features" id="features"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Identity (X25519 + ML-KEM-768)</h2>
+      <div class="card">
+        <p style="margin-top:0; color:#aaa;">
+          하이브리드 identity 키쌍을 생성하거나 기존 파일을 검사합니다.
+          이 키파일은 <span class="danger">절대 외부에 공유하지 마세요.</span>
+        </p>
+        <div class="row">
+          <button id="btn-gen">새 키쌍 생성</button>
+          <button class="secondary" id="btn-show">기존 키 검사</button>
+        </div>
+        <pre id="identity-result" class="empty">아직 작업이 없습니다.</pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>다음 단계</h2>
+      <div class="card empty">
+        파일 pack / unpack / 진행 바 / 드래그 앤 드롭 / 외부 아카이브 탐색기는
+        다음 마일스톤에 추가됩니다 (M2~M8).
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const invoke = window.__TAURI__.core.invoke;
+
+    async function refreshAbout() {
+      try {
+        const info = await invoke("about");
+        document.getElementById("version").textContent = "v" + info.version;
+        document.getElementById("cipher-suite").textContent = info.cipher_suite;
+        const feats = document.getElementById("features");
+        feats.innerHTML = "";
+        for (const f of info.features) {
+          const el = document.createElement("span");
+          el.textContent = f;
+          feats.appendChild(el);
+        }
+      } catch (e) {
+        document.getElementById("version").textContent = "error";
+        console.error(e);
+      }
+    }
+
+    function showIdentity(summary) {
+      const out = document.getElementById("identity-result");
+      out.classList.remove("empty");
+      out.textContent =
+        `path        : ${summary.path}\n` +
+        `fingerprint : ${summary.fingerprint}\n` +
+        `x25519_pk   : ${summary.x25519_pk_len} bytes\n` +
+        `mlkem768_pk : ${summary.mlkem768_pk_len} bytes`;
+    }
+
+    document.getElementById("btn-gen").addEventListener("click", async () => {
+      const path = prompt(
+        "저장할 경로를 입력하세요 (예: ~/qsafe-identity.json)",
+        "qsafe-identity.json"
+      );
+      if (!path) return;
+      try {
+        const summary = await invoke("identity_generate", { outputPath: path, force: false });
+        showIdentity(summary);
+      } catch (e) {
+        alert(String(e));
+      }
+    });
+
+    document.getElementById("btn-show").addEventListener("click", async () => {
+      const path = prompt("검사할 identity JSON 경로를 입력하세요");
+      if (!path) return;
+      try {
+        const summary = await invoke("identity_show", { path });
+        showIdentity(summary);
+      } catch (e) {
+        alert(String(e));
+      }
+    });
+
+    refreshAbout();
+  </script>
+</body>
+</html>

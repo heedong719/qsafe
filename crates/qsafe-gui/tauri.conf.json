@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "qsafe",
+  "version": "0.1.4",
+  "identifier": "app.qsafe.gui",
+  "build": {
+    "frontendDist": "ui"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "qsafe — quantum-safe compression",
+        "width": 960,
+        "height": 640,
+        "minWidth": 720,
+        "minHeight": 480,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": false,
+    "targets": "all",
+    "icon": ["icons/icon.png"]
+  }
+}

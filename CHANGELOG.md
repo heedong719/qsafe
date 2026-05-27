@@ -7,10 +7,53 @@
 ## [Unreleased]
 
 ### 추가
-- GUI 다이얼로그 (계획)
 - OS 통합: Windows 탐색기 / macOS Finder / Linux 파일 매니저 (계획)
 - 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
-- CLI에 Pubkey recipient 통합 (qsafe-identity 라이브러리는 활성화됨, 다음 단계)
+- GUI M2~M8: pack/unpack 명령, 진행 바, drag&drop, 다중 수신자 UI (qsafe-gui scaffold는 v0.1.5에 활성화됨)
+- SFX cross-compile 4-target 자동 빌드 (CI release workflow 확장)
+- SFX codesign / notarization (macOS Gatekeeper / Windows SmartScreen 통과용)
+
+---
+
+## [0.1.5] — 2026-05-28 (CLI Pubkey + SFX 자기압축해제 + GUI MVP scaffold)
+
+### 추가 — 새 기능 3종
+
+#### 1. CLI Pubkey recipient 통합 (X25519 + ML-KEM-768 하이브리드)
+- 새 명령: `qsafe identity generate / show / export-pubkey`.
+- `qsafe pack --pubkey <recipient.pub.json>` (복수 지정 가능, OR 논리).
+- `qsafe unpack --identity <my-secret.json>` (Pubkey recipient 풀기).
+- 키 직렬화: JSON (`IdentitySecretBytes` / `IdentityPublic`).
+- 단위 + e2e 검증: 86 → 90 → **95 tests passing**. SHA256 라운드트립 일치.
+
+#### 2. SFX (Self-Extracting eXecutable) 자기압축해제
+- 새 crate `qsafe-stub` (lib + binary): SFX 포맷 정의 + 최소 extractor binary.
+- SFX 파일 구조: `[stub binary][.qs payload][payload_len u64 LE 8B][SFX_MAGIC "QSAFESFX" 8B]`.
+- `qsafe pack --sfx [--sfx-stub <PATH>]`: 결과로 `<input>.run` (Unix) 또는 `<input>.exe` (Windows) 단일 실행파일 생성. 0755 권한 자동.
+- Stub binary는 `current_exe()` → footer 읽음 → payload 추출 → password prompt (TTY) 또는 stdin (pipe) → AEAD decrypt + BLAKE3 검증 → 원본 복원.
+- ⚠️ SFX는 unsigned 실행파일이라 macOS Gatekeeper / Windows SmartScreen 차단 가능. codesign / notarization은 후속 작업.
+- e2e: 66 bytes → 1.3 MB SFX 실행파일 → 풀기 후 SHA256 일치 확인.
+
+#### 3. qsafe-gui (Tauri 2.x) MVP scaffold
+- 새 crate `qsafe-gui`: Tauri 기반 GUI 프론트엔드 (HTML/CSS/JS + Rust commands).
+- MVP commands: `about`, `file_info`, `identity_generate`, `identity_show`.
+- frontend: 단일 `ui/index.html` (dark theme, identity 관리 UI).
+- 윈도우: 960×640 기본, min 720×480, resizable.
+- 한계: pack/unpack, drag&drop, 진행 바는 다음 마일스톤 (M2~M8). OS 통합 (Finder/Explorer)은 v0.2.x 로드맵.
+
+### 정리
+
+- `deny.toml`의 stale RUSTSEC-2025-0009 ignore 항목 제거 (v0.1.3 마이그레이션으로 더 이상 적용 안 됨).
+- 모든 새 crate에 workspace 메타 (license/repository/keywords/categories) 일관 상속.
+
+### 보안 모델 변동
+
+- **SFX는 사용자 신뢰 모델에 큰 영향**: 사용자가 임의 `.exe` 더블 클릭 = 광범위한 공격 표면. payload는 여전히 AEAD + BLAKE3 검증되므로 payload 변조는 잡히지만, stub 자체가 변조될 수 있다는 한계가 SFX 본질. 권장: codesign / notarization 적용 후 배포.
+- **Pubkey recipient의 transcript MitM 방어**: HKDF salt에 ephemeral_pk + recipient_pk + ML-KEM ct + recipient_mlkem_pk를 모두 포함하므로 중간자가 일부 값만 바꿔도 wrap_key 도출 실패.
+
+---
+
+## [0.1.4] — 2026-05-28 (qsafe-identity 활성화: X25519 + ML-KEM-768)
 
 ---
 

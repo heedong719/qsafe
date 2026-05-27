@@ -1,0 +1,38 @@
+[package]
+name = "qsafe-gui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "qsafe GUI — graphical front-end for the qsafe CLI (Tauri)"
+
+[[bin]]
+name = "qsafe-gui"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+qsafe-core.workspace = true
+qsafe-crypto.workspace = true
+qsafe-paper.workspace = true
+qsafe-shamir.workspace = true
+qsafe-identity.workspace = true
+qsafe-formats.workspace = true
+tauri = { version = "2", features = ["compression"] }
+serde.workspace = true
+serde_json = "1"
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+rand.workspace = true
+zeroize.workspace = true
+hex.workspace = true

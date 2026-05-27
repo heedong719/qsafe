@@ -9,13 +9,8 @@ db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 # 0.19+: vulnerability/yanked/notice는 자동 deny, unmaintained 범위만 설정
 unmaintained = "workspace"
-ignore = [
-    # RUSTSEC-2025-0009: ring 0.16.20 HeaderProtectionKey::new_mask() QUIC panic
-    # 영향 범위: ctap-hid-fido2 v2가 ring 0.16을 transitive 의존, fido2-hw feature(default OFF)에서만 활성.
-    # 실제 영향: 없음 — qsafe는 QUIC 프로토콜 미사용 (CLI 로컬 도구, 네트워크 없음).
-    # 후속 조치: ctap-hid-fido2 v3 API 마이그레이션 (qsafe-hardware/src/hw.rs Builder 패턴 적용) 후 ring 0.17+ 자동 해결.
-    { id = "RUSTSEC-2025-0009", reason = "QUIC-only panic, qsafe doesn't use QUIC; will be fixed by ctap-hid-fido2 v3 migration" },
-]
+# v0.1.3에서 ctap-hid-fido2 v3 / ring 0.17.14 마이그레이션 후 RUSTSEC-2025-0009이 더 이상 적용되지 않아 ignore 비움.
+ignore = []
 
 [licenses]
 allow = [

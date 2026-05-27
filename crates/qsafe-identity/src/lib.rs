@@ -35,7 +35,7 @@ pub mod identity;
 pub mod recipient;
 
 pub use error::{IdentityError, Result};
-pub use identity::{Identity, IdentityPublic};
+pub use identity::{Identity, IdentityPublic, IdentitySecretBytes};
 pub use recipient::{unwrap_pubkey, PubkeyWrapper};
 
 pub const HKDF_INFO_PQ_HYBRID_V1: &[u8] = b"qsafe-v1-pq-hybrid-pubkey-wrap-key";

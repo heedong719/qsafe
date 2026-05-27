@@ -1,12 +1,15 @@
 //! 파일 I/O — qsafe 파일의 직렬화/역직렬화.
 //!
 //! 파일 구조:
-//!   [MAGIC 8B]
-//!   [HEADER_LEN u32 LE]
-//!   [HEADER CBOR]
-//!   [PAYLOAD_LEN u64 LE]
-//!   [PAYLOAD]
-//!   [ORIGINAL_HASH BLAKE3 32B]   ← decompress 후 검증용
+//!
+//! ```text
+//! [MAGIC 8B]
+//! [HEADER_LEN u32 LE]
+//! [HEADER CBOR]
+//! [PAYLOAD_LEN u64 LE]
+//! [PAYLOAD]
+//! [ORIGINAL_HASH BLAKE3 32B]   ← decompress 후 검증용
+//! ```
 
 use crate::error::{CoreError, Result};
 use crate::format::{FileHeader, MAGIC};

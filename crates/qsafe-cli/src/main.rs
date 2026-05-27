@@ -73,6 +73,19 @@ enum Cmd {
         /// FIDO2 키 PIN (PIN 설정된 키 전용)
         #[arg(long, hide = true)]
         fido2_pin: Option<String>,
+        /// 수신자의 public identity JSON 파일 — X25519+ML-KEM-768 하이브리드 봉투 추가.
+        /// 복수 지정 가능 (OR 논리, 한 명에게만 풀어도 됨).
+        #[arg(long)]
+        pubkey: Vec<PathBuf>,
+        /// 자기 압축 해제(SFX) 실행파일로 결과 묶기.
+        /// 수신자가 받아 더블 클릭/실행만 하면 패스워드 입력 후 풀림.
+        /// ⚠️ SFX는 신뢰 모델 위험: codesign / notarization 권장.
+        #[arg(long)]
+        sfx: bool,
+        /// SFX stub 바이너리 경로 (생략 시 conventional: `target/release/qsafe-stub`).
+        /// 다른 OS 타깃의 stub을 쓰려면 명시.
+        #[arg(long, requires = "sfx")]
+        sfx_stub: Option<PathBuf>,
         /// 사람이 읽을 라벨 (선택). 출력 파일명에는 영향 없음.
         #[arg(long)]
         label: Option<String>,
@@ -99,6 +112,9 @@ enum Cmd {
         /// FIDO2 PIN
         #[arg(long, hide = true)]
         fido2_pin: Option<String>,
+        /// 자신의 secret identity JSON 파일 — Pubkey recipient 풀기에 사용
+        #[arg(long)]
+        identity: Option<PathBuf>,
         /// 출력 파일이 이미 있어도 덮어씀
         #[arg(long)]
         force: bool,
@@ -200,6 +216,40 @@ enum Cmd {
         /// 데이터 유형
         #[arg(short, long, value_enum, default_value_t = BenchData::Random)]
         data: BenchData,
+    },
+    /// X25519+ML-KEM-768 하이브리드 identity 키 관리
+    Identity {
+        #[command(subcommand)]
+        cmd: IdentityCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum IdentityCmd {
+    /// 새 identity 키쌍 생성 → JSON (secret + public) 저장
+    Generate {
+        /// 출력 파일 경로 (생략 시 ./qsafe-identity.json)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// 같은 경로에 파일이 있어도 덮어씀
+        #[arg(long)]
+        force: bool,
+    },
+    /// 저장된 identity 파일의 fingerprint + 메타 출력
+    Show {
+        /// identity JSON 파일 (secret 또는 public 모두 허용)
+        input: PathBuf,
+    },
+    /// secret identity → 공개키만 추출하여 별도 JSON 저장 (공유용)
+    ExportPubkey {
+        /// secret identity JSON 파일
+        input: PathBuf,
+        /// 출력 public identity 파일 (생략 시 `<input>.pub.json`)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// 같은 경로에 파일이 있어도 덮어씀
+        #[arg(long)]
+        force: bool,
     },
 }
 
@@ -343,6 +393,9 @@ fn run(cmd: Cmd) -> Result<()> {
             no_password,
             fido2,
             fido2_pin,
+            pubkey,
+            sfx,
+            sfx_stub,
             label,
             force,
             shred,
@@ -355,6 +408,9 @@ fn run(cmd: Cmd) -> Result<()> {
             no_password,
             fido2,
             fido2_pin,
+            pubkey,
+            sfx,
+            sfx_stub,
             label,
             force,
             shred,
@@ -365,8 +421,9 @@ fn run(cmd: Cmd) -> Result<()> {
             password,
             fido2,
             fido2_pin,
+            identity,
             force,
-        } => cmd_unpack(input, output, password, fido2, fido2_pin, force),
+        } => cmd_unpack(input, output, password, fido2, fido2_pin, identity, force),
         Cmd::Info { input } => cmd_info(input),
         Cmd::Fido2 { cmd } => cmd_fido2(cmd),
         Cmd::Mnemonic { cmd } => cmd_mnemonic(cmd),
@@ -396,7 +453,113 @@ fn run(cmd: Cmd) -> Result<()> {
             new_password,
         } => cmd_migrate(input, output, old_password, new_password),
         Cmd::Bench { size_mb, data } => cmd_bench(size_mb, data),
+        Cmd::Identity { cmd } => cmd_identity(cmd),
     }
+}
+
+fn cmd_identity(cmd: IdentityCmd) -> Result<()> {
+    match cmd {
+        IdentityCmd::Generate { output, force } => cmd_identity_generate(output, force),
+        IdentityCmd::Show { input } => cmd_identity_show(input),
+        IdentityCmd::ExportPubkey {
+            input,
+            output,
+            force,
+        } => cmd_identity_export_pubkey(input, output, force),
+    }
+}
+
+fn cmd_identity_generate(output: Option<PathBuf>, force: bool) -> Result<()> {
+    use qsafe_identity::{Identity, IdentitySecretBytes};
+
+    let output = output.unwrap_or_else(|| PathBuf::from("qsafe-identity.json"));
+    refuse_overwrite_unless_force(&output, force)?;
+
+    let identity = Identity::generate();
+    let secret = IdentitySecretBytes::from_identity(&identity);
+    let json = serde_json::to_vec_pretty(&secret)?;
+
+    // 0600 — 다른 사용자 읽기 금지 (secret 포함)
+    write_atomic(&output, |w| {
+        use std::io::Write;
+        w.write_all(&json).map_err(anyhow::Error::from)
+    })?;
+
+    println!("✓ identity 생성: {}", output.display());
+    println!("  fingerprint  : {}", identity.fingerprint());
+    println!("  x25519_pk    : {} bytes", identity.x25519_pk_bytes.len());
+    println!(
+        "  mlkem768_pk  : {} bytes (ML-KEM-768 hybrid)",
+        identity.mlkem768_pk_bytes.len()
+    );
+    println!();
+    println!("⚠️  이 파일은 secret 키를 포함합니다. 외부 공유 금지.");
+    println!(
+        "    공유용 공개키: `qsafe identity export-pubkey {}`",
+        output.display()
+    );
+    Ok(())
+}
+
+fn cmd_identity_show(input: PathBuf) -> Result<()> {
+    use qsafe_identity::{IdentityPublic, IdentitySecretBytes};
+
+    let bytes = fs::read(&input).with_context(|| format!("read {}", input.display()))?;
+
+    // secret 먼저 시도 → public fallback (둘 다 호환)
+    if let Ok(secret) = serde_json::from_slice::<IdentitySecretBytes>(&bytes) {
+        let identity = secret
+            .to_identity()
+            .map_err(|e| anyhow!("invalid secret identity: {}", e))?;
+        println!("qsafe identity (secret + public):");
+        println!("  file         : {}", input.display());
+        println!("  fingerprint  : {}", identity.fingerprint());
+        println!("  x25519_pk    : {} bytes", identity.x25519_pk_bytes.len());
+        println!(
+            "  mlkem768_pk  : {} bytes",
+            identity.mlkem768_pk_bytes.len()
+        );
+        return Ok(());
+    }
+
+    let public: IdentityPublic = serde_json::from_slice(&bytes)
+        .map_err(|e| anyhow!("not a valid qsafe identity JSON: {}", e))?;
+    println!("qsafe identity (public only):");
+    println!("  file         : {}", input.display());
+    println!("  fingerprint  : {}", public.fingerprint());
+    println!("  x25519_pk    : {} bytes", public.x25519_pk.len());
+    println!("  mlkem768_pk  : {} bytes", public.mlkem768_pk.len());
+    Ok(())
+}
+
+fn cmd_identity_export_pubkey(input: PathBuf, output: Option<PathBuf>, force: bool) -> Result<()> {
+    use qsafe_identity::IdentitySecretBytes;
+
+    let bytes = fs::read(&input).with_context(|| format!("read {}", input.display()))?;
+    let secret: IdentitySecretBytes =
+        serde_json::from_slice(&bytes).map_err(|e| anyhow!("not a secret identity JSON: {}", e))?;
+    let identity = secret
+        .to_identity()
+        .map_err(|e| anyhow!("invalid secret identity: {}", e))?;
+    let public = identity.public();
+
+    let output = output.unwrap_or_else(|| {
+        let mut p = input.clone();
+        let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("identity");
+        p.set_file_name(format!("{}.pub.json", stem));
+        p
+    });
+    refuse_overwrite_unless_force(&output, force)?;
+
+    let json = serde_json::to_vec_pretty(&public)?;
+    fs::write(&output, &json).with_context(|| format!("write {}", output.display()))?;
+    println!(
+        "✓ public identity 추출: {} → {}",
+        input.display(),
+        output.display()
+    );
+    println!("  fingerprint: {}", public.fingerprint());
+    Ok(())
 }
 
 fn cmd_migrate(
@@ -452,6 +615,9 @@ fn cmd_migrate(
         no_password: false,
         fido2: Vec::new(),
         fido2_pin: None,
+        pubkey: Vec::new(),
+        sfx: false,
+        sfx_stub: None,
         label: header.label,
         force: true,
         shred: false,
@@ -1273,6 +1439,9 @@ struct PackOptions {
     no_password: bool,
     fido2: Vec<String>,
     fido2_pin: Option<String>,
+    pubkey: Vec<PathBuf>,
+    sfx: bool,
+    sfx_stub: Option<PathBuf>,
     label: Option<String>,
     force: bool,
     shred: bool,
@@ -1288,13 +1457,21 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
         no_password,
         fido2,
         fido2_pin,
+        pubkey,
+        sfx,
+        sfx_stub,
         label,
         force,
         shred,
     } = opts;
 
-    if no_password && fido2.is_empty() {
-        bail!("적어도 하나의 수신자가 필요합니다 (패스워드 또는 --fido2)");
+    if no_password && fido2.is_empty() && pubkey.is_empty() {
+        bail!("적어도 하나의 수신자가 필요합니다 (패스워드, --fido2, 또는 --pubkey)");
+    }
+
+    // SFX는 patient stub 구조상 password recipient만 지원.
+    if sfx && no_password {
+        bail!("--sfx 는 패스워드 수신자가 필요합니다. --no-password와 함께 쓸 수 없음.");
     }
 
     let input_meta =
@@ -1397,6 +1574,12 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
         recipients.extend(recipients_added);
     }
 
+    // 4c. Pubkey 수신자들 (X25519+ML-KEM-768 하이브리드)
+    for pk_path in &pubkey {
+        let recipient = wrap_pubkey_recipient(pk_path, &file_key)?;
+        recipients.push(recipient);
+    }
+
     drop(file_key);
 
     if recipients.is_empty() {
@@ -1412,7 +1595,61 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
     header.created_at_unix = chrono::Utc::now().timestamp();
     header.label = label;
 
-    // 6. atomic write
+    // 6. SFX 모드면 stub binary + qs payload를 합쳐 단일 실행파일로 작성.
+    //    아니면 일반 .qs 파일로 직접 atomic write.
+    if sfx {
+        let stub_path = resolve_sfx_stub(sfx_stub.as_deref())?;
+        let stub_bytes = fs::read(&stub_path)
+            .with_context(|| format!("SFX stub 읽기: {}", stub_path.display()))?;
+
+        // qs 페이로드를 메모리 버퍼에 빌드
+        let mut qs_buf: Vec<u8> = Vec::new();
+        write_packed_file(&mut qs_buf, &header, &ciphertext, &original_hash)
+            .map_err(anyhow::Error::from)?;
+
+        let sfx_bytes = qsafe_stub::assemble_sfx(&stub_bytes, &qs_buf);
+
+        // 출력 경로가 명시 안 됐으면 OS 별 기본 확장자
+        let output = sfx_default_output(&input, &output);
+        paths_must_differ(&input, &output)?;
+        refuse_overwrite_unless_force(&output, force)?;
+
+        write_atomic(&output, |w| {
+            use std::io::Write;
+            w.write_all(&sfx_bytes).map_err(anyhow::Error::from)
+        })?;
+
+        // 실행 비트 + 0755 (Unix)
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&output)?.permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&output, perms)?;
+        }
+
+        let out_size = fs::metadata(&output)?.len();
+        println!("✓ packed (SFX) {} → {}", input.display(), output.display());
+        println!(
+            "  {} bytes → {} bytes (stub {} + qs {} + footer 16)",
+            original_size,
+            out_size,
+            stub_bytes.len(),
+            qs_buf.len()
+        );
+        eprintln!(
+            "⚠️  SFX는 unsigned 실행파일입니다. macOS Gatekeeper / Windows SmartScreen 차단 가능."
+        );
+
+        if shred {
+            eprintln!("⚠️  --shred: 베스트 에포트 (SSD/copy-on-write 파일시스템에서는 잔존 가능)");
+            secure_delete(&input)?;
+            println!("  shredded original: {}", input.display());
+        }
+        return Ok(());
+    }
+
+    // 6'. 일반 모드: atomic write
     write_atomic(&output, |w| {
         write_packed_file(w, &header, &ciphertext, &original_hash).map_err(anyhow::Error::from)
     })?;
@@ -1654,12 +1891,14 @@ fn cmd_pack_streaming(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn cmd_unpack(
     input: PathBuf,
     output: Option<PathBuf>,
     password: Option<String>,
     use_fido2: bool,
     fido2_pin: Option<String>,
+    identity: Option<PathBuf>,
     force: bool,
 ) -> Result<()> {
     let input_meta =
@@ -1690,8 +1929,10 @@ fn cmd_unpack(
         original_hash,
     } = read_packed_file(bytes.as_slice())?;
 
-    // 2. FileKey 복원 — FIDO2 우선 시도하거나 패스워드 시도
-    let file_key = if use_fido2 {
+    // 2. FileKey 복원 — identity 우선 → FIDO2 → 패스워드 (사용자가 명시한 우선순위 따름)
+    let file_key = if let Some(id_path) = identity.as_ref() {
+        try_unwrap_identity(&header.recipients, id_path)?
+    } else if use_fido2 {
         try_unwrap_fido2(&header.recipients, fido2_pin.as_deref())?
     } else {
         try_unwrap_password(&header.recipients, password)?
@@ -1938,6 +2179,42 @@ fn wrap_fido2_recipients(
     }
 }
 
+/// 한 명의 수신자 public identity JSON 파일 → Pubkey Recipient.
+/// X25519 + ML-KEM-768 하이브리드 봉투.
+fn wrap_pubkey_recipient(pk_path: &Path, file_key: &FileKey) -> Result<Recipient> {
+    let bytes =
+        fs::read(pk_path).with_context(|| format!("read public identity {}", pk_path.display()))?;
+    let public: qsafe_identity::IdentityPublic = serde_json::from_slice(&bytes)
+        .with_context(|| format!("parse public identity JSON: {}", pk_path.display()))?;
+    let wrapper = qsafe_identity::PubkeyWrapper::new(public);
+    wrapper
+        .wrap(file_key)
+        .map_err(|e| anyhow!("pubkey wrap ({}): {}", pk_path.display(), e))
+}
+
+/// secret identity 파일로 Pubkey Recipient 풀기.
+/// 헤더의 Pubkey recipients 중 우리 mlkem_pk_hash와 일치하는 첫 항목으로 시도.
+fn try_unwrap_identity(recipients: &[Recipient], identity_path: &Path) -> Result<FileKey> {
+    let bytes = fs::read(identity_path)
+        .with_context(|| format!("read identity {}", identity_path.display()))?;
+    let secret: qsafe_identity::IdentitySecretBytes = serde_json::from_slice(&bytes)
+        .with_context(|| format!("parse secret identity: {}", identity_path.display()))?;
+    let identity = secret
+        .to_identity()
+        .map_err(|e| anyhow!("identity 복원 실패: {}", e))?;
+
+    let mut last_err: Option<anyhow::Error> = None;
+    for r in recipients {
+        if let Recipient::Pubkey(pr) = r {
+            match qsafe_identity::unwrap_pubkey(&identity, pr) {
+                Ok(fk) => return Ok(fk),
+                Err(e) => last_err = Some(anyhow!("pubkey unwrap: {}", e)),
+            }
+        }
+    }
+    Err(last_err.unwrap_or_else(|| anyhow!("Pubkey recipient를 가진 파일이 아닙니다")))
+}
+
 fn cmd_fido2(cmd: Fido2Cmd) -> Result<()> {
     match cmd {
         Fido2Cmd::Devices => cmd_fido2_devices(),
@@ -2093,6 +2370,76 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 }
 
 /// .qs 확장자만 제거한 안전한 기본 출력 경로. **헤더 라벨 신뢰 X**.
+/// SFX 모드의 기본 출력 경로 — 명시 안 했으면 OS 별 확장자 자동.
+fn sfx_default_output(input: &Path, explicit: &Path) -> PathBuf {
+    if explicit != input {
+        // 호출자가 이미 default `.qs`를 자동 생성했더라도 SFX 모드에선 다시 결정.
+        // explicit이 input과 다르면 사용자 지정으로 간주하고 그대로 사용.
+        // (cmd_pack 진입 시 output unwrap이 항상 일어나므로 input과 비교가 안전.)
+        if !explicit.to_string_lossy().ends_with(".qs") {
+            return explicit.to_path_buf();
+        }
+    }
+    let mut p = input.to_path_buf();
+    let name = input
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("output");
+    #[cfg(target_os = "windows")]
+    let new_name = format!("{}.exe", name);
+    #[cfg(not(target_os = "windows"))]
+    let new_name = format!("{}.run", name);
+    p.set_file_name(new_name);
+    p
+}
+
+/// SFX stub binary 경로를 결정한다.
+/// 우선순위: (1) --sfx-stub 명시 → (2) 환경변수 QSAFE_STUB_BIN → (3) CARGO_TARGET_DIR/release/qsafe-stub
+/// → (4) ./target/release/qsafe-stub → (5) ~/.cargo/bin/qsafe-stub
+fn resolve_sfx_stub(explicit: Option<&Path>) -> Result<PathBuf> {
+    if let Some(p) = explicit {
+        if !p.exists() {
+            bail!("--sfx-stub 경로가 없습니다: {}", p.display());
+        }
+        return Ok(p.to_path_buf());
+    }
+    if let Ok(env_path) = std::env::var("QSAFE_STUB_BIN") {
+        let p = PathBuf::from(env_path);
+        if p.exists() {
+            return Ok(p);
+        }
+    }
+    let candidates = [
+        std::env::var("CARGO_TARGET_DIR")
+            .ok()
+            .map(|d| PathBuf::from(d).join("release").join(stub_bin_name())),
+        Some(PathBuf::from("target/release").join(stub_bin_name())),
+        std::env::var("HOME")
+            .ok()
+            .map(|h| PathBuf::from(h).join(".cargo/bin").join(stub_bin_name())),
+    ];
+    for c in candidates.into_iter().flatten() {
+        if c.exists() {
+            return Ok(c);
+        }
+    }
+    bail!(
+        "SFX stub binary를 찾을 수 없습니다. `cargo build --release -p qsafe-stub` 후 재시도하거나 \
+         --sfx-stub <PATH> 또는 QSAFE_STUB_BIN 환경변수를 사용하세요."
+    )
+}
+
+fn stub_bin_name() -> &'static str {
+    #[cfg(target_os = "windows")]
+    {
+        "qsafe-stub.exe"
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        "qsafe-stub"
+    }
+}
+
 fn safe_default_output(input: &Path) -> PathBuf {
     let mut p = input.to_path_buf();
     let ext = p.extension().and_then(|e| e.to_str());
