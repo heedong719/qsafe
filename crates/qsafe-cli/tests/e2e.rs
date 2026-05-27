@@ -323,3 +323,103 @@ fn large_random_binary_roundtrip() {
 
     assert_eq!(fs::read(&unpacked).unwrap(), data);
 }
+
+/// `qsafe identity generate / show / export-pubkey` 라운드트립 (v0.1.5+).
+/// 검증: 0600 권한 (Unix), fingerprint 일치, show가 secret/public 모두 인식.
+#[test]
+fn identity_generate_show_export_roundtrip() {
+    let d = TestDir::new("identity-rt");
+    let secret = d.p("id.json");
+    let public = d.p("id.pub.json");
+
+    let (ok, stdout, err) = run(&["identity", "generate", "-o", secret.to_str().unwrap()]);
+    assert!(ok, "identity generate failed: {}", err);
+    assert!(
+        stdout.contains("fingerprint"),
+        "missing fingerprint in: {}",
+        stdout
+    );
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = fs::metadata(&secret).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600, "secret identity must be 0600, got {:o}", mode);
+    }
+
+    let (ok, _, err) = run(&[
+        "identity",
+        "export-pubkey",
+        secret.to_str().unwrap(),
+        "-o",
+        public.to_str().unwrap(),
+    ]);
+    assert!(ok, "export-pubkey failed: {}", err);
+    assert!(public.exists());
+
+    let (ok_s, out_s, _) = run(&["identity", "show", secret.to_str().unwrap()]);
+    assert!(ok_s);
+    let (ok_p, out_p, _) = run(&["identity", "show", public.to_str().unwrap()]);
+    assert!(ok_p);
+
+    let fp_line = |s: &str| -> String {
+        s.lines()
+            .find(|l| l.contains("fingerprint"))
+            .unwrap_or("")
+            .to_string()
+    };
+    assert_eq!(fp_line(&out_s), fp_line(&out_p), "fingerprint mismatch");
+}
+
+/// X25519 + ML-KEM-768 하이브리드 pack/unpack 라운드트립 (v0.1.5+).
+#[test]
+fn pack_unpack_with_pubkey_recipient() {
+    let d = TestDir::new("pubkey-rt");
+    let recipient_secret = d.p("recipient.json");
+    let recipient_public = d.p("recipient.pub.json");
+    let plaintext = d.p("secret.txt");
+    let packed = d.p("secret.qs");
+    let restored = d.p("secret.out");
+
+    let (ok, _, err) = run(&[
+        "identity",
+        "generate",
+        "-o",
+        recipient_secret.to_str().unwrap(),
+    ]);
+    assert!(ok, "generate failed: {}", err);
+    let (ok, _, err) = run(&[
+        "identity",
+        "export-pubkey",
+        recipient_secret.to_str().unwrap(),
+        "-o",
+        recipient_public.to_str().unwrap(),
+    ]);
+    assert!(ok, "export-pubkey failed: {}", err);
+
+    let data = b"hybrid PQ envelope test \xff\x00\x42";
+    fs::write(&plaintext, data).unwrap();
+
+    let (ok, _, err) = run(&[
+        "pack",
+        plaintext.to_str().unwrap(),
+        "-o",
+        packed.to_str().unwrap(),
+        "--no-password",
+        "--pubkey",
+        recipient_public.to_str().unwrap(),
+    ]);
+    assert!(ok, "pack --pubkey failed: {}", err);
+
+    let (ok, _, err) = run(&[
+        "unpack",
+        packed.to_str().unwrap(),
+        "-o",
+        restored.to_str().unwrap(),
+        "--identity",
+        recipient_secret.to_str().unwrap(),
+    ]);
+    assert!(ok, "unpack --identity failed: {}", err);
+
+    assert_eq!(fs::read(&restored).unwrap(), data, "roundtrip mismatch");
+}

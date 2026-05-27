@@ -3279,7 +3279,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-cli"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "bip39",
@@ -3309,7 +3309,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-core"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "blake3",
  "brotli 6.0.0",
@@ -3329,7 +3329,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-crypto"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "argon2",
  "chacha20poly1305",
@@ -3344,7 +3344,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-formats"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "brotli 6.0.0",
  "bzip2-rs",
@@ -3366,7 +3366,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-gui"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "hex",
@@ -3389,7 +3389,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-hardware"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "chacha20poly1305",
@@ -3407,7 +3407,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-identity"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "chacha20poly1305",
  "hex",
@@ -3427,7 +3427,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-paper"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "bip39",
  "chacha20poly1305",
@@ -3442,7 +3442,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-shamir"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "blahaj",
  "hex",
@@ -3455,7 +3455,7 @@ dependencies = [
 
 [[package]]
 name = "qsafe-stub"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "qsafe-core",

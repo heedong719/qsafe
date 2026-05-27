@@ -12,6 +12,11 @@
 - GUI M2~M8: pack/unpack 명령, 진행 바, drag&drop, 다중 수신자 UI (qsafe-gui scaffold는 v0.1.5에 활성화됨)
 - SFX codesign / notarization (macOS Gatekeeper / Windows SmartScreen 통과용)
 - 별도 Tauri release workflow (icon.ico/.icns 자산 포함, OS-native bundle)
+- Windows 정식 PowerShell 설치 스크립트 (install.ps1)
+
+### v0.1.6 직후 post-release 정리 (untagged main updates)
+- `tests/e2e.rs`: 새 통합 테스트 2건 (총 10 → 12) — `identity_generate_show_export_roundtrip` (0600 권한 + fingerprint 일치 검증), `pack_unpack_with_pubkey_recipient` (X25519+ML-KEM-768 라운드트립).
+- `install.sh`: Windows에서 "install.ps1 권장" 안내가 misleading (스크립트 없음) → "Releases에서 .zip 직접 다운로드 + PATH 추가"로 수정. PowerShell 스크립트가 추가될 때 다시 갱신.
 
 ---
 

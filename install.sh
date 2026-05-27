@@ -43,8 +43,10 @@ detect_target() {
             esac
             ;;
         MINGW*|MSYS*|CYGWIN*)
-            TARGET="x86_64-pc-windows-msvc"
-            warn "Windows 감지 — install.ps1 사용 권장"
+            # 정식 Windows 설치 스크립트는 아직 없음. Releases 페이지에서
+            # qsafe-<VERSION>-x86_64-pc-windows-msvc.zip 직접 다운로드 후
+            # 풀어 PATH에 추가하는 것을 권장한다.
+            err "Windows에서는 https://github.com/$REPO/releases 에서 .zip 직접 다운로드 + PATH 추가"
             ;;
         *) err "지원하지 않는 OS: $OS" ;;
     esac
