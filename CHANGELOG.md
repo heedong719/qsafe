@@ -11,7 +11,35 @@
 - OS 통합: Windows 탐색기 / macOS Finder / Linux 파일 매니저 (계획)
 - 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
 - X25519 + ML-KEM-768 하이브리드 공개키 수신자
-- ctap-hid-fido2 v3 API 마이그레이션 (qsafe-hardware/src/hw.rs Builder 패턴) — ring 0.17+로 RUSTSEC-2025-0009 해결
+
+---
+
+## [0.1.3] — 2026-05-27 (FIDO2 의존 업그레이드, ring 0.17)
+
+### 🔒 보안
+
+- **RUSTSEC-2025-0009 해소**: `ctap-hid-fido2` v2.2 → v3.5 마이그레이션 → `ring 0.16.20` → `ring 0.17.14` 자동 갱신.
+  - 이전 알려진 이슈였던 QUIC `HeaderProtectionKey::new_mask()` panic 제거.
+  - 영향 범위였던 `fido2-hw` feature 사용자도 이제 패치된 ring을 사용.
+- `deny.toml`의 `ignore = [RUSTSEC-2025-0009]` 항목 제거 가능 (실제 advisory가 더 이상 발생하지 않음).
+
+### 🔧 의존성 / 빌드
+
+- `ctap-hid-fido2 = "3"` (workspace dependency).
+- `qsafe-hardware/src/hw.rs` 마이그레이션:
+  - `ctap_hid_fido2::get_assertion_params::Extension` → `ctap_hid_fido2::fidokey::AssertionExtension`
+  - `ctap_hid_fido2::make_credential_params::Extension` → `ctap_hid_fido2::fidokey::CredentialExtension`
+  - top-level `make_credential_with_args(&cfg, &args)` / `get_assertion_with_args(&cfg, &args)` → `FidoKeyHidFactory::create(&cfg)?` 후 `device.make_credential_with_args(&args)` / `device.get_assertion_with_args(&args)` 메서드 호출
+- Transitive 업데이트: `hidapi v1.5 → v2.6`. CI Ubuntu runner는 `libudev-dev`가 필요하며 ci.yml에 추가됨.
+
+### 🔧 CI 수정 (a55a104)
+
+- Ubuntu CI clippy step이 `hidapi` 빌드 단계에서 `libudev` pkg-config 누락으로 실패하던 문제 해소: `apt-get install libudev-dev pkg-config` step 추가 (Linux 전용 + MSRV job).
+- Linux-only `run_in_memory`의 `*const i8` → `*const libc::c_char` (aarch64 호환).
+
+---
+
+## [0.1.2] — 2026-05-27 (보안 + CI + 코드 품질)
 
 ### 검토 중
 - EGG / ALZ 한국 사유 포맷 풀기 (라이브러리 미성숙)

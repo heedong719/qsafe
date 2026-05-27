@@ -1,12 +1,19 @@
-//! 실 FIDO2 USB HID 하드웨어 통합 (ctap-hid-fido2 v2.2.x).
+//! 실 FIDO2 USB HID 하드웨어 통합 (ctap-hid-fido2 v3.x).
 //!
 //! 빌드: `cargo build --features fido2-hw`
 //!
 //! 작동 흐름:
-//!   enroll:  make_credential_with_args + Extension::HmacSecret(Some(true))
+//!   enroll:  device.make_credential_with_args + CredentialExtension::HmacSecret(Some(true))
 //!            → verify_attestation → credential_id 발급
-//!   evaluate: get_assertion_with_args + Extension::HmacSecret(Some(salt_32))
+//!   evaluate: device.get_assertion_with_args + AssertionExtension::HmacSecret(Some(salt_32))
 //!            → assertion.extensions에서 HmacSecret 출력 추출
+//!
+//! v2 → v3 마이그레이션:
+//!   - top-level `make_credential_with_args(&cfg, &args)` → `device.make_credential_with_args(&args)`
+//!   - top-level `get_assertion_with_args(&cfg, &args)` → `device.get_assertion_with_args(&args)`
+//!   - `get_assertion_params::Extension` → `fidokey::AssertionExtension`
+//!   - `make_credential_params::Extension` → `fidokey::CredentialExtension`
+//!   - device = `FidoKeyHidFactory::create(&cfg)?`
 //!
 //! 사용자 경험:
 //!   - 키 꽂으면 자동 감지 (1개 연결 가정)
@@ -17,9 +24,11 @@ use crate::backend::{EnrolledCredential, PrfBackend, PrfOutput};
 use crate::error::{HardwareError, Result};
 use crate::HMAC_SALT_LEN;
 use ctap_hid_fido2::{
-    get_assertion_params::Extension as Gext, get_fidokey_devices,
-    make_credential_params::Extension as Mext, verifier, Cfg, GetAssertionArgsBuilder,
-    MakeCredentialArgsBuilder,
+    fidokey::{
+        AssertionExtension as Gext, CredentialExtension as Mext, GetAssertionArgsBuilder,
+        MakeCredentialArgsBuilder,
+    },
+    get_fidokey_devices, verifier, Cfg, FidoKeyHidFactory,
 };
 
 /// 실 USB HID FIDO2 백엔드.
@@ -73,6 +82,8 @@ impl PrfBackend for Fido2HwBackend {
         })?;
 
         let cfg = Cfg::init();
+        let device = FidoKeyHidFactory::create(&cfg)
+            .map_err(|e| HardwareError::Backend(format!("device open: {}", e)))?;
         let challenge = verifier::create_challenge();
         let ext = Gext::HmacSecret(Some(salt_arr));
 
@@ -83,7 +94,8 @@ impl PrfBackend for Fido2HwBackend {
         builder = builder.credential_id(credential_id).extensions(&[ext]);
         let args = builder.build();
 
-        let assertions = ctap_hid_fido2::get_assertion_with_args(&cfg, &args)
+        let assertions = device
+            .get_assertion_with_args(&args)
             .map_err(|e| HardwareError::Backend(format!("get_assertion: {}", e)))?;
 
         if assertions.is_empty() {
@@ -107,6 +119,8 @@ impl PrfBackend for Fido2HwBackend {
         Self::check_device()?;
 
         let cfg = Cfg::init();
+        let device = FidoKeyHidFactory::create(&cfg)
+            .map_err(|e| HardwareError::Backend(format!("device open: {}", e)))?;
         let challenge = verifier::create_challenge();
         let ext = Mext::HmacSecret(Some(true));
 
@@ -116,7 +130,8 @@ impl PrfBackend for Fido2HwBackend {
         }
         let args = builder.extensions(&[ext]).build();
 
-        let attestation = ctap_hid_fido2::make_credential_with_args(&cfg, &args)
+        let attestation = device
+            .make_credential_with_args(&args)
             .map_err(|e| HardwareError::Backend(format!("make_credential: {}", e)))?;
 
         let verify_result = verifier::verify_attestation(&self.rp_id, &challenge, &attestation);

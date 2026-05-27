@@ -103,9 +103,7 @@ qsafe는 베스트 에포트로 작성되었으나:
 
 #### 알려진 이슈 (Known Issues)
 
-| ID | 영향 범위 | 실제 영향 | 후속 조치 |
-|---|---|---|---|
-| RUSTSEC-2025-0009 (ring 0.16.20) | `fido2-hw` feature (default OFF)의 transitive 의존 | **없음** — QUIC `HeaderProtectionKey::new_mask()` panic이며 qsafe는 QUIC 미사용 | ctap-hid-fido2 v3 API 마이그레이션 후 ring 0.17+로 자동 해결 |
+v0.1.3에서 ctap-hid-fido2 v3 마이그레이션이 완료되어 transitive `ring 0.17.14`가 사용됩니다 — **RUSTSEC-2025-0009은 더 이상 적용되지 않습니다**. 현재 추적 중인 알려진 보안 이슈는 없습니다.
 
 ### 향후
 - v1.0: 외부 감사 (Trail of Bits / NCC Group)
