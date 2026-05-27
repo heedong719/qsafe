@@ -10,7 +10,38 @@
 - GUI 다이얼로그 (계획)
 - OS 통합: Windows 탐색기 / macOS Finder / Linux 파일 매니저 (계획)
 - 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
-- X25519 + ML-KEM-768 하이브리드 공개키 수신자
+- CLI에 Pubkey recipient 통합 (qsafe-identity 라이브러리는 활성화됨, 다음 단계)
+
+---
+
+## [0.1.4] — 2026-05-28 (qsafe-identity 활성화: X25519 + ML-KEM-768)
+
+### 추가
+
+- **qsafe-identity crate를 workspace에 활성화** (이전까지 보류 상태였음).
+  - X25519 (Diffie-Hellman) + ML-KEM-768 (FIPS 203 PQ KEM) 하이브리드 봉투 wrap/unwrap.
+  - IKM = X25519_shared || ML-KEM_shared, transcript salt = BLAKE3/SHA256(eph_pk || recipient_pk || ct || mlkem_pk)으로 MitM 방어.
+  - 도메인 분리: HKDF info `qsafe-v1-pq-hybrid-pubkey-wrap-key`.
+  - 라이브러리만 활성화. CLI 통합 (`qsafe pack --pubkey`)은 다음 릴리스에 진행.
+
+### 의존성 / 마이그레이션
+
+- `ml-kem 0.2.3` API 호환 마이그레이션 (전부 `qsafe-identity` 내부):
+  - `DecapsulationKey<MlKem768>` → `<MlKem768 as KemCore>::DecapsulationKey` (associated type 사용; `MlKem768`은 `Kem<MlKem768Params>` 래퍼라 `ParameterSet`을 직접 구현하지 않음)
+  - `as_bytes()` / `from_bytes()` 호출 위해 `ml_kem::EncodedSizeUser` trait import 명시
+  - `Encapsulate<EK, SS>`가 2개 type parameter generic이라 추론 실패 → `(Ciphertext<MlKem768>, SharedKey<MlKem768>)` explicit annotation
+- `x25519_dalek::StaticSecret::random_from_rng(rng)` (clippy::needless_borrows_for_generic_args 준수)
+- ML-KEM 0.3.x는 MSRV 1.85를 요구해 우리 1.80 MSRV와 호환되지 않으므로 0.2.3 유지.
+
+### 테스트
+
+- workspace 테스트 85 → **90** (qsafe-identity 단위 테스트 +5: identity 라운드트립, IdentityPublic fingerprint, IdentitySecretBytes 직렬화, PubkeyWrapper 라운드트립, transcript MitM 거부).
+- clippy `--workspace --all-features --no-deps -- -D warnings`: clean
+- `cargo deny check`: advisories ok, bans ok, licenses ok, sources ok
+
+---
+
+## [0.1.3] — 2026-05-27 (FIDO2 의존 업그레이드, ring 0.17)
 
 ---
 

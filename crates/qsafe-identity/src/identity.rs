@@ -3,11 +3,8 @@
 //! 사용자는 자기 자신만의 identity 하나를 가짐. 직렬화 가능 (저장용).
 
 use crate::error::{IdentityError, Result};
-use ml_kem::{
-    kem::{Decapsulate, DecapsulationKey, Encapsulate, EncapsulationKey},
-    KemCore, MlKem768,
-};
 use ml_kem::array::Array;
+use ml_kem::{EncodedSizeUser, KemCore, MlKem768};
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -44,11 +41,15 @@ impl IdentityPublic {
 }
 
 /// 비밀 키 포함 전체 identity. **절대 직렬화/공유 금지** 외부에는 IdentityPublic만.
+///
+/// ml-kem 0.2.3: `MlKem768`은 `Kem<MlKem768Params>` 래퍼이고 `ParameterSet`을 구현하지 않으므로
+/// `DecapsulationKey<MlKem768>` 같은 직접 매개변수화는 컴파일 안 됨. 대신 `KemCore::DecapsulationKey`
+/// associated type을 사용해야 raw `DecapsulationKey<MlKem768Params>`로 해결된다.
 pub struct Identity {
     pub x25519_sk: X25519Sk,
     pub x25519_pk_bytes: [u8; 32],
-    pub mlkem768_sk: DecapsulationKey<MlKem768>,
-    pub mlkem768_pk: EncapsulationKey<MlKem768>,
+    pub mlkem768_sk: <MlKem768 as KemCore>::DecapsulationKey,
+    pub mlkem768_pk: <MlKem768 as KemCore>::EncapsulationKey,
     pub mlkem768_pk_bytes: Vec<u8>,
 }
 
@@ -58,7 +59,7 @@ impl Identity {
         let mut rng = OsRng;
 
         // X25519
-        let x25519_sk = X25519Sk::random_from_rng(&mut rng);
+        let x25519_sk = X25519Sk::random_from_rng(rng);
         let x25519_pk_bytes = X25519Pk::from(&x25519_sk).to_bytes();
 
         // ML-KEM-768

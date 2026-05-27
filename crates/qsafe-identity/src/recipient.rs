@@ -7,12 +7,12 @@ use chacha20poly1305::{
     aead::{Aead, KeyInit},
     XChaCha20Poly1305, XNonce,
 };
-use qsafe_core::envelope::{FileKey, FILE_KEY_LEN};
-use qsafe_core::format::{PubkeyRecipient, Recipient};
 use hkdf::Hkdf;
 use ml_kem::array::Array;
 use ml_kem::kem::{Decapsulate, Encapsulate};
-use ml_kem::{KemCore, MlKem768};
+use ml_kem::{Ciphertext, EncodedSizeUser, KemCore, MlKem768, SharedKey};
+use qsafe_core::envelope::{FileKey, FILE_KEY_LEN};
+use qsafe_core::format::{PubkeyRecipient, Recipient};
 use rand::rngs::OsRng;
 use sha2::Sha256;
 use x25519_dalek::{PublicKey as X25519Pk, StaticSecret as X25519Sk};
@@ -34,7 +34,9 @@ impl PubkeyWrapper {
     pub fn wrap(&self, file_key: &FileKey) -> Result<Recipient> {
         // ── 입력 검증 ─────────────────────────────────────
         if self.recipient.x25519_pk.len() != 32 {
-            return Err(IdentityError::InvalidX25519PkLen(self.recipient.x25519_pk.len()));
+            return Err(IdentityError::InvalidX25519PkLen(
+                self.recipient.x25519_pk.len(),
+            ));
         }
 
         // ── 1. 임시 X25519 키쌍 + ECDH ─────────────────────
@@ -44,15 +46,20 @@ impl PubkeyWrapper {
         let mut recipient_x25519_pk_arr = [0u8; 32];
         recipient_x25519_pk_arr.copy_from_slice(&self.recipient.x25519_pk);
         let recipient_x25519_pk = X25519Pk::from(recipient_x25519_pk_arr);
-        let mut x25519_shared = eph_x25519_sk.diffie_hellman(&recipient_x25519_pk).to_bytes();
+        let mut x25519_shared = eph_x25519_sk
+            .diffie_hellman(&recipient_x25519_pk)
+            .to_bytes();
 
         // ── 2. ML-KEM 캡슐화 ───────────────────────────────
         let mlkem_pk_arr: Array<u8, _> = Array::try_from(self.recipient.mlkem768_pk.as_slice())
             .map_err(|_| IdentityError::InvalidMlkemPkLen)?;
         let mlkem_pk = <MlKem768 as KemCore>::EncapsulationKey::from_bytes(&mlkem_pk_arr);
-        let (mlkem_ct, mut mlkem_shared_arr) = mlkem_pk
-            .encapsulate(&mut OsRng)
-            .map_err(|_| IdentityError::MlkemDecapFailed)?;
+        // ml-kem 0.2.3: Encapsulate<EK, SS> is generic over both EK and SS, so we annotate
+        // the impl pair (EncodedCiphertext<MlKem768Params>, SharedKey<MlKem768>) explicitly.
+        let (mlkem_ct, mut mlkem_shared_arr): (Ciphertext<MlKem768>, SharedKey<MlKem768>) =
+            mlkem_pk
+                .encapsulate(&mut OsRng)
+                .map_err(|_| IdentityError::MlkemDecapFailed)?;
         let mlkem_ct_bytes = mlkem_ct.as_slice().to_vec();
 
         // ── 3. wrap_key = HKDF(...) ────────────────────────
