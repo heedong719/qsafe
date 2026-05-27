@@ -29,8 +29,10 @@ pub fn create_brotli(input: &Path, output: &Path, quality: u32) -> Result<()> {
     let mut reader = BufReader::new(f_in);
     let f_out = File::create(output).map_err(FormatError::Io)?;
     let mut writer = BufWriter::new(f_out);
-    let mut params = brotli::enc::BrotliEncoderParams::default();
-    params.quality = quality as i32;
+    let params = brotli::enc::BrotliEncoderParams {
+        quality: quality as i32,
+        ..Default::default()
+    };
     brotli::BrotliCompress(&mut reader, &mut writer, &params)
         .map_err(|e| FormatError::Brotli(format!("{:?}", e)))?;
     writer.flush().map_err(FormatError::Io)?;

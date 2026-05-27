@@ -20,6 +20,41 @@
 
 ---
 
+## [0.1.2] — 2026-05-27 (보안 + CI + 코드 품질)
+
+### 🔒 보안 (Breaking change for stream files)
+
+- **스트리밍 모드 BLAKE3 keyed-mode 적용** (R1-1 — Known-plaintext truncation forgery 차단)
+  - 이전: `blake3::Hasher::new()` (unkeyed) — 공격자가 평문 일부를 알면 청크 truncation + 헤더 ChunkInfo 변조 + trailing hash 위조 가능
+  - 수정: `blake3::Hasher::new_keyed(derive_key("qsafe-v1-stream-integrity", file_key))`. 공격자가 file_key를 모르면 hash 위조 불가.
+  - 호환성: v0.1.1 stream `.qs` 파일은 v0.1.2로 풀 수 없음. v0.1.1 사용자 거의 없으므로 영향 최소. batch (`<100 MB`) 파일은 영향 없음.
+  - 추가 회귀 테스트: `stream_integrity_hasher_is_keyed_and_key_dependent` (key 의존성 + plain BLAKE3와 분리 검증)
+
+### 🔧 CI / 빌드 신뢰성
+
+- `RUSTFLAGS: -D warnings` 환경 변수 제거 — 외부 crate 워닝까지 에러로 만드는 위험 제거. clippy 명령에 `--no-deps -- -D warnings`만 유지.
+- `rustsec/audit-check` 제거 — `cargo-deny`와 중복이고 `deny.toml`의 ignore 리스트를 무시. cargo-deny가 advisories/licenses/bans/sources를 통합 검사.
+- `EmbarkStudios/cargo-deny-action` v1 → v2 (cargo-deny 0.19+ 스키마 호환).
+- MSRV 1.80 빌드 실패 해소: `qsafe-cli/main.rs`의 unused imports (`OsStrExt`, `AsRawFd`) 제거.
+
+### 🧹 코드 품질 (clippy clean)
+
+- `qsafe-shamir`: `EncodedShare::to_string` → `impl Display` (clippy::inherent_to_string).
+- `qsafe-shamir`: `total > MAX_SHARES` 비교 제거 (clippy::absurd_extreme_comparisons — `u8 > 255`는 항상 false).
+- `qsafe-formats/brotli_fmt.rs`: `BrotliEncoderParams` 빌드 패턴 (clippy::field_reassign_with_default).
+- `qsafe-cli/main.rs`:
+  - 중복 `#[allow(clippy::too_many_arguments)]` 제거
+  - `ConfigCmd` enum에 `#[allow(clippy::enum_variant_names)]` (의도된 *Password 접미사)
+  - `(a + b - 1) / b` → `a.div_ceil(b)` 2곳
+  - `sanitize_for_terminal` `filter_map` → `filter` (None/Some(c) 단순화)
+- `SystemTime::now().duration_since(UNIX_EPOCH).unwrap()` → `.unwrap_or(Duration::ZERO).as_nanos()` (macOS/Windows `run_in_memory`) — 시계 이상 환경 panic 회피.
+
+### 🛡️ 알려진 이슈 (변동 없음)
+
+- RUSTSEC-2025-0009 (ring 0.16.20 transitive via ctap-hid-fido2 v2, `fido2-hw` feature) — QUIC 미사용으로 실제 영향 없음. v3 마이그레이션 시 자동 해결.
+
+---
+
 ## [0.1.1] — 2026-05-27 (보안 핫픽스)
 
 ### 🔒 보안

@@ -8,7 +8,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: "-D warnings"
 
 jobs:
   test:
@@ -33,8 +32,8 @@ jobs:
       - name: Format check
         run: cargo fmt --all -- --check
 
-      - name: Clippy
-        run: cargo clippy --workspace --all-features -- -D warnings
+      - name: Clippy (workspace, all features, fail on warnings)
+        run: cargo clippy --workspace --all-features --no-deps -- -D warnings
 
       - name: Build
         run: cargo build --workspace --release
@@ -42,21 +41,18 @@ jobs:
       - name: Test
         run: cargo test --workspace --release
 
-  security:
-    name: Security audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: rustsec/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
+  # 통합 보안/라이센스 검사 — cargo-deny가 RUSTSEC advisories + licenses + bans + sources를 모두 검사.
+  # 이전 rustsec/audit-check는 중복이고 deny.toml의 ignore 리스트를 무시하므로 제거.
   deny:
-    name: Cargo deny (licenses + bans + advisories)
+    name: Cargo deny (licenses + bans + advisories + sources)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v1
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features
+          log-level: warn
 
   msrv:
     name: MSRV (1.80)

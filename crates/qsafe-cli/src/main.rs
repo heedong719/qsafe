@@ -239,6 +239,8 @@ enum ShamirCmd {
     },
 }
 
+/// `config` 서브명령 — 모든 variant가 패스워드 관련이라 의도적으로 동일 postfix 사용.
+#[allow(clippy::enum_variant_names)]
 #[derive(Subcommand, Debug)]
 enum ConfigCmd {
     /// 기본 패스워드 OS 키링에 저장 (pack 시 자동 사용)
@@ -648,9 +650,6 @@ fn cmd_run(input: PathBuf, password: Option<String>, args: Vec<String>) -> Resul
 
 #[cfg(target_os = "linux")]
 fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
-    use std::os::unix::ffi::OsStrExt;
-    use std::os::unix::io::AsRawFd;
-
     eprintln!("ℹ️  Linux: memfd_create + execveat (디스크 거치지 않음)");
 
     // memfd_create 익명 메모리 fd 생성
@@ -728,15 +727,12 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
 
     // macOS는 memfd 없음 → 임시 디렉토리에 0700 디렉토리 + 0500 실행파일
     let tmp_dir = std::env::var("TMPDIR").unwrap_or_else(|_| "/tmp".into());
-    let unique = format!(
-        "{}/qsafe-exec-{}-{}",
-        tmp_dir,
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    );
+    // 시스템 시계가 UNIX_EPOCH 이전이면 0 nanos로 대체 (희박하지만 panic 회피).
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let unique = format!("{}/qsafe-exec-{}-{}", tmp_dir, std::process::id(), nanos);
     let exec_path = PathBuf::from(unique);
 
     // 0700 으로 임시 파일 생성
@@ -781,14 +777,15 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
     let tmp_dir = std::env::var("TEMP")
         .or_else(|_| std::env::var("TMP"))
         .unwrap_or_else(|_| ".".into());
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
     let unique = format!(
         "{}\\qsafe-exec-{}-{}.exe",
         tmp_dir,
         std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
+        nanos
     );
     let exec_path = PathBuf::from(unique);
 
@@ -923,7 +920,7 @@ fn cmd_split(input: PathBuf, size: String, output_prefix: Option<PathBuf>) -> Re
     }
 
     let total = fs::metadata(&input)?.len();
-    let total_parts = (total + part_size - 1) / part_size;
+    let total_parts = total.div_ceil(part_size);
     if total_parts > 9999 {
         bail!(
             "part 수가 너무 많음 ({}): part 크기를 키우세요",
@@ -1452,7 +1449,6 @@ fn format_size_pack(bytes: u64) -> String {
 }
 
 #[allow(clippy::too_many_arguments)]
-#[allow(clippy::too_many_arguments)]
 fn cmd_unpack_streaming(
     input: PathBuf,
     output: Option<PathBuf>,
@@ -1509,7 +1505,7 @@ fn cmd_unpack_streaming(
     paths_must_differ(&input, &output)?;
     refuse_overwrite_unless_force(&output, force)?;
 
-    let mut hasher = blake3::Hasher::new();
+    let mut hasher = qsafe_core::envelope::stream_integrity_hasher(&file_key);
 
     write_atomic(&output, |out| {
         stream_decrypt_with_hash(
@@ -1587,7 +1583,7 @@ fn cmd_pack_streaming(
 
     // 청크 수 사전 계산
     let chunk_size = qsafe_core::envelope::STREAM_CHUNK_SIZE as u64;
-    let num_chunks = ((input_size + chunk_size - 1) / chunk_size).max(1) as u32;
+    let num_chunks = input_size.div_ceil(chunk_size).max(1) as u32;
     let last_chunk_size = if input_size == 0 {
         0
     } else if input_size % chunk_size == 0 {
@@ -1616,7 +1612,7 @@ fn cmd_pack_streaming(
         let input_file = fs::File::open(&input)?;
         let mut reader = BufReader::with_capacity(64 * 1024, input_file);
 
-        let mut hasher = blake3::Hasher::new();
+        let mut hasher = qsafe_core::envelope::stream_integrity_hasher(&file_key);
         let (n_chunks, last_size, total) =
             stream_encrypt_with_hash(&mut reader, &mut *out, &file_key, &base_nonce, &mut hasher)
                 .map_err(|e| anyhow!("stream encrypt: {}", e))?;
@@ -2239,17 +2235,9 @@ where
 /// 악의적 .qs 파일이 터미널 hijack 시도하는 것 방지.
 fn sanitize_for_terminal(s: &str) -> String {
     s.chars()
-        .filter_map(|c| {
-            // 인쇄 가능 문자 + 정상 공백/한글/이모지 등은 허용
-            // 제어 문자 (\x00-\x1F, \x7F)는 모두 제거 (단, \t/\n은 정보용으로 보존)
-            if c == '\n' || c == '\t' || c == ' ' {
-                Some(c)
-            } else if c.is_control() {
-                None // ANSI escape (\x1b), bell (\x07), null 등 제거
-            } else {
-                Some(c)
-            }
-        })
+        // 인쇄 가능 문자 + 정상 공백/한글/이모지는 허용. 제어 문자(\x00-\x1F, \x7F)는 제거,
+        // 단 \t/\n/공백은 정보용으로 보존. ANSI escape(\x1b)·bell(\x07)·null 등은 차단.
+        .filter(|c| *c == '\n' || *c == '\t' || *c == ' ' || !c.is_control())
         .take(512) // 길이 제한 — 거대 라벨 방어
         .collect()
 }

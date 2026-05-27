@@ -24,10 +24,11 @@ pub struct EncodedShare {
     pub data: Vec<u8>,
 }
 
-impl EncodedShare {
-    /// 종이 백업용 문자열 인코딩.
-    pub fn to_string(&self) -> String {
-        format!(
+impl std::fmt::Display for EncodedShare {
+    /// 종이 백업용 문자열 인코딩: `qs1-M-N-XX-HEXDATA`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "qs1-{}-{}-{:02x}-{}",
             self.threshold,
             self.total,
@@ -69,7 +70,8 @@ impl FromStr for EncodedShare {
 
 /// secret을 M-of-N으로 분할.
 pub fn split_secret(secret: &[u8], threshold: u8, total: u8) -> Result<Vec<EncodedShare>> {
-    if threshold < MIN_SHARES || total < threshold || total > MAX_SHARES {
+    // MAX_SHARES = u8::MAX이므로 `total > MAX_SHARES`는 타입상 항상 false (clippy::absurd_extreme_comparisons).
+    if threshold < MIN_SHARES || total < threshold {
         return Err(ShamirError::InvalidThreshold {
             m: threshold,
             n: total,

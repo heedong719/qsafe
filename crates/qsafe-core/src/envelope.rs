@@ -141,6 +141,22 @@ pub fn decrypt_chunk(
         .map_err(|_| CoreError::IntegrityFailed)
 }
 
+/// 스트리밍 무결성 검증용 keyed BLAKE3 hasher.
+///
+/// 보안 근거:
+/// - 기본(plain) BLAKE3는 keyless이므로 공격자가 평문을 알면 hash를 위조할 수 있다.
+/// - 청크 truncation + 헤더 ChunkInfo 변조 + 끝의 trailing hash 교체로
+///   known-plaintext forgery가 성립 가능했다 (R1-1, v0.1.2 fix).
+/// - file_key 기반 derived key를 BLAKE3 keyed 모드에 사용하면
+///   공격자가 file_key를 모르므로 hash 위조 불가.
+///
+/// 도메인 분리: `derive_key`의 context string `"qsafe-v1-stream-integrity"`는
+/// 다른 용도(예: payload AEAD 키)로 절대 충돌하지 않는다 (BLAKE3 KDF 도메인 분리).
+pub fn stream_integrity_hasher(file_key: &FileKey) -> blake3::Hasher {
+    let key = blake3::derive_key("qsafe-v1-stream-integrity", file_key.as_bytes());
+    blake3::Hasher::new_keyed(&key)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -218,5 +234,39 @@ mod tests {
         // 순서 바꾸면 nonce 불일치 → 실패
         assert!(decrypt_chunk(&k, &base, 0, &ct1).is_err());
         assert!(decrypt_chunk(&k, &base, 1, &ct0).is_err());
+    }
+
+    #[test]
+    fn stream_integrity_hasher_is_keyed_and_key_dependent() {
+        // 같은 평문이라도 file_key가 다르면 hash가 달라야 한다 (keyed BLAKE3 검증).
+        // → 공격자가 평문을 알아도 file_key 없이 hash 위조 불가.
+        let k1 = FileKey::random();
+        let k2 = FileKey::random();
+
+        let mut h1 = stream_integrity_hasher(&k1);
+        let mut h2 = stream_integrity_hasher(&k2);
+        let data = b"common-known-plaintext-blocks";
+        h1.update(data);
+        h2.update(data);
+        let out1 = h1.finalize();
+        let out2 = h2.finalize();
+        assert_ne!(
+            out1.as_bytes(),
+            out2.as_bytes(),
+            "different file_keys must produce different keyed BLAKE3 outputs"
+        );
+
+        // 같은 file_key + 같은 평문 → 같은 hash (결정성).
+        let mut h1b = stream_integrity_hasher(&k1);
+        h1b.update(data);
+        assert_eq!(out1.as_bytes(), h1b.finalize().as_bytes());
+
+        // plain BLAKE3와도 달라야 한다 (도메인 분리 확인).
+        let plain = blake3::hash(data);
+        assert_ne!(
+            out1.as_bytes(),
+            plain.as_bytes(),
+            "keyed BLAKE3 with derived key must differ from unkeyed hash"
+        );
     }
 }

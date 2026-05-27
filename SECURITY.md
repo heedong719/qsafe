@@ -94,6 +94,13 @@ qsafe는 베스트 에포트로 작성되었으나:
 - 6개 Critical 갭 사전 봉합 (압축 폭탄, TOCTOU, Argon2 검증, escape sanitize, 0600 권한, zeroize)
 - 외부 감사 없음
 
+### v0.1.2 (2026-05-27, 보안 + CI 개선)
+- **스트리밍 모드 BLAKE3 keyed-mode 적용** (R1-1, 내부 발견):
+  - 이전: plain BLAKE3 → known-plaintext + 청크 truncation으로 trailing hash 위조 이론상 가능
+  - 수정: `derive_key("qsafe-v1-stream-integrity", file_key)` 기반 keyed BLAKE3로 위조 불가
+  - Breaking: v0.1.1 stream `.qs` 파일은 v0.1.2로 풀 수 없음 (batch 파일은 영향 없음)
+- `SystemTime UNIX_EPOCH` unwrap → panic-free (시계 이상 환경 방어, run_in_memory)
+
 #### 알려진 이슈 (Known Issues)
 
 | ID | 영향 범위 | 실제 영향 | 후속 조치 |
