@@ -6,11 +6,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
 
-pub fn extract_brotli(
-    input: &Path,
-    output_dir: &Path,
-    _password: Option<&str>,
-) -> Result<usize> {
+pub fn extract_brotli(input: &Path, output_dir: &Path, _password: Option<&str>) -> Result<usize> {
     let out_base = ensure_output_dir(output_dir)?;
     let stem = input
         .file_stem()

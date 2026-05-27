@@ -27,7 +27,9 @@
 //! - 청크 누락 검증 (헤더의 num_chunks 비교)
 //! - 마지막 청크 인식 (재생 공격 차단)
 
-use crate::envelope::{decrypt_chunk, encrypt_chunk, FileKey, STREAM_BASE_NONCE_LEN, STREAM_CHUNK_SIZE};
+use crate::envelope::{
+    decrypt_chunk, encrypt_chunk, FileKey, STREAM_BASE_NONCE_LEN, STREAM_CHUNK_SIZE,
+};
 use crate::error::{CoreError, Result};
 use crate::format::{ChunkInfo, FileHeader, MAGIC};
 use std::io::{Read, Write};
@@ -67,7 +69,9 @@ pub fn stream_encrypt_with_hash<R: Read, W: Write>(
 
         let ct = encrypt_chunk(file_key, base_nonce, chunk_idx, &buf[..filled])?;
         let ct_len = ct.len() as u32;
-        writer.write_all(&ct_len.to_le_bytes()).map_err(CoreError::Io)?;
+        writer
+            .write_all(&ct_len.to_le_bytes())
+            .map_err(CoreError::Io)?;
         writer.write_all(&ct).map_err(CoreError::Io)?;
 
         last_chunk_size = filled as u32;
@@ -82,7 +86,9 @@ pub fn stream_encrypt_with_hash<R: Read, W: Write>(
         // 빈 입력
         let ct = encrypt_chunk(file_key, base_nonce, 0, b"")?;
         let ct_len = ct.len() as u32;
-        writer.write_all(&ct_len.to_le_bytes()).map_err(CoreError::Io)?;
+        writer
+            .write_all(&ct_len.to_le_bytes())
+            .map_err(CoreError::Io)?;
         writer.write_all(&ct).map_err(CoreError::Io)?;
         return Ok((1, 0, 0));
     }
@@ -170,7 +176,9 @@ pub fn stream_encrypt<R: Read, W: Write>(
 
         // [u32 LE chunk_ct_len][ct]
         let ct_len = ct.len() as u32;
-        writer.write_all(&ct_len.to_le_bytes()).map_err(CoreError::Io)?;
+        writer
+            .write_all(&ct_len.to_le_bytes())
+            .map_err(CoreError::Io)?;
         writer.write_all(&ct).map_err(CoreError::Io)?;
 
         last_chunk_size = filled as u32;
@@ -186,7 +194,9 @@ pub fn stream_encrypt<R: Read, W: Write>(
         // 빈 입력 처리 — 길이 0 청크 하나 보냄
         let ct = encrypt_chunk(file_key, base_nonce, 0, b"")?;
         let ct_len = ct.len() as u32;
-        writer.write_all(&ct_len.to_le_bytes()).map_err(CoreError::Io)?;
+        writer
+            .write_all(&ct_len.to_le_bytes())
+            .map_err(CoreError::Io)?;
         writer.write_all(&ct).map_err(CoreError::Io)?;
         return Ok((1, 0));
     }
@@ -246,7 +256,8 @@ pub fn write_stream_header<W: Write>(mut w: W, header: &FileHeader) -> Result<()
         .len()
         .try_into()
         .map_err(|_| CoreError::HeaderEncode("header too large".into()))?;
-    w.write_all(&header_len.to_le_bytes()).map_err(CoreError::Io)?;
+    w.write_all(&header_len.to_le_bytes())
+        .map_err(CoreError::Io)?;
     w.write_all(&header_bytes).map_err(CoreError::Io)?;
     Ok(())
 }
@@ -293,13 +304,8 @@ mod tests {
 
         let plaintext = b"hello stream world".repeat(100);
         let mut ct_buf = Vec::new();
-        let (n_chunks, last_size) = stream_encrypt(
-            Cursor::new(&plaintext),
-            &mut ct_buf,
-            &file_key,
-            &base_nonce,
-        )
-        .unwrap();
+        let (n_chunks, last_size) =
+            stream_encrypt(Cursor::new(&plaintext), &mut ct_buf, &file_key, &base_nonce).unwrap();
 
         assert_eq!(n_chunks, 1);
         assert_eq!(last_size as usize, plaintext.len());
@@ -323,18 +329,11 @@ mod tests {
         let base_nonce = crate::envelope::random_stream_base_nonce();
 
         // 10 MB 입력 → 약 3 청크 (4MB + 4MB + 2MB)
-        let plaintext: Vec<u8> = (0..10 * 1024 * 1024)
-            .map(|i| (i % 256) as u8)
-            .collect();
+        let plaintext: Vec<u8> = (0..10 * 1024 * 1024).map(|i| (i % 256) as u8).collect();
 
         let mut ct_buf = Vec::new();
-        let (n_chunks, last_size) = stream_encrypt(
-            Cursor::new(&plaintext),
-            &mut ct_buf,
-            &file_key,
-            &base_nonce,
-        )
-        .unwrap();
+        let (n_chunks, last_size) =
+            stream_encrypt(Cursor::new(&plaintext), &mut ct_buf, &file_key, &base_nonce).unwrap();
 
         assert_eq!(n_chunks, 3);
         assert_eq!(last_size as usize, 2 * 1024 * 1024);
@@ -359,18 +358,12 @@ mod tests {
 
         let plaintext = vec![42u8; 5 * 1024 * 1024];
         let mut ct_buf = Vec::new();
-        let (n_chunks, _) = stream_encrypt(
-            Cursor::new(&plaintext),
-            &mut ct_buf,
-            &file_key,
-            &base_nonce,
-        )
-        .unwrap();
+        let (n_chunks, _) =
+            stream_encrypt(Cursor::new(&plaintext), &mut ct_buf, &file_key, &base_nonce).unwrap();
 
         // 두 번째 청크 ciphertext 1 byte 뒤집기
         // 첫 청크 끝 위치 찾기
-        let first_chunk_ct_len =
-            u32::from_le_bytes(ct_buf[..4].try_into().unwrap()) as usize;
+        let first_chunk_ct_len = u32::from_le_bytes(ct_buf[..4].try_into().unwrap()) as usize;
         let second_chunk_start = 4 + first_chunk_ct_len + 4; // skip len of 2nd
         ct_buf[second_chunk_start + 100] ^= 1;
 
@@ -391,13 +384,8 @@ mod tests {
         let base_nonce = crate::envelope::random_stream_base_nonce();
 
         let mut ct_buf = Vec::new();
-        let (n_chunks, last_size) = stream_encrypt(
-            Cursor::new(&[][..]),
-            &mut ct_buf,
-            &file_key,
-            &base_nonce,
-        )
-        .unwrap();
+        let (n_chunks, last_size) =
+            stream_encrypt(Cursor::new(&[][..]), &mut ct_buf, &file_key, &base_nonce).unwrap();
         assert_eq!(n_chunks, 1);
         assert_eq!(last_size, 0);
 

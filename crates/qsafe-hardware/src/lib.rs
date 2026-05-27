@@ -24,7 +24,7 @@ pub mod hw;
 
 pub use backend::{MockPrfBackend, PrfBackend, PrfOutput};
 pub use error::{HardwareError, Result};
-pub use recipient::{Fido2Wrapper, unwrap_fido2_with};
+pub use recipient::{unwrap_fido2_with, Fido2Wrapper};
 
 /// qsafe의 FIDO2 RP ID. 모든 .cl 파일은 이 RP로 등록된 credential 사용.
 pub const DEFAULT_RP_ID: &str = "qsafe.local";

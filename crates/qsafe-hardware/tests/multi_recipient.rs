@@ -6,9 +6,7 @@
 //! 실제 password 수신자는 qsafe-crypto에서 검증되었으므로,
 //! 여기서는 "다중 수신자 가운데 FIDO2만으로도 풀린다"를 검증.
 
-use qsafe_core::envelope::{
-    decrypt_payload, encrypt_payload, random_payload_nonce, FileKey,
-};
+use qsafe_core::envelope::{decrypt_payload, encrypt_payload, random_payload_nonce, FileKey};
 use qsafe_core::format::{CipherSuite, CompressionAlgo, FileHeader, IntegrityAlgo, Recipient};
 use qsafe_core::integrity::blake3_hash;
 use qsafe_core::io::{read_packed_file, write_packed_file};
@@ -58,8 +56,12 @@ fn fido2_only_recipient_full_roundtrip() {
     let recovered_key = unwrap_fido2_with(&backend, &f2r).unwrap();
 
     // 8. 페이로드 복호화 → plaintext 비교
-    let recovered_plain =
-        decrypt_payload(&recovered_key, &parsed.header.payload_nonce, &parsed.payload).unwrap();
+    let recovered_plain = decrypt_payload(
+        &recovered_key,
+        &parsed.header.payload_nonce,
+        &parsed.payload,
+    )
+    .unwrap();
     assert_eq!(recovered_plain, plaintext);
 }
 

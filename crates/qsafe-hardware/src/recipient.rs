@@ -13,9 +13,9 @@ use chacha20poly1305::{
     aead::{Aead, KeyInit},
     XChaCha20Poly1305, XNonce,
 };
+use hkdf::Hkdf;
 use qsafe_core::envelope::{FileKey, FILE_KEY_LEN};
 use qsafe_core::format::{Fido2Recipient, Recipient};
-use hkdf::Hkdf;
 use rand::{rngs::OsRng, RngCore};
 use sha2::Sha256;
 use zeroize::Zeroize;
@@ -151,8 +151,8 @@ mod tests {
         let file_key = FileKey::random();
         let original = *file_key.as_bytes();
 
-        let wrapper = Fido2Wrapper::new(&backend, enrolled.credential_id.clone())
-            .with_label("test-key");
+        let wrapper =
+            Fido2Wrapper::new(&backend, enrolled.credential_id.clone()).with_label("test-key");
         let r = wrapper.wrap(&file_key).unwrap();
 
         let f2r = match r {

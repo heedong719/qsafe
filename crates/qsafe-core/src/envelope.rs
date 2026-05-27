@@ -68,7 +68,9 @@ pub fn random_payload_nonce() -> Vec<u8> {
 /// 페이로드를 FileKey + nonce로 암호화 (XChaCha20-Poly1305).
 pub fn encrypt_payload(file_key: &FileKey, nonce: &[u8], plaintext: &[u8]) -> Result<Vec<u8>> {
     if nonce.len() != PAYLOAD_NONCE_LEN {
-        return Err(CoreError::HeaderDecode("invalid payload nonce length".into()));
+        return Err(CoreError::HeaderDecode(
+            "invalid payload nonce length".into(),
+        ));
     }
     let cipher = XChaCha20Poly1305::new(file_key.as_bytes().into());
     let xnonce = XNonce::from_slice(nonce);
@@ -80,7 +82,9 @@ pub fn encrypt_payload(file_key: &FileKey, nonce: &[u8], plaintext: &[u8]) -> Re
 /// 페이로드 복호화. MAC 실패 시 IntegrityFailed.
 pub fn decrypt_payload(file_key: &FileKey, nonce: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>> {
     if nonce.len() != PAYLOAD_NONCE_LEN {
-        return Err(CoreError::HeaderDecode("invalid payload nonce length".into()));
+        return Err(CoreError::HeaderDecode(
+            "invalid payload nonce length".into(),
+        ));
     }
     let cipher = XChaCha20Poly1305::new(file_key.as_bytes().into());
     let xnonce = XNonce::from_slice(nonce);

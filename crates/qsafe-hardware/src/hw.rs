@@ -67,12 +67,10 @@ impl PrfBackend for Fido2HwBackend {
         Self::check_device()?;
 
         // salt를 [u8; 32]로
-        let salt_arr: [u8; 32] = salt
-            .try_into()
-            .map_err(|_| HardwareError::InvalidSaltLen {
-                expected: HMAC_SALT_LEN,
-                actual: salt.len(),
-            })?;
+        let salt_arr: [u8; 32] = salt.try_into().map_err(|_| HardwareError::InvalidSaltLen {
+            expected: HMAC_SALT_LEN,
+            actual: salt.len(),
+        })?;
 
         let cfg = Cfg::init();
         let challenge = verifier::create_challenge();

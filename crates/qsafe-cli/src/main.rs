@@ -7,13 +7,16 @@ mod config;
 mod credentials;
 
 use anyhow::{anyhow, bail, Context, Result};
+use clap::{Parser, Subcommand, ValueEnum};
+#[allow(unused_imports)]
+use credentials::{CredentialStore, StoredCredential};
 use qsafe_core::compress::make_compressor;
 use qsafe_core::envelope::{
     decrypt_payload, encrypt_payload, random_payload_nonce, random_stream_base_nonce, FileKey,
     STREAM_BASE_NONCE_LEN,
 };
 use qsafe_core::format::{
-    ChunkInfo, CipherSuite, CompressionAlgo, FileHeader, Fido2Recipient, IntegrityAlgo, Recipient,
+    ChunkInfo, CipherSuite, CompressionAlgo, Fido2Recipient, FileHeader, IntegrityAlgo, Recipient,
 };
 use qsafe_core::integrity::{blake3_hash, verify_blake3};
 use qsafe_core::io::{read_packed_file, write_packed_file, PackedFile};
@@ -22,12 +25,9 @@ use qsafe_core::stream::{
     STREAM_THRESHOLD,
 };
 use qsafe_crypto::{unwrap_password, PasswordWrapper};
-use qsafe_paper::{display_words, GeneratedMnemonic};
 #[allow(unused_imports)]
 use qsafe_hardware::{unwrap_fido2_with, Fido2Wrapper, PrfBackend};
-use clap::{Parser, Subcommand, ValueEnum};
-#[allow(unused_imports)]
-use credentials::{CredentialStore, StoredCredential};
+use qsafe_paper::{display_words, GeneratedMnemonic};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tracing_subscriber::EnvFilter;
@@ -272,9 +272,7 @@ enum MnemonicCmd {
         words: String,
     },
     /// 입력한 mnemonic의 정보 (단어수, language, fingerprint) 표시
-    Info {
-        words: String,
-    },
+    Info { words: String },
 }
 
 #[derive(Subcommand, Debug)]
@@ -370,15 +368,31 @@ fn run(cmd: Cmd) -> Result<()> {
         Cmd::Info { input } => cmd_info(input),
         Cmd::Fido2 { cmd } => cmd_fido2(cmd),
         Cmd::Mnemonic { cmd } => cmd_mnemonic(cmd),
-        Cmd::Extract { input, output, password } => cmd_extract(input, output, password),
+        Cmd::Extract {
+            input,
+            output,
+            password,
+        } => cmd_extract(input, output, password),
         Cmd::Ls { input, password } => cmd_ls(input, password),
         Cmd::Config { cmd } => cmd_config(cmd),
-        Cmd::Split { input, size, output_prefix } => cmd_split(input, size, output_prefix),
+        Cmd::Split {
+            input,
+            size,
+            output_prefix,
+        } => cmd_split(input, size, output_prefix),
         Cmd::Merge { input, output } => cmd_merge(input, output),
         Cmd::Shamir { cmd } => cmd_shamir(cmd),
-        Cmd::Run { input, password, args } => cmd_run(input, password, args),
-        Cmd::Migrate { input, output, old_password, new_password } =>
-            cmd_migrate(input, output, old_password, new_password),
+        Cmd::Run {
+            input,
+            password,
+            args,
+        } => cmd_run(input, password, args),
+        Cmd::Migrate {
+            input,
+            output,
+            old_password,
+            new_password,
+        } => cmd_migrate(input, output, old_password, new_password),
         Cmd::Bench { size_mb, data } => cmd_bench(size_mb, data),
     }
 }
@@ -446,7 +460,11 @@ fn cmd_migrate(
 
     result?;
 
-    println!("✓ 마이그레이션 완료: {} → {}", input.display(), output.display());
+    println!(
+        "✓ 마이그레이션 완료: {} → {}",
+        input.display(),
+        output.display()
+    );
     println!("  qsafe v0.1 표준 알고리즘으로 재암호화됨");
     Ok(())
 }
@@ -560,7 +578,8 @@ fn cmd_bench(size_mb: u32, data: BenchData) -> Result<()> {
     );
 
     println!();
-    println!("환경: {} cores",
+    println!(
+        "환경: {} cores",
         std::thread::available_parallelism()
             .map(|n| n.get())
             .unwrap_or(1)
@@ -606,8 +625,8 @@ fn cmd_run(input: PathBuf, password: Option<String>, args: Vec<String>) -> Resul
     if pw.is_empty() {
         bail!("empty password");
     }
-    let file_key = unwrap_password(&pw, &pw_recipient)
-        .map_err(|e| anyhow!("패스워드 오류: {}", e))?;
+    let file_key =
+        unwrap_password(&pw, &pw_recipient).map_err(|e| anyhow!("패스워드 오류: {}", e))?;
     let mut pw_z = pw;
     pw_z.zeroize();
 
@@ -639,13 +658,18 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
     let name = std::ffi::CString::new("qsafe-mem-exec").unwrap();
     let fd = unsafe { libc::memfd_create(name.as_ptr(), libc::MFD_CLOEXEC) };
     if fd < 0 {
-        return Err(anyhow!("memfd_create 실패: {}", std::io::Error::last_os_error()));
+        return Err(anyhow!(
+            "memfd_create 실패: {}",
+            std::io::Error::last_os_error()
+        ));
     }
     // fd 보호 RAII
     struct FdGuard(i32);
     impl Drop for FdGuard {
         fn drop(&mut self) {
-            unsafe { libc::close(self.0); }
+            unsafe {
+                libc::close(self.0);
+            }
         }
     }
     let _guard = FdGuard(fd);
@@ -661,7 +685,10 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
             )
         };
         if written < 0 {
-            return Err(anyhow!("write to memfd: {}", std::io::Error::last_os_error()));
+            return Err(anyhow!(
+                "write to memfd: {}",
+                std::io::Error::last_os_error()
+            ));
         }
         remaining = &remaining[written as usize..];
     }
@@ -688,7 +715,10 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
         );
     }
     // 도달 시 execveat 실패
-    Err(anyhow!("execveat 실패: {}", std::io::Error::last_os_error()))
+    Err(anyhow!(
+        "execveat 실패: {}",
+        std::io::Error::last_os_error()
+    ))
 }
 
 #[cfg(target_os = "macos")]
@@ -697,8 +727,7 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
     eprintln!("ℹ️  macOS: 보안 임시 파일 + posix_spawn + 즉시 unlink");
 
     // macOS는 memfd 없음 → 임시 디렉토리에 0700 디렉토리 + 0500 실행파일
-    let tmp_dir = std::env::var("TMPDIR")
-        .unwrap_or_else(|_| "/tmp".into());
+    let tmp_dir = std::env::var("TMPDIR").unwrap_or_else(|_| "/tmp".into());
     let unique = format!(
         "{}/qsafe-exec-{}-{}",
         tmp_dir,
@@ -749,7 +778,8 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
     use std::io::Write;
     eprintln!("ℹ️  Windows: %TEMP% 보안 임시 파일 + CreateProcess + 즉시 삭제");
 
-    let tmp_dir = std::env::var("TEMP").or_else(|_| std::env::var("TMP"))
+    let tmp_dir = std::env::var("TEMP")
+        .or_else(|_| std::env::var("TMP"))
         .unwrap_or_else(|_| ".".into());
     let unique = format!(
         "{}\\qsafe-exec-{}-{}.exe",
@@ -798,14 +828,18 @@ fn cmd_shamir(cmd: ShamirCmd) -> Result<()> {
     use std::str::FromStr;
 
     match cmd {
-        ShamirCmd::Split { input, threshold, total, output_dir } => {
-            let secret = fs::read(&input)
-                .with_context(|| format!("read {}", input.display()))?;
+        ShamirCmd::Split {
+            input,
+            threshold,
+            total,
+            output_dir,
+        } => {
+            let secret = fs::read(&input).with_context(|| format!("read {}", input.display()))?;
             if secret.is_empty() {
                 bail!("입력 파일이 비어있음");
             }
-            let shares = split_secret(&secret, threshold, total)
-                .map_err(|e| anyhow!("split: {}", e))?;
+            let shares =
+                split_secret(&secret, threshold, total).map_err(|e| anyhow!("split: {}", e))?;
 
             let out_dir = output_dir.unwrap_or_else(|| {
                 let mut p = input.clone();
@@ -855,20 +889,21 @@ fn cmd_shamir(cmd: ShamirCmd) -> Result<()> {
 
             let mut parsed = Vec::with_capacity(shares.len());
             for path in &shares {
-                let content = fs::read_to_string(path)
-                    .with_context(|| format!("read {}", path.display()))?;
+                let content =
+                    fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
                 // share 라인은 "qs1-"으로 시작
                 let share_line = content
                     .lines()
                     .find(|l| l.trim().starts_with("qs1-"))
-                    .ok_or_else(|| anyhow!("'{}' 에서 'qs1-' share 라인을 찾을 수 없음", path.display()))?;
+                    .ok_or_else(|| {
+                        anyhow!("'{}' 에서 'qs1-' share 라인을 찾을 수 없음", path.display())
+                    })?;
                 let share = EncodedShare::from_str(share_line.trim())
                     .map_err(|e| anyhow!("'{}' 파싱: {}", path.display(), e))?;
                 parsed.push(share);
             }
 
-            let secret = combine_secret(&parsed)
-                .map_err(|e| anyhow!("combine: {}", e))?;
+            let secret = combine_secret(&parsed).map_err(|e| anyhow!("combine: {}", e))?;
 
             write_atomic(&output, |w| {
                 std::io::Write::write_all(w, &secret).map_err(anyhow::Error::from)
@@ -890,14 +925,21 @@ fn cmd_split(input: PathBuf, size: String, output_prefix: Option<PathBuf>) -> Re
     let total = fs::metadata(&input)?.len();
     let total_parts = (total + part_size - 1) / part_size;
     if total_parts > 9999 {
-        bail!("part 수가 너무 많음 ({}): part 크기를 키우세요", total_parts);
+        bail!(
+            "part 수가 너무 많음 ({}): part 크기를 키우세요",
+            total_parts
+        );
     }
 
     let prefix = output_prefix.unwrap_or_else(|| input.clone());
     let total_parts_u32 = total_parts as u32;
 
-    eprintln!("총 {} 바이트 → {} 개 part로 분할 ({}/part)",
-        total, total_parts, format_size(part_size));
+    eprintln!(
+        "총 {} 바이트 → {} 개 part로 분할 ({}/part)",
+        total,
+        total_parts,
+        format_size(part_size)
+    );
 
     let mut input_file = fs::File::open(&input)?;
     use std::io::{Read, Write};
@@ -937,9 +979,7 @@ fn cmd_merge(first_part: PathBuf, output: Option<PathBuf>) -> Result<()> {
     use std::io::{Read, Write};
 
     // 첫 part 파일명에서 .partNNN 추출
-    let stem = first_part
-        .to_str()
-        .ok_or_else(|| anyhow!("invalid path"))?;
+    let stem = first_part.to_str().ok_or_else(|| anyhow!("invalid path"))?;
     let part_pos = stem
         .rfind(".part")
         .ok_or_else(|| anyhow!("입력이 .partXXX 형식이 아님"))?;
@@ -982,7 +1022,11 @@ fn cmd_merge(first_part: PathBuf, output: Option<PathBuf>) -> Result<()> {
         }
     }
     out.sync_all()?;
-    println!("✓ {} 합쳐짐 ({} 바이트)", output.display(), fs::metadata(&output)?.len());
+    println!(
+        "✓ {} 합쳐짐 ({} 바이트)",
+        output.display(),
+        fs::metadata(&output)?.len()
+    );
     Ok(())
 }
 
@@ -1055,11 +1099,7 @@ fn cmd_config(cmd: ConfigCmd) -> Result<()> {
     }
 }
 
-fn cmd_extract(
-    input: PathBuf,
-    output: Option<PathBuf>,
-    password: Option<String>,
-) -> Result<()> {
+fn cmd_extract(input: PathBuf, output: Option<PathBuf>, password: Option<String>) -> Result<()> {
     use qsafe_formats::{detect_format, ExternalFormat};
     let bytes = fs::read(&input).with_context(|| format!("read {}", input.display()))?;
     let format = detect_format(&bytes);
@@ -1071,35 +1111,39 @@ fn cmd_extract(
     }
 
     let out_dir = output.unwrap_or_else(|| {
-        let stem = input.file_stem().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("extracted"));
+        let stem = input
+            .file_stem()
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("extracted"));
         stem
     });
     fs::create_dir_all(&out_dir)
         .with_context(|| format!("디렉토리 생성: {}", out_dir.display()))?;
 
     let pw = password.as_deref();
-    let count = match format {
-        ExternalFormat::Rar => qsafe_formats::rar::extract_rar(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("RAR: {}", e))?,
-        ExternalFormat::Zip => qsafe_formats::zipformat::extract_zip(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("ZIP: {}", e))?,
-        ExternalFormat::Gzip => qsafe_formats::gz::extract_gz(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("GZ: {}", e))?,
-        ExternalFormat::Xz => qsafe_formats::xz::extract_xz(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("XZ: {}", e))?,
-        ExternalFormat::Bzip2 => qsafe_formats::bz2::extract_bz2(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("BZ2: {}", e))?,
-        ExternalFormat::Lz4Frame => qsafe_formats::lz4::extract_lz4(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("LZ4: {}", e))?,
-        ExternalFormat::SevenZ => qsafe_formats::sevenz::extract_7z(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("7Z: {}", e))?,
-        ExternalFormat::Tar => qsafe_formats::tar_fmt::extract_tar(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("TAR: {}", e))?,
-        ExternalFormat::Zstd => qsafe_formats::zstd_fmt::extract_zstd(&input, &out_dir, pw)
-            .map_err(|e| anyhow!("ZSTD: {}", e))?,
-        ExternalFormat::Qsafe => bail!("'.qs' 파일은 `qsafe unpack`을 사용하세요"),
-        _ => bail!("이 포맷 추출 미구현: {}", format.name()),
-    };
+    let count =
+        match format {
+            ExternalFormat::Rar => qsafe_formats::rar::extract_rar(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("RAR: {}", e))?,
+            ExternalFormat::Zip => qsafe_formats::zipformat::extract_zip(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("ZIP: {}", e))?,
+            ExternalFormat::Gzip => qsafe_formats::gz::extract_gz(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("GZ: {}", e))?,
+            ExternalFormat::Xz => qsafe_formats::xz::extract_xz(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("XZ: {}", e))?,
+            ExternalFormat::Bzip2 => qsafe_formats::bz2::extract_bz2(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("BZ2: {}", e))?,
+            ExternalFormat::Lz4Frame => qsafe_formats::lz4::extract_lz4(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("LZ4: {}", e))?,
+            ExternalFormat::SevenZ => qsafe_formats::sevenz::extract_7z(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("7Z: {}", e))?,
+            ExternalFormat::Tar => qsafe_formats::tar_fmt::extract_tar(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("TAR: {}", e))?,
+            ExternalFormat::Zstd => qsafe_formats::zstd_fmt::extract_zstd(&input, &out_dir, pw)
+                .map_err(|e| anyhow!("ZSTD: {}", e))?,
+            ExternalFormat::Qsafe => bail!("'.qs' 파일은 `qsafe unpack`을 사용하세요"),
+            _ => bail!("이 포맷 추출 미구현: {}", format.name()),
+        };
     println!("✓ {} 파일 추출 → {}", count, out_dir.display());
     Ok(())
 }
@@ -1118,7 +1162,13 @@ fn cmd_ls(input: PathBuf, password: Option<String>) -> Result<()> {
                 .map_err(|e| anyhow!("RAR: {}", e))?;
             println!("총 {}개 엔트리:", entries.len());
             for e in &entries {
-                let kind = if e.is_directory { "DIR" } else if e.is_encrypted { "ENC" } else { "FILE" };
+                let kind = if e.is_directory {
+                    "DIR"
+                } else if e.is_encrypted {
+                    "ENC"
+                } else {
+                    "FILE"
+                };
                 println!("  {:>12}  {:>4}  {}", e.unpacked_size, kind, e.filename);
             }
         }
@@ -1141,8 +1191,7 @@ fn cmd_mnemonic(cmd: MnemonicCmd) -> Result<()> {
 }
 
 fn mnemonic_generate(words: u8, oneline: bool, show_seed: bool, show_entropy: bool) -> Result<()> {
-    let m = GeneratedMnemonic::random(words)
-        .map_err(|e| anyhow!("mnemonic 생성 실패: {}", e))?;
+    let m = GeneratedMnemonic::random(words).map_err(|e| anyhow!("mnemonic 생성 실패: {}", e))?;
     let word_list = m.words();
 
     if oneline {
@@ -1165,7 +1214,11 @@ fn mnemonic_generate(words: u8, oneline: bool, show_seed: bool, show_entropy: bo
 
         if show_entropy {
             let entropy = mnemonic.to_entropy();
-            eprintln!("entropy ({} bytes): {}", entropy.len(), hex::encode(&entropy));
+            eprintln!(
+                "entropy ({} bytes): {}",
+                entropy.len(),
+                hex::encode(&entropy)
+            );
         }
         if show_seed {
             let seed = mnemonic.to_seed("");
@@ -1200,7 +1253,11 @@ fn mnemonic_info(words: &str) -> Result<()> {
     println!("BIP39 Mnemonic 정보:");
     println!("  단어 수      : {}", count);
     println!("  언어         : English");
-    println!("  entropy 크기 : {} bits ({} bytes)", entropy_bits, entropy.len());
+    println!(
+        "  entropy 크기 : {} bits ({} bytes)",
+        entropy_bits,
+        entropy.len()
+    );
     println!("  체크섬       : 통과 ✓");
 
     // 짧은 fingerprint (entropy의 BLAKE3 해시 앞 8 bytes)
@@ -1243,8 +1300,8 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
         bail!("적어도 하나의 수신자가 필요합니다 (패스워드 또는 --fido2)");
     }
 
-    let input_meta = fs::metadata(&input)
-        .with_context(|| format!("cannot stat {}", input.display()))?;
+    let input_meta =
+        fs::metadata(&input).with_context(|| format!("cannot stat {}", input.display()))?;
     if !input_meta.is_file() {
         bail!("입력이 일반 파일이 아닙니다: {}", input.display());
     }
@@ -1253,7 +1310,10 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
         let mut p = input.clone();
         let new_name = format!(
             "{}.qs",
-            input.file_name().and_then(|n| n.to_str()).unwrap_or("output")
+            input
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("output")
         );
         p.set_file_name(new_name);
         p
@@ -1325,7 +1385,9 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
             Profile::Standard => PasswordWrapper::new(&pw),
             Profile::Strong => PasswordWrapper::strong(&pw),
         };
-        let r = wrapper.wrap(&file_key).map_err(|e| anyhow!("password wrap: {}", e))?;
+        let r = wrapper
+            .wrap(&file_key)
+            .map_err(|e| anyhow!("password wrap: {}", e))?;
         recipients.push(r);
         drop(wrapper);
         let mut pw_z = pw;
@@ -1364,20 +1426,14 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
     } else {
         100.0 * out_size as f64 / original_size as f64
     };
-    println!(
-        "✓ packed {} → {}",
-        input.display(),
-        output.display()
-    );
+    println!("✓ packed {} → {}", input.display(), output.display());
     println!(
         "  {} bytes → {} bytes ({:.1}% of original)",
         original_size, out_size, ratio
     );
 
     if shred {
-        eprintln!(
-            "⚠️  --shred: 베스트 에포트 (SSD/copy-on-write 파일시스템에서는 잔존 가능)"
-        );
+        eprintln!("⚠️  --shred: 베스트 에포트 (SSD/copy-on-write 파일시스템에서는 잔존 가능)");
         secure_delete(&input)?;
         println!("  shredded original: {}", input.display());
     }
@@ -1412,7 +1468,10 @@ fn cmd_unpack_streaming(
     let input_file = fs::File::open(&input)?;
     let mut reader = BufReader::with_capacity(64 * 1024, input_file);
     let header = read_stream_header(&mut reader)?;
-    let chunks = header.chunks.clone().ok_or_else(|| anyhow!("not streaming"))?;
+    let chunks = header
+        .chunks
+        .clone()
+        .ok_or_else(|| anyhow!("not streaming"))?;
 
     // payload_nonce에서 base_nonce 추출
     if header.payload_nonce.len() < STREAM_BASE_NONCE_LEN {
@@ -1441,8 +1500,8 @@ fn cmd_unpack_streaming(
             }
         }
     };
-    let file_key = unwrap_password(&pw, &pw_recipient)
-        .map_err(|e| anyhow!("패스워드 오류: {}", e))?;
+    let file_key =
+        unwrap_password(&pw, &pw_recipient).map_err(|e| anyhow!("패스워드 오류: {}", e))?;
     let mut pw_z = pw;
     pw_z.zeroize();
 
@@ -1514,7 +1573,9 @@ fn cmd_pack_streaming(
             Profile::Standard => PasswordWrapper::new(&pw),
             Profile::Strong => PasswordWrapper::strong(&pw),
         };
-        let r = wrapper.wrap(&file_key).map_err(|e| anyhow!("password wrap: {}", e))?;
+        let r = wrapper
+            .wrap(&file_key)
+            .map_err(|e| anyhow!("password wrap: {}", e))?;
         recipients.push(r);
         let mut pw_z = pw;
         pw_z.zeroize();
@@ -1605,8 +1666,8 @@ fn cmd_unpack(
     fido2_pin: Option<String>,
     force: bool,
 ) -> Result<()> {
-    let input_meta = fs::metadata(&input)
-        .with_context(|| format!("cannot stat {}", input.display()))?;
+    let input_meta =
+        fs::metadata(&input).with_context(|| format!("cannot stat {}", input.display()))?;
     if !input_meta.is_file() {
         bail!("입력이 일반 파일이 아닙니다: {}", input.display());
     }
@@ -1757,7 +1818,9 @@ fn try_unwrap_password(recipients: &[Recipient], password: Option<String>) -> Re
             Recipient::Password(p) => Some(p.clone()),
             _ => None,
         })
-        .ok_or_else(|| anyhow!("이 파일은 password 수신자가 없습니다. --fido2 옵션을 사용해 보세요"))?;
+        .ok_or_else(|| {
+            anyhow!("이 파일은 password 수신자가 없습니다. --fido2 옵션을 사용해 보세요")
+        })?;
 
     let pw = match password {
         Some(p) => p,
@@ -1778,9 +1841,8 @@ fn try_unwrap_password(recipients: &[Recipient], password: Option<String>) -> Re
     if pw.is_empty() {
         bail!("empty password");
     }
-    let result = unwrap_password(&pw, &pw_recipient).map_err(|e| {
-        anyhow!("패스워드가 틀렸거나 파일이 손상되었습니다 (raw: {})", e)
-    });
+    let result = unwrap_password(&pw, &pw_recipient)
+        .map_err(|e| anyhow!("패스워드가 틀렸거나 파일이 손상되었습니다 (raw: {})", e));
     let mut pw_z = pw;
     pw_z.zeroize();
     result
@@ -1848,15 +1910,13 @@ fn wrap_fido2_recipients(
         let mut out = Vec::with_capacity(names.len());
 
         for name in names {
-            let cred = store
-                .find(name)
-                .ok_or_else(|| {
-                    anyhow!(
-                        "등록되지 않은 FIDO2 credential: '{}'. `qsafe fido2 enroll {} <name>` 먼저",
-                        name,
-                        name
-                    )
-                })?;
+            let cred = store.find(name).ok_or_else(|| {
+                anyhow!(
+                    "등록되지 않은 FIDO2 credential: '{}'. `qsafe fido2 enroll {} <name>` 먼저",
+                    name,
+                    name
+                )
+            })?;
             let credential_id =
                 hex::decode(&cred.credential_id_hex).context("credential_id hex decode")?;
 
@@ -1917,7 +1977,11 @@ fn cmd_fido2_enroll(name: String, pin: Option<String>) -> Result<()> {
 
         let mut store = CredentialStore::load()?;
         if store.find(&name).is_some() {
-            bail!("이미 존재하는 이름: '{}'. 먼저 `fido2 forget {}` 해주세요.", name, name);
+            bail!(
+                "이미 존재하는 이름: '{}'. 먼저 `fido2 forget {}` 해주세요.",
+                name,
+                name
+            );
         }
 
         eprintln!("FIDO2 키를 꽂고 Touch 하세요 (등록)...");
@@ -2040,10 +2104,7 @@ fn safe_default_output(input: &Path) -> PathBuf {
         // .qs (현재) + .cl (v0.1 호환)
         p.set_extension("");
     } else {
-        let stem = input
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("out");
+        let stem = input.file_name().and_then(|n| n.to_str()).unwrap_or("out");
         p.set_file_name(format!("{}.unpacked", stem));
     }
     p
@@ -2266,10 +2327,22 @@ mod tests {
 
     #[test]
     fn decide_compression_auto() {
-        assert_eq!(decide_compression(CompressArg::Auto, 10), CompressionAlgo::None);
-        assert_eq!(decide_compression(CompressArg::Auto, 10_000), CompressionAlgo::Zstd);
-        assert_eq!(decide_compression(CompressArg::None, 10_000), CompressionAlgo::None);
-        assert_eq!(decide_compression(CompressArg::Zstd, 10), CompressionAlgo::Zstd);
+        assert_eq!(
+            decide_compression(CompressArg::Auto, 10),
+            CompressionAlgo::None
+        );
+        assert_eq!(
+            decide_compression(CompressArg::Auto, 10_000),
+            CompressionAlgo::Zstd
+        );
+        assert_eq!(
+            decide_compression(CompressArg::None, 10_000),
+            CompressionAlgo::None
+        );
+        assert_eq!(
+            decide_compression(CompressArg::Zstd, 10),
+            CompressionAlgo::Zstd
+        );
     }
 
     #[test]

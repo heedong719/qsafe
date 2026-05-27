@@ -30,9 +30,7 @@ impl CredentialStore {
         let base = if cfg!(windows) {
             std::env::var("APPDATA")
                 .map(PathBuf::from)
-                .unwrap_or_else(|_| {
-                    dirs_home().join("AppData").join("Roaming")
-                })
+                .unwrap_or_else(|_| dirs_home().join("AppData").join("Roaming"))
         } else {
             std::env::var("XDG_CONFIG_HOME")
                 .map(PathBuf::from)
@@ -47,8 +45,8 @@ impl CredentialStore {
             return Ok(Self::default());
         }
         let bytes = fs::read(&path).with_context(|| format!("read {}", path.display()))?;
-        let store: CredentialStore = serde_json::from_slice(&bytes)
-            .with_context(|| format!("parse {}", path.display()))?;
+        let store: CredentialStore =
+            serde_json::from_slice(&bytes).with_context(|| format!("parse {}", path.display()))?;
         Ok(store)
     }
 

@@ -4,11 +4,7 @@ use crate::error::{FormatError, Result};
 use crate::path_safety::ensure_output_dir;
 use std::path::Path;
 
-pub fn extract_7z(
-    input: &Path,
-    output_dir: &Path,
-    password: Option<&str>,
-) -> Result<usize> {
+pub fn extract_7z(input: &Path, output_dir: &Path, password: Option<&str>) -> Result<usize> {
     let base = ensure_output_dir(output_dir)?;
 
     if let Some(pw) = password {

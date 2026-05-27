@@ -13,9 +13,9 @@ use chacha20poly1305::{
     aead::{Aead, KeyInit},
     XChaCha20Poly1305, XNonce,
 };
+use hkdf::Hkdf;
 use qsafe_core::envelope::{FileKey, FILE_KEY_LEN};
 use qsafe_core::format::{PasswordRecipient, Recipient};
-use hkdf::Hkdf;
 use rand::{rngs::OsRng, RngCore};
 use sha2::Sha256;
 use zeroize::Zeroize;
@@ -163,7 +163,9 @@ pub fn unwrap_password(password: &str, recipient: &PasswordRecipient) -> Result<
 
     if plaintext.len() != FILE_KEY_LEN {
         plaintext.zeroize();
-        return Err(CryptoError::InvalidParams("file key length mismatch".into()));
+        return Err(CryptoError::InvalidParams(
+            "file key length mismatch".into(),
+        ));
     }
 
     let mut file_key_bytes = [0u8; FILE_KEY_LEN];

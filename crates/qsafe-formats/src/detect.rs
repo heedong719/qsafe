@@ -174,7 +174,10 @@ mod tests {
 
     #[test]
     fn detect_unknown() {
-        assert_eq!(detect_format(b"\xff\xff\xff\xff..."), ExternalFormat::Unknown);
+        assert_eq!(
+            detect_format(b"\xff\xff\xff\xff..."),
+            ExternalFormat::Unknown
+        );
     }
 
     #[test]

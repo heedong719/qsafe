@@ -8,9 +8,9 @@ use chacha20poly1305::{
     aead::{Aead, KeyInit},
     XChaCha20Poly1305, XNonce,
 };
+use hkdf::Hkdf;
 use qsafe_core::envelope::{FileKey, FILE_KEY_LEN};
 use qsafe_core::format::{Bip39Recipient, Recipient};
-use hkdf::Hkdf;
 use rand::{rngs::OsRng, RngCore};
 use sha2::Sha256;
 use zeroize::Zeroize;
@@ -292,7 +292,9 @@ mod tests {
 
     #[test]
     fn display_words_format_correct() {
-        let words = vec!["one", "two", "three", "four", "five", "six", "seven", "eight"];
+        let words = vec![
+            "one", "two", "three", "four", "five", "six", "seven", "eight",
+        ];
         let formatted = display_words(&words);
         // 4단어 후 줄바꿈 있어야 함
         assert!(formatted.contains('\n'));

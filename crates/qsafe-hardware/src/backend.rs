@@ -95,8 +95,7 @@ impl PrfBackend for MockPrfBackend {
         use sha2::Sha256;
         type HmacSha256 = Hmac<Sha256>;
 
-        let mut mac =
-            HmacSha256::new_from_slice(&self.mock_device_secret).expect("HMAC key valid");
+        let mut mac = HmacSha256::new_from_slice(&self.mock_device_secret).expect("HMAC key valid");
         mac.update(credential_id);
         mac.update(salt);
         let result = mac.finalize().into_bytes();

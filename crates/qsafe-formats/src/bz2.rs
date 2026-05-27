@@ -7,11 +7,7 @@ use std::fs::File;
 use std::io::{self, BufReader, BufWriter};
 use std::path::Path;
 
-pub fn extract_bz2(
-    input: &Path,
-    output_dir: &Path,
-    _password: Option<&str>,
-) -> Result<usize> {
+pub fn extract_bz2(input: &Path, output_dir: &Path, _password: Option<&str>) -> Result<usize> {
     let out_base = ensure_output_dir(output_dir)?;
     let stem = input
         .file_stem()
@@ -22,8 +18,8 @@ pub fn extract_bz2(
     let mut decoder = DecoderReader::new(BufReader::new(f));
     let mut out = BufWriter::new(File::create(&out_path).map_err(FormatError::Io)?);
 
-    let written = io::copy(&mut decoder, &mut out)
-        .map_err(|e| FormatError::Bzip2(e.to_string()))?;
+    let written =
+        io::copy(&mut decoder, &mut out).map_err(|e| FormatError::Bzip2(e.to_string()))?;
     tracing::debug!(out = %out_path.display(), bytes = written, "bz2 extracted");
     Ok(1)
 }

@@ -6,11 +6,7 @@ use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Read};
 use std::path::Path;
 
-pub fn extract_zstd(
-    input: &Path,
-    output_dir: &Path,
-    _password: Option<&str>,
-) -> Result<usize> {
+pub fn extract_zstd(input: &Path, output_dir: &Path, _password: Option<&str>) -> Result<usize> {
     let out_base = ensure_output_dir(output_dir)?;
     let stem = input
         .file_stem()
@@ -23,8 +19,7 @@ pub fn extract_zstd(
         .map_err(|e| FormatError::Zstd(format!("{:?}", e)))?;
     let mut out = BufWriter::new(File::create(&out_path).map_err(FormatError::Io)?);
 
-    let written = io::copy(&mut decoder, &mut out)
-        .map_err(|e| FormatError::Zstd(e.to_string()))?;
+    let written = io::copy(&mut decoder, &mut out).map_err(|e| FormatError::Zstd(e.to_string()))?;
     tracing::debug!(out = %out_path.display(), bytes = written, "zst extracted");
     Ok(1)
 }
@@ -33,7 +28,8 @@ pub fn decompress_buf(data: &[u8]) -> Result<Vec<u8>> {
     let mut decoder = ruzstd::streaming_decoder::StreamingDecoder::new(data)
         .map_err(|e| FormatError::Zstd(format!("{:?}", e)))?;
     let mut out = Vec::with_capacity(data.len() * 4);
-    decoder.read_to_end(&mut out)
+    decoder
+        .read_to_end(&mut out)
         .map_err(|e| FormatError::Zstd(e.to_string()))?;
     Ok(out)
 }

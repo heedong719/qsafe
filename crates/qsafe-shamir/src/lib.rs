@@ -22,5 +22,5 @@
 pub mod error;
 pub mod share;
 
-pub use error::{ShamirError, Result};
+pub use error::{Result, ShamirError};
 pub use share::{combine_secret, split_secret, EncodedShare, MAX_SHARES, MIN_SHARES};

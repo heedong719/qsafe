@@ -30,8 +30,8 @@ pub fn load_default_password() -> Result<Option<String>> {
 
 /// OS 키링에 기본 패스워드 저장.
 pub fn save_default_password(password: &str) -> Result<()> {
-    let entry = keyring::Entry::new(SERVICE, ACCOUNT)
-        .map_err(|e| anyhow!("키링 엔트리 생성: {}", e))?;
+    let entry =
+        keyring::Entry::new(SERVICE, ACCOUNT).map_err(|e| anyhow!("키링 엔트리 생성: {}", e))?;
     entry
         .set_password(password)
         .map_err(|e| anyhow!("키링 저장: {}", e))?;
@@ -40,8 +40,7 @@ pub fn save_default_password(password: &str) -> Result<()> {
 
 /// OS 키링에서 기본 패스워드 삭제.
 pub fn clear_default_password() -> Result<()> {
-    let entry = keyring::Entry::new(SERVICE, ACCOUNT)
-        .map_err(|e| anyhow!("키링 엔트리: {}", e))?;
+    let entry = keyring::Entry::new(SERVICE, ACCOUNT).map_err(|e| anyhow!("키링 엔트리: {}", e))?;
     match entry.delete_credential() {
         Ok(()) => Ok(()),
         Err(keyring::Error::NoEntry) => Ok(()),

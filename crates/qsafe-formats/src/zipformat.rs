@@ -6,15 +6,11 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
-pub fn extract_zip(
-    input: &Path,
-    output_dir: &Path,
-    password: Option<&str>,
-) -> Result<usize> {
+pub fn extract_zip(input: &Path, output_dir: &Path, password: Option<&str>) -> Result<usize> {
     let base = ensure_output_dir(output_dir)?;
     let f = File::open(input).map_err(FormatError::Io)?;
-    let mut archive = zip::ZipArchive::new(BufReader::new(f))
-        .map_err(|e| FormatError::Zip(e.to_string()))?;
+    let mut archive =
+        zip::ZipArchive::new(BufReader::new(f)).map_err(|e| FormatError::Zip(e.to_string()))?;
 
     let mut extracted = 0usize;
     for i in 0..archive.len() {

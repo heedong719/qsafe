@@ -99,8 +99,8 @@ impl Compressor for ZstdCompressor {
     }
     fn decompress(&self, data: &[u8], expected_size: Option<usize>) -> Result<Vec<u8>> {
         let limit = compute_decompress_limit(data.len(), expected_size);
-        let decoder =
-            zstd::stream::read::Decoder::new(data).map_err(|e| CoreError::Compression(e.to_string()))?;
+        let decoder = zstd::stream::read::Decoder::new(data)
+            .map_err(|e| CoreError::Compression(e.to_string()))?;
         // Read::take 으로 하드 limit 강제 (압축 폭탄 방어)
         let mut limited = decoder.take(limit);
         let mut out: Vec<u8> = Vec::with_capacity(expected_size.unwrap_or(0).min(64 * 1024 * 1024));
@@ -115,7 +115,10 @@ impl Compressor for ZstdCompressor {
             let mut decoder_check = limited.into_inner();
             if let Ok(n) = decoder_check.read(&mut extra) {
                 if n > 0 {
-                    return Err(CoreError::CompressionBomb { got: bytes_read + n as u64, limit });
+                    return Err(CoreError::CompressionBomb {
+                        got: bytes_read + n as u64,
+                        limit,
+                    });
                 }
             }
         }

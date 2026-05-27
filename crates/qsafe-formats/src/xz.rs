@@ -8,11 +8,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
-pub fn extract_xz(
-    input: &Path,
-    output_dir: &Path,
-    _password: Option<&str>,
-) -> Result<usize> {
+pub fn extract_xz(input: &Path, output_dir: &Path, _password: Option<&str>) -> Result<usize> {
     let out_base = ensure_output_dir(output_dir)?;
     let stem = input
         .file_stem()
@@ -34,7 +30,6 @@ pub fn extract_xz(
 pub fn decompress_buf(data: &[u8]) -> Result<Vec<u8>> {
     let mut input = std::io::BufReader::new(data);
     let mut out = Vec::new();
-    lzma_rs::xz_decompress(&mut input, &mut out)
-        .map_err(|e| FormatError::Xz(format!("{}", e)))?;
+    lzma_rs::xz_decompress(&mut input, &mut out).map_err(|e| FormatError::Xz(format!("{}", e)))?;
     Ok(out)
 }
