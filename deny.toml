@@ -1,4 +1,5 @@
 # cargo-deny 설정 — 라이센스/취약점/금지 의존성 자동 검사
+# cargo-deny 0.19+ 스키마 (deprecated 필드: vulnerability/unmaintained/yanked/notice → 자동 deny/warn)
 
 [graph]
 all-features = true
@@ -6,14 +7,17 @@ all-features = true
 [advisories]
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
-vulnerability = "deny"
-unmaintained = "warn"
-yanked = "warn"
-notice = "warn"
-ignore = []
+# 0.19+: vulnerability/yanked/notice는 자동 deny, unmaintained 범위만 설정
+unmaintained = "workspace"
+ignore = [
+    # RUSTSEC-2025-0009: ring 0.16.20 HeaderProtectionKey::new_mask() QUIC panic
+    # 영향 범위: ctap-hid-fido2 v2가 ring 0.16을 transitive 의존, fido2-hw feature(default OFF)에서만 활성.
+    # 실제 영향: 없음 — qsafe는 QUIC 프로토콜 미사용 (CLI 로컬 도구, 네트워크 없음).
+    # 후속 조치: ctap-hid-fido2 v3 API 마이그레이션 (qsafe-hardware/src/hw.rs Builder 패턴 적용) 후 ring 0.17+ 자동 해결.
+    { id = "RUSTSEC-2025-0009", reason = "QUIC-only panic, qsafe doesn't use QUIC; will be fixed by ctap-hid-fido2 v3 migration" },
+]
 
 [licenses]
-unlicensed = "deny"
 allow = [
     "MIT",
     "Apache-2.0",
@@ -28,26 +32,25 @@ allow = [
     "CC0-1.0",
     "Zlib",
     "0BSD",
-    # unrar 특수 라이센스 (사용자가 수동 검토)
     "WTFPL",
+    # unrar: Eugene Roshal's UnRAR License — SPDX 미존재, LicenseRef-unrar로 표현
+    "LicenseRef-unrar",
+    # ring: license manifest 미명시이지만 ISC + MIT + OpenSSL 조합 (수동 검토)
+    "LicenseRef-ring",
 ]
-deny = [
-    # GPL/LGPL/AGPL은 정적 링크 시 라이센스 전염 — 거부
-    "GPL-2.0",
-    "GPL-3.0",
-    "LGPL-2.1",
-    "LGPL-3.0",
-    "AGPL-3.0",
-]
-copyleft = "deny"
-allow-osi-fsf-free = "neither"
-default = "deny"
 confidence-threshold = 0.8
 
 # unrar는 특수 라이센스 (Eugene Roshal's UnRAR License)
-[[licenses.exceptions]]
-allow = ["custom:unrar"]
-name = "unrar"
+[[licenses.clarify]]
+crate = "unrar"
+expression = "LicenseRef-unrar"
+license-files = []
+
+# ring은 manifest에 license 명시 안 함 — ISC + MIT + OpenSSL 코드 혼합 (LICENSE 파일에 정의)
+[[licenses.clarify]]
+crate = "ring"
+expression = "LicenseRef-ring"
+license-files = []
 
 [bans]
 multiple-versions = "warn"

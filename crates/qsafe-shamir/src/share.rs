@@ -1,7 +1,7 @@
 //! Shamir share — 분할/결합 + 종이 백업용 인코딩.
 
 use crate::error::{Result, ShamirError};
-use sharks::{Share, Sharks};
+use blahaj::{Share, Sharks};
 use std::str::FromStr;
 use zeroize::Zeroize;
 

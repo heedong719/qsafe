@@ -11,6 +11,7 @@
 - OS 통합: Windows 탐색기 / macOS Finder / Linux 파일 매니저 (계획)
 - 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
 - X25519 + ML-KEM-768 하이브리드 공개키 수신자
+- ctap-hid-fido2 v3 API 마이그레이션 (qsafe-hardware/src/hw.rs Builder 패턴) — ring 0.17+로 RUSTSEC-2025-0009 해결
 
 ### 검토 중
 - EGG / ALZ 한국 사유 포맷 풀기 (라이브러리 미성숙)
@@ -19,7 +20,27 @@
 
 ---
 
-## [0.1.0] — 2026-05 (개발 중, pre-release)
+## [0.1.1] — 2026-05-27 (보안 핫픽스)
+
+### 🔒 보안
+- **Shamir M-of-N 다항식 계수 bias 수정** (RUSTSEC-2024-0398)
+  - `sharks 0.5` → `blahaj 0.6` 교체 (Cure53가 감사한 fork)
+  - 이전 영향: 같은 secret을 500–1500회 공유 시 일부 byte 값 brute force 가능
+  - blahaj는 sharks와 100% API 호환 (drop-in replacement) — 기존 share 데이터는 영향 받지 않음
+- **cargo-deny 0.19+ 스키마 마이그레이션**: deny.toml 재작성, advisories/licenses 자동 deny 활용
+- **알려진 이슈** (영향 없음):
+  - RUSTSEC-2025-0009 (ring 0.16.20 QUIC `HeaderProtectionKey::new_mask()` panic) — `fido2-hw` feature(default OFF) 의존성만 transitive. qsafe는 QUIC 미사용이라 실제 영향 없음 (ctap-hid-fido2 v3 마이그레이션으로 해결 예정).
+
+### 정리
+- 빌드 경고 3개 제거 (lz4.rs의 미사용 `Write`, main.rs의 미사용 BIP39 import, credentials의 dead code 주석)
+- 워크스페이스 메타데이터 inheritance 정리 (`repository`, `homepage`, `readme`, `keywords`, `categories` 일관 적용)
+- 내부 crate path 의존성에 version 명시 (publish 가능 상태)
+
+---
+
+## [0.1.0] — 2026-05 (개발 중, pre-release — 보안 이슈로 철회)
+
+> ⚠️ v0.1.0은 릴리스 직후 RUSTSEC-2024-0398 발견으로 즉시 철회되었습니다. v0.1.1을 사용하세요.
 
 ### 추가
 - **다중 수신자 봉투** — Password / FIDO2 / BIP39 / Shamir / Pubkey (OR 논리)

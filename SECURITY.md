@@ -84,10 +84,21 @@ qsafe는 베스트 에포트로 작성되었으나:
 
 ## 📅 변경 이력 — Security Changelog
 
-### v0.1.0 (Pre-release, 2026-05)
-- 초기 보안 모델 구현
+### v0.1.0 (2026-05, 철회됨)
+- 릴리스 직후 RUSTSEC-2024-0398 (sharks 다항식 bias) 발견으로 즉시 철회
+- v0.1.1로 대체 — 사용 금지
+
+### v0.1.1 (2026-05-27, 보안 핫픽스)
+- **RUSTSEC-2024-0398 해소**: Shamir 구현체 `sharks 0.5` → `blahaj 0.6` 교체 (Cure53 감사 fork)
+- 초기 보안 모델 구현 (v0.1.0에서 계승)
 - 6개 Critical 갭 사전 봉합 (압축 폭탄, TOCTOU, Argon2 검증, escape sanitize, 0600 권한, zeroize)
 - 외부 감사 없음
+
+#### 알려진 이슈 (Known Issues)
+
+| ID | 영향 범위 | 실제 영향 | 후속 조치 |
+|---|---|---|---|
+| RUSTSEC-2025-0009 (ring 0.16.20) | `fido2-hw` feature (default OFF)의 transitive 의존 | **없음** — QUIC `HeaderProtectionKey::new_mask()` panic이며 qsafe는 QUIC 미사용 | ctap-hid-fido2 v3 API 마이그레이션 후 ring 0.17+로 자동 해결 |
 
 ### 향후
 - v1.0: 외부 감사 (Trail of Bits / NCC Group)
