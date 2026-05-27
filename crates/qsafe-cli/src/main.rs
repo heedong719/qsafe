@@ -692,13 +692,13 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
         remaining = &remaining[written as usize..];
     }
 
-    // 자식 프로세스 인자 준비
-    let mut argv: Vec<std::ffi::CString> = Vec::new();
-    argv.push(std::ffi::CString::new("qsafe-exec")?);
+    // 자식 프로세스 인자 준비. argv[0]는 관습적인 self-name.
+    let mut argv: Vec<std::ffi::CString> = vec![std::ffi::CString::new("qsafe-exec")?];
     for a in args {
         argv.push(std::ffi::CString::new(a.as_str())?);
     }
-    let mut argv_ptrs: Vec<*const i8> = argv.iter().map(|c| c.as_ptr()).collect();
+    // c_char는 플랫폼별로 i8(x86_64)/u8(aarch64). libc::c_char 사용으로 ARM Linux 호환.
+    let mut argv_ptrs: Vec<*const libc::c_char> = argv.iter().map(|c| c.as_ptr()).collect();
     argv_ptrs.push(std::ptr::null());
 
     // execveat(fd, "", argv, envp, AT_EMPTY_PATH)
@@ -709,7 +709,7 @@ fn run_in_memory(executable: &[u8], args: &[String]) -> Result<()> {
             fd,
             empty_path.as_ptr(),
             argv_ptrs.as_ptr(),
-            std::ptr::null::<*const i8>(),
+            std::ptr::null::<*const libc::c_char>(),
             libc::AT_EMPTY_PATH,
         );
     }

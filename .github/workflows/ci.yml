@@ -26,6 +26,12 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      # Linux: hidapi (ctap-hid-fido2의 transitive)가 libudev pkg-config 의존.
+      # macOS/Windows는 필요 없음.
+      - name: Install Linux deps (libudev for hidapi)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
+
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
 
@@ -60,5 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.80.0
+      - name: Install Linux deps (libudev for hidapi)
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --workspace --release
