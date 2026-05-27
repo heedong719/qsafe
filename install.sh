@@ -99,30 +99,43 @@ main() {
     # 압축 해제
     tar -xzf "$TMP/qsafe.tar.gz" -C "$TMP"
 
-    # 설치
-    if [ -w "$INSTALL_DIR" ]; then
-        cp "$TMP/qsafe" "$INSTALL_DIR/"
-    else
-        info "권한 필요: sudo 사용"
-        sudo cp "$TMP/qsafe" "$INSTALL_DIR/"
+    # 설치 (qsafe CLI + qsafe-stub SFX extractor — `qsafe pack --sfx`가 같은 디렉토리의 stub을 찾음)
+    install_one() {
+        bin="$1"
+        if [ ! -f "$TMP/$bin" ]; then
+            return 0
+        fi
+        if [ -w "$INSTALL_DIR" ]; then
+            cp "$TMP/$bin" "$INSTALL_DIR/"
+        else
+            sudo cp "$TMP/$bin" "$INSTALL_DIR/"
+        fi
+        chmod +x "$INSTALL_DIR/$bin" 2>/dev/null || sudo chmod +x "$INSTALL_DIR/$bin"
+    }
+    install_one qsafe
+    install_one qsafe-stub
+
+    if [ ! -w "$INSTALL_DIR" ]; then
+        info "권한 필요: sudo 사용 완료"
     fi
 
-    chmod +x "$INSTALL_DIR/qsafe" 2>/dev/null || \
-        sudo chmod +x "$INSTALL_DIR/qsafe"
-
     ok "설치 완료: $INSTALL_DIR/qsafe"
+    [ -f "$INSTALL_DIR/qsafe-stub" ] && ok "          $INSTALL_DIR/qsafe-stub (SFX 자기압축해제 stub)"
     echo
     "$INSTALL_DIR/qsafe" --version 2>/dev/null || \
         warn "PATH에 $INSTALL_DIR 추가 필요"
 
     echo
     echo "사용법:"
-    echo "  qsafe pack file.pdf          # 압축+암호화"
-    echo "  qsafe unpack file.pdf.qs     # 풀기"
-    echo "  qsafe extract foo.rar        # RAR/ZIP/7Z 등 풀기"
-    echo "  qsafe mnemonic generate      # BIP39 단어 생성"
+    echo "  qsafe pack file.pdf                              # 압축+암호화"
+    echo "  qsafe pack file.pdf --sfx                        # 자기압축해제 .run 만들기 (v0.1.5+)"
+    echo "  qsafe pack file.pdf --pubkey friend.pub.json     # X25519+ML-KEM-768 하이브리드"
+    echo "  qsafe unpack file.pdf.qs                         # 풀기"
+    echo "  qsafe extract foo.rar                            # RAR/ZIP/7Z 등 풀기"
+    echo "  qsafe identity generate                          # PQ 키쌍 만들기"
+    echo "  qsafe mnemonic generate                          # BIP39 단어 생성"
     echo "  qsafe shamir split secret -m 3 -n 5"
-    echo "  qsafe bench                  # 성능 측정"
+    echo "  qsafe bench                                      # 성능 측정"
     echo "  qsafe --help"
 }
 

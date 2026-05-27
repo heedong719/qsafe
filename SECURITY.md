@@ -54,6 +54,25 @@ qsafe가 방어하는 위협:
 - HSM/TPM 펌웨어 백도어
 - 사이드 채널 (전력 분석, 음향)
 
+### ⚠️ SFX 자기압축해제 신뢰 모델 (v0.1.5+)
+
+`qsafe pack --sfx`는 사용자 친화성과 보안을 교환하는 패턴이다:
+
+- **payload는 여전히 안전**: SFX 안의 `.qs` payload는 AEAD + keyed BLAKE3 검증을 그대로 거친다. payload만 변조하면 stub이 실패한다.
+- **stub 자체는 변조 가능**: 공격자가 SFX 파일의 stub 부분을 자기 코드로 교체할 수 있다. 사용자는 자기가 받은 `.run`/`.exe`가 진짜 qsafe stub인지 확신할 방법이 없다.
+- **배포 권장 사항**:
+  - 가능하면 **codesign / notarization**된 SFX만 배포 (macOS Apple Developer ID, Windows EV cert)
+  - 그렇지 않다면 일반 `.qs` 파일 + qsafe CLI 사용 권장
+  - SFX 받은 사용자도 가능하면 `qsafe unpack`으로 검증
+- **alarm**: macOS Gatekeeper / Windows SmartScreen이 unsigned SFX를 차단하는 것은 사용자 보호의 일부이므로 우회 가이드를 제공하지 않는다.
+
+### ⚠️ Pubkey recipient 신뢰 모델 (v0.1.5+)
+
+- **transcript 바인딩**: HKDF salt에 `ephemeral_pk || recipient_x25519_pk || mlkem_ct || recipient_mlkem_pk`를 모두 포함하므로, 중간자가 일부 값만 바꿔도 wrap_key 도출이 실패한다.
+- **하이브리드 안전성**: X25519가 깨져도 ML-KEM이 막고, ML-KEM이 깨져도 X25519가 막는다. 두 알고리즘이 모두 깨지려면 양자컴 + 새 수학적 돌파가 둘 다 필요하다.
+- **PFS (Forward Secrecy)**: 매 봉투마다 새 ephemeral X25519 키쌍이 생성되므로 장기 키가 유출돼도 과거 봉투는 안전.
+- **identity 파일 보호**: secret identity JSON 파일은 **외부 공유 금지**. 현재는 평문 JSON으로 저장되며, 향후 OS 키링 / 패스워드 보호 옵션이 추가될 예정.
+
 ## 🔐 암호 사양 — Cryptographic Specification
 
 상세 사양은 `docs/CRYPTO-SPEC.md` 참조 (향후 작성).

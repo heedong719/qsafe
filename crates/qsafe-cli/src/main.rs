@@ -552,7 +552,11 @@ fn cmd_identity_export_pubkey(input: PathBuf, output: Option<PathBuf>, force: bo
     refuse_overwrite_unless_force(&output, force)?;
 
     let json = serde_json::to_vec_pretty(&public)?;
-    fs::write(&output, &json).with_context(|| format!("write {}", output.display()))?;
+    // public 키 자체는 비밀이 아니지만 일관성 위해 atomic write 사용.
+    write_atomic(&output, |w| {
+        use std::io::Write;
+        w.write_all(&json).map_err(anyhow::Error::from)
+    })?;
     println!(
         "✓ public identity 추출: {} → {}",
         input.display(),

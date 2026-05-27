@@ -10,8 +10,64 @@
 - OS 통합: Windows 탐색기 / macOS Finder / Linux 파일 매니저 (계획)
 - 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
 - GUI M2~M8: pack/unpack 명령, 진행 바, drag&drop, 다중 수신자 UI (qsafe-gui scaffold는 v0.1.5에 활성화됨)
-- SFX cross-compile 4-target 자동 빌드 (CI release workflow 확장)
 - SFX codesign / notarization (macOS Gatekeeper / Windows SmartScreen 통과용)
+- 별도 Tauri release workflow (icon.ico/.icns 자산 포함, OS-native bundle)
+
+---
+
+## [0.1.6] — 2026-05-28 (v0.1.5 후속 분석 — secret file 권한 강화, CI 안정화)
+
+### 🔒 보안
+
+- **secret 파일 0600 권한 강제** (R6, 큰 발견):
+  - `qsafe identity generate`: 이미 `write_atomic` 사용 (0600+O_NOFOLLOW+O_EXCL)
+  - `qsafe identity export-pubkey`: `fs::write` → `write_atomic` 으로 일관 적용
+  - SFX stub의 풀린 파일: `write_secret_file` 헬퍼 추가 (0600, `create_new`)
+  - qsafe-gui `identity_generate`: `write_secret_json` 헬퍼 추가 (0600, `create_new`)
+  - Windows에서는 NTFS ACL 기본을 따름 (`create_new`만 적용).
+
+- **SECURITY.md에 SFX/Pubkey 신뢰 모델 명시** (R4):
+  - SFX: payload는 AEAD 보호되지만 stub은 변조될 수 있다는 한계, codesign/notarization 권장
+  - Pubkey: transcript MitM 방어, X25519+ML-KEM-768 하이브리드 안전성, PFS, identity 파일 보호
+
+### 🔧 CI / 인프라
+
+- **Windows CI fail 해소** (R1):
+  - v0.1.5의 ubuntu CI는 통과했지만 windows에서 `tauri-build`가 `icons/icon.ico` 부재로 fail.
+  - 해결: CI test/MSRV/clippy/build/test 모두 `--workspace --exclude qsafe-gui`로 분리. Tauri 빌드는 별도 release workflow 책임.
+  - Linux Tauri WebKit deps (`webkit2gtk-4.1` 등)도 CI matrix에서 제거 (gui 미빌드).
+
+- **release.yml에 qsafe-stub 4-target 빌드 추가** (R2):
+  - `cargo build --release --target ${target} -p qsafe-stub` + Linux strip 추가.
+  - dist 아카이브에 `qsafe-stub${ext}` 포함 → `qsafe pack --sfx`가 같은 디렉토리의 stub 자동 발견.
+  - CHANGELOG.md도 dist에 포함.
+
+- **install.sh에 qsafe-stub 자동 설치** (R3):
+  - `qsafe` + `qsafe-stub` 동시 설치 (sudo 한 번).
+  - 새 사용법 가이드 출력: `pack --sfx`, `pack --pubkey`, `identity generate`.
+
+### 🧹 코드 품질 / UX
+
+- **qsafe-stub UX 개선** (R10):
+  - 사용자가 standalone `qsafe-stub`을 직접 실행한 경우 `NotSfx` 에러를 친절한 안내로 보완.
+  - `--version` / `--help` flag 추가 (이전: SFX 풀기를 무조건 시도하던 confusing 동작).
+
+- clippy `needless_return` 위반 1건 해소 (cfg(unix) 블록의 explicit `return`).
+- `cargo fmt` 자동 적용.
+
+### 검증 (14 라운드, R12/R13/R14 3번 연속 0건)
+
+- cargo build --workspace --release --all-features: clean
+- cargo fmt --check: clean
+- cargo clippy --workspace --all-features --no-deps -- -D warnings: clean
+- cargo test --workspace --release --all-features: 95 / 0
+- cargo deny check: advisories ok, bans ok, licenses ok, sources ok
+- cargo doc --workspace --no-deps: no warnings
+- **e2e 매트릭스 검증**: (1) password pack/unpack, (2) X25519+ML-KEM-768 PQ 하이브리드 pack/unpack, (3) SFX 자기압축해제 1.3MB `.run` → 풀기 — 모두 SHA256 일치.
+
+---
+
+## [0.1.5] — 2026-05-28 (CLI Pubkey + SFX 자기압축해제 + GUI MVP scaffold)
 
 ---
 

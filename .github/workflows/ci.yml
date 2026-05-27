@@ -26,18 +26,11 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      # Linux 시스템 의존성:
-      # - libudev: hidapi (ctap-hid-fido2 v3 의 transitive)
-      # - webkit2gtk + javascriptcoregtk + libsoup: Tauri WebView (qsafe-gui)
-      # macOS/Windows는 OS 내장 WebView 사용.
-      - name: Install Linux deps (libudev + Tauri WebKit)
+      # Linux 시스템 의존성: hidapi (ctap-hid-fido2 v3 의 transitive)가 libudev를 요구한다.
+      # qsafe-gui는 CI matrix에서 제외하므로 Tauri WebKit deps는 release workflow에서만 설치한다.
+      - name: Install Linux deps (libudev for hidapi)
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libudev-dev pkg-config \
-            libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev \
-            libsoup-3.0-dev libayatana-appindicator3-dev librsvg2-dev
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
 
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
@@ -45,14 +38,17 @@ jobs:
       - name: Format check
         run: cargo fmt --all -- --check
 
+      # qsafe-gui (Tauri)는 Windows에서 icons/icon.ico를 요구하고 macOS에서는 .icns를 권장하는 등
+      # 플랫폼별 bundle 자산이 필요하다. 일반 CI에서는 GUI를 제외하고, 별도 release workflow에서
+      # 전용 bundle artifacts와 함께 빌드한다.
       - name: Clippy (workspace, all features, fail on warnings)
-        run: cargo clippy --workspace --all-features --no-deps -- -D warnings
+        run: cargo clippy --workspace --exclude qsafe-gui --all-features --no-deps -- -D warnings
 
       - name: Build
-        run: cargo build --workspace --release
+        run: cargo build --workspace --exclude qsafe-gui --release
 
       - name: Test
-        run: cargo test --workspace --release
+        run: cargo test --workspace --exclude qsafe-gui --release
 
   # 통합 보안/라이센스 검사 — cargo-deny가 RUSTSEC advisories + licenses + bans + sources를 모두 검사.
   # 이전 rustsec/audit-check는 중복이고 deny.toml의 ignore 리스트를 무시하므로 제거.
@@ -73,12 +69,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.80.0
-      - name: Install Linux deps (libudev + Tauri WebKit)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libudev-dev pkg-config \
-            libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev \
-            libsoup-3.0-dev libayatana-appindicator3-dev librsvg2-dev
+      - name: Install Linux deps (libudev for hidapi)
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build --workspace --release
+      # MSRV는 CLI/라이브러리 호환성만 검사. GUI는 Tauri 자체 MSRV가 1.77이라 분리.
+      - run: cargo build --workspace --exclude qsafe-gui --release

@@ -5,7 +5,23 @@
 //! so the frontend gets clean strings on error.
 
 use serde::Serialize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+/// 0600 권한으로 secret JSON 파일 작성 (Unix). Windows는 일반 write.
+fn write_secret_json(path: &Path, data: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+    let mut opts = std::fs::OpenOptions::new();
+    opts.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        opts.mode(0o600);
+    }
+    let mut f = opts.open(path)?;
+    f.write_all(data)?;
+    f.sync_all()?;
+    Ok(())
+}
 
 #[derive(Serialize)]
 pub struct AboutInfo {
@@ -100,7 +116,8 @@ pub fn identity_generate(output_path: String, force: bool) -> Result<IdentitySum
     let identity = qsafe_identity::Identity::generate();
     let secret = qsafe_identity::IdentitySecretBytes::from_identity(&identity);
     let json = serde_json::to_vec_pretty(&secret).map_err(|e| e.to_string())?;
-    std::fs::write(&path, &json).map_err(|e| format!("write: {}", e))?;
+    // secret JSON은 0600 권한 (Unix). create_new로 race-free.
+    write_secret_json(&path, &json).map_err(|e| format!("write: {}", e))?;
 
     Ok(IdentitySummary {
         fingerprint: identity.fingerprint(),

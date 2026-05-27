@@ -20,10 +20,46 @@ use std::path::PathBuf;
 use zeroize::Zeroize;
 
 fn main() {
+    // 사용자가 minimal stub binary를 직접 실행한 경우 안내. 정상 사용은
+    // `qsafe pack --sfx`로 만들어진 SFX 파일 (이 stub이 그 안에 embed된 상태)을 실행하는 것.
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|a| a == "--version" || a == "-V") {
+        println!("qsafe-stub {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
+    if args.iter().any(|a| a == "--help" || a == "-h") {
+        print_help();
+        return;
+    }
+
     if let Err(e) = run() {
         eprintln!("✗ qsafe SFX 풀기 실패: {:#}", e);
+        if matches!(
+            e.downcast_ref::<qsafe_stub::SfxError>(),
+            Some(qsafe_stub::SfxError::NotSfx)
+        ) {
+            eprintln!();
+            eprintln!("이 binary는 SFX stub 자체입니다 — 직접 실행하는 용도가 아닙니다.");
+            eprintln!("`qsafe pack --sfx ...`로 만들어진 .run/.exe 파일을 실행하세요.");
+        }
         std::process::exit(2);
     }
+}
+
+fn print_help() {
+    println!(
+        "qsafe-stub {} — qsafe SFX self-extracting stub",
+        env!("CARGO_PKG_VERSION")
+    );
+    println!();
+    println!("USAGE:");
+    println!("  이 binary는 단독 실행 용도가 아닙니다.");
+    println!("  `qsafe pack --sfx <file>`이 만든 결과 SFX 파일을 실행하면");
+    println!("  자기 자신 안의 stub이 호출되어 payload를 풀어줍니다.");
+    println!();
+    println!("OPTIONS:");
+    println!("  -V, --version       버전 출력");
+    println!("  -h, --help          이 도움말 출력");
 }
 
 fn run() -> Result<()> {
@@ -86,11 +122,28 @@ fn run() -> Result<()> {
     verify_blake3(&plaintext, &original_hash).context("BLAKE3 검증")?;
 
     // 출력 위치: 같은 디렉토리에 stem 사용. 출력 파일 충돌 시 -1, -2 등 자동 추가.
+    // 0600 권한 — 풀린 내용이 다른 사용자에게 노출되지 않도록.
     let out_path = pick_output_path(&exe)?;
-    fs::write(&out_path, &plaintext)
+    write_secret_file(&out_path, &plaintext)
         .with_context(|| format!("write output {}", out_path.display()))?;
 
     eprintln!("✓ {} 로 풀렸습니다.", out_path.display());
+    Ok(())
+}
+
+/// 0600 권한으로 파일 작성 (Unix). Windows에서는 일반 write.
+fn write_secret_file(path: &std::path::Path, data: &[u8]) -> Result<()> {
+    use std::io::Write;
+    let mut opts = fs::OpenOptions::new();
+    opts.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        opts.mode(0o600);
+    }
+    let mut f = opts.open(path)?;
+    f.write_all(data)?;
+    f.sync_all()?;
     Ok(())
 }
 

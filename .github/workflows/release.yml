@@ -39,19 +39,31 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Build release
-        run: cargo build --release --target ${{ matrix.target }} -p qsafe-cli
+      # Linux: hidapi (ctap-hid-fido2 transitive)가 libudev를 요구.
+      - name: Install Linux deps (libudev for hidapi)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
+
+      # qsafe CLI + qsafe-stub 두 binary를 동시에 빌드한다.
+      # qsafe-stub은 `qsafe pack --sfx` 출력에 prepend되므로 같은 release에 포함되어야 한다.
+      - name: Build release (CLI + stub)
+        run: |
+          cargo build --release --target ${{ matrix.target }} -p qsafe-cli
+          cargo build --release --target ${{ matrix.target }} -p qsafe-stub
 
       - name: Strip (Unix)
         if: runner.os != 'Windows'
-        run: strip target/${{ matrix.target }}/release/qsafe
+        run: |
+          strip target/${{ matrix.target }}/release/qsafe
+          strip target/${{ matrix.target }}/release/qsafe-stub
 
       - name: Package
         shell: bash
         run: |
           mkdir -p dist
           cp target/${{ matrix.target }}/release/qsafe${{ matrix.ext }} dist/
-          cp README.md LICENSE-MIT LICENSE-APACHE NOTICE.md SECURITY.md dist/
+          cp target/${{ matrix.target }}/release/qsafe-stub${{ matrix.ext }} dist/
+          cp README.md LICENSE-MIT LICENSE-APACHE NOTICE.md SECURITY.md CHANGELOG.md dist/
           cd dist
           if [ "${{ runner.os }}" = "Windows" ]; then
             7z a ../qsafe-${{ github.ref_name }}-${{ matrix.target }}.zip *

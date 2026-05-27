@@ -18,7 +18,7 @@ members = [
 #   crates/qsafe-shell-*     (OS 통합)
 
 [workspace.package]
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 rust-version = "1.80"
 authors = ["heedong719 <heedong719@gmail.com>"]
@@ -32,14 +32,14 @@ description = "Quantum-safe compression and encryption tool — hardware key + p
 
 [workspace.dependencies]
 # Internal crates — path + version (path는 로컬 빌드, version은 publish용)
-qsafe-core = { path = "crates/qsafe-core", version = "0.1.5" }
-qsafe-crypto = { path = "crates/qsafe-crypto", version = "0.1.5" }
-qsafe-hardware = { path = "crates/qsafe-hardware", version = "0.1.5" }
-qsafe-paper = { path = "crates/qsafe-paper", version = "0.1.5" }
-qsafe-shamir = { path = "crates/qsafe-shamir", version = "0.1.5" }
-qsafe-formats = { path = "crates/qsafe-formats", version = "0.1.5" }
-qsafe-identity = { path = "crates/qsafe-identity", version = "0.1.5" }
-qsafe-stub = { path = "crates/qsafe-stub", version = "0.1.5" }
+qsafe-core = { path = "crates/qsafe-core", version = "0.1.6" }
+qsafe-crypto = { path = "crates/qsafe-crypto", version = "0.1.6" }
+qsafe-hardware = { path = "crates/qsafe-hardware", version = "0.1.6" }
+qsafe-paper = { path = "crates/qsafe-paper", version = "0.1.6" }
+qsafe-shamir = { path = "crates/qsafe-shamir", version = "0.1.6" }
+qsafe-formats = { path = "crates/qsafe-formats", version = "0.1.6" }
+qsafe-identity = { path = "crates/qsafe-identity", version = "0.1.6" }
+qsafe-stub = { path = "crates/qsafe-stub", version = "0.1.6" }
 
 # Errors / logging
 thiserror = "2"
