@@ -1,0 +1,24 @@
+[package]
+name = "qsafe-paper"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "qsafe paper backup recipient (BIP39 24-word mnemonic)"
+
+[dependencies]
+qsafe-core.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chacha20poly1305.workspace = true
+rand.workspace = true
+zeroize.workspace = true
+hkdf.workspace = true
+sha2.workspace = true
+bip39.workspace = true

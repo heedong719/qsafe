@@ -1,0 +1,34 @@
+[package]
+name = "qsafe-hardware"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "qsafe hardware-key recipient (FIDO2 PRF / hmac-secret)"
+
+[dependencies]
+qsafe-core.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chacha20poly1305.workspace = true
+rand.workspace = true
+zeroize.workspace = true
+hkdf.workspace = true
+hmac.workspace = true
+sha2.workspace = true
+hex.workspace = true
+
+# CTAP HID — 실 하드웨어 통신
+ctap-hid-fido2 = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+
+[features]
+default = []
+# 실 FIDO2 하드웨어 통합 (USB HID 필요)
+fido2-hw = ["dep:ctap-hid-fido2", "dep:anyhow"]

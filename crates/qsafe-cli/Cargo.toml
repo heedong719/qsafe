@@ -1,0 +1,53 @@
+[package]
+name = "qsafe-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "qsafe CLI — quantum-safe compression and encryption"
+
+[[bin]]
+name = "qsafe"
+path = "src/main.rs"
+
+[dependencies]
+qsafe-core.workspace = true
+qsafe-crypto.workspace = true
+qsafe-hardware.workspace = true
+qsafe-paper.workspace = true
+qsafe-formats.workspace = true
+qsafe-shamir.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap.workspace = true
+rpassword.workspace = true
+chrono.workspace = true
+zeroize.workspace = true
+hex.workspace = true
+serde.workspace = true
+serde_json = "1"
+bip39.workspace = true
+keyring.workspace = true
+blake3.workspace = true
+rand.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+
+[features]
+default = ["password", "rar"]
+password = ["qsafe-crypto/password"]
+fido2-hw = ["qsafe-hardware/fido2-hw"]
+rar = ["qsafe-formats/rar"]
+full = ["password", "fido2-hw", "rar"]
+
+[dev-dependencies]
+rand = "0.8"

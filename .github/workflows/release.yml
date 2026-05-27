@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            ext: ""
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            ext: ""
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            ext: ""
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            ext: ".exe"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }} -p qsafe-cli
+
+      - name: Strip (Unix)
+        if: runner.os != 'Windows'
+        run: strip target/${{ matrix.target }}/release/qsafe
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/qsafe${{ matrix.ext }} dist/
+          cp README.md LICENSE-MIT LICENSE-APACHE NOTICE.md SECURITY.md dist/
+          cd dist
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a ../qsafe-${{ github.ref_name }}-${{ matrix.target }}.zip *
+          else
+            tar -czf ../qsafe-${{ github.ref_name }}-${{ matrix.target }}.tar.gz *
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qsafe-${{ matrix.target }}
+          path: |
+            qsafe-*.tar.gz
+            qsafe-*.zip
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/qsafe-*.tar.gz
+            artifacts/**/qsafe-*.zip
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(github.ref, 'rc') || contains(github.ref, 'beta') }}

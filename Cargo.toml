@@ -1,0 +1,122 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/qsafe-core",
+    "crates/qsafe-crypto",
+    "crates/qsafe-hardware",
+    "crates/qsafe-paper",
+    "crates/qsafe-shamir",
+    "crates/qsafe-formats",
+    "crates/qsafe-cli",
+]
+# 향후 추가:
+#   crates/qsafe-identity    (X25519+ML-KEM-768 — ml-kem v0.2 API 정착 후)
+#   crates/qsafe-shamir      (M-of-N)
+#   crates/qsafe-timelock    (drand tlock, 옵션)
+#   crates/qsafe-paper       (BIP39)
+#   crates/qsafe-shamir      (M-of-N)
+#   crates/qsafe-stub-*      (보호 실행파일)
+#   crates/qsafe-shell-*     (OS 통합)
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+authors = ["heedong719 <heedong719@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/heedong719/qsafe"
+homepage = "https://github.com/heedong719/qsafe"
+readme = "README.md"
+keywords = ["encryption", "compression", "quantum-safe", "argon2", "fido2"]
+categories = ["cryptography", "compression", "command-line-utilities"]
+description = "Quantum-safe compression and encryption tool — hardware key + paper backup, no blockchain"
+
+[workspace.dependencies]
+# Internal crates — path + version (path는 로컬 빌드, version은 publish용)
+qsafe-core = { path = "crates/qsafe-core", version = "0.1.0" }
+qsafe-crypto = { path = "crates/qsafe-crypto", version = "0.1.0" }
+qsafe-hardware = { path = "crates/qsafe-hardware", version = "0.1.0" }
+qsafe-paper = { path = "crates/qsafe-paper", version = "0.1.0" }
+qsafe-shamir = { path = "crates/qsafe-shamir", version = "0.1.0" }
+qsafe-formats = { path = "crates/qsafe-formats", version = "0.1.0" }
+
+# Errors / logging
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_bytes = "0.11"
+ciborium = "0.2"
+serde_json = "1"
+
+# Compression — 모두 순수 Rust 가능한 옵션 정리
+# zstd (C) — 빠르고 강력. zstdmt = 멀티스레드 인코더 (반디집 추월 핵심)
+zstd = { version = "0.13", features = ["zstdmt"] }
+# 순수 Rust 알고리즘들
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }   # gzip
+lz4_flex = { version = "0.11", default-features = false, features = ["std", "frame"] } # lz4
+brotli = { version = "6", default-features = false, features = ["std"] }            # brotli
+bzip2-rs = "0.1"                                                                    # bzip2 (decode, 순수 Rust)
+lzma-rs = "0.3"                                                                     # xz/lzma (decode + 부분 encode)
+ruzstd = "0.7"                                                                      # zstd decode (외부 .zst 읽기용)
+snap = "1"                                                                          # snappy
+weezl = "0.1"                                                                       # lzw / .Z (compress)
+tar = "0.4"                                                                         # TAR 컨테이너 (순수 Rust)
+sevenz-rust2 = { version = "0.13", features = ["aes256", "util"] }                  # 7z + 패스워드 (순수 Rust!)
+
+# Hashing / integrity
+blake3 = "1.5"
+reed-solomon-simd = "3"
+
+# Crypto (대칭 + KDF)
+chacha20poly1305 = "0.10"
+argon2 = "0.5"
+rand = "0.8"
+rand_core = { version = "0.6", features = ["std"] }
+zeroize = { version = "1.8", features = ["derive"] }
+hkdf = "0.12"
+hmac = "0.12"
+sha2 = "0.10"
+
+# Crypto (비대칭 + PQ 하이브리드)
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+ml-kem = "0.2"
+
+# Shamir Secret Sharing — 가벼운 GF(256) 구현
+sharks = "0.5"
+
+# BIP39 mnemonic — std + rand 필요
+bip39 = { version = "2", features = ["std", "rand", "zeroize"] }
+
+# 외부 압축 포맷
+unrar = "0.5"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+indicatif = "0.17"
+rpassword = "7"
+
+# Time / async
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs", "io-util"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+
+# Hex / base
+hex = "0.4"
+base64 = "0.22"
+
+# OS 키링 (macOS Keychain / Windows Credential Manager / Linux Secret Service)
+keyring = "3"
+
+# FIDO2 / CTAP HID
+ctap-hid-fido2 = "2.2"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+opt-level = 3

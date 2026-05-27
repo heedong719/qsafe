@@ -1,0 +1,59 @@
+[package]
+name = "qsafe-formats"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "External archive format support: 반디집 호환 (RAR/ZIP/7Z/TAR/GZ/XZ/BZ2/LZ4/ZSTD 등)"
+
+[dependencies]
+qsafe-core.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# Format-specific libraries (모두 feature gate)
+unrar = { workspace = true, optional = true }       # RAR (C unrar, 풀기만)
+flate2 = { workspace = true, optional = true }      # gzip (miniz_oxide, 순수 Rust)
+lz4_flex = { workspace = true, optional = true }    # LZ4 (순수 Rust)
+brotli = { workspace = true, optional = true }      # brotli (순수 Rust)
+bzip2-rs = { workspace = true, optional = true }    # bzip2 (순수 Rust)
+lzma-rs = { workspace = true, optional = true }     # xz/lzma (순수 Rust)
+ruzstd = { workspace = true, optional = true }      # zstd decode (순수 Rust)
+snap = { workspace = true, optional = true }        # snappy (순수 Rust)
+weezl = { workspace = true, optional = true }       # LZW/.Z (순수 Rust)
+tar = { workspace = true, optional = true }         # TAR (순수 Rust)
+sevenz-rust2 = { workspace = true, optional = true }# 7z (순수 Rust!)
+zip = { workspace = true, optional = true }         # ZIP
+
+[features]
+# 기본: 반디집 주요 포맷 모두 (대부분 순수 Rust)
+default = ["rar", "zip-format", "gzip", "xz", "bzip2", "lz4", "brotli", "snappy", "tar-container", "sevenz", "zstd-decode"]
+
+# 개별 feature
+rar = ["dep:unrar"]                                  # C unrar (RAR4 + RAR5 풀기만)
+zip-format = ["dep:zip", "dep:flate2"]               # ZIP + DEFLATE
+gzip = ["dep:flate2"]                                # .gz
+xz = ["dep:lzma-rs"]                                 # .xz / .lzma
+bzip2 = ["dep:bzip2-rs"]                             # .bz2
+lz4 = ["dep:lz4_flex"]                               # .lz4
+brotli = ["dep:brotli"]                              # .br
+snappy = ["dep:snap"]                                # .sz
+lzw = ["dep:weezl"]                                  # .Z
+tar-container = ["dep:tar"]                          # .tar
+sevenz = ["dep:sevenz-rust2"]                        # .7z
+zstd-decode = ["dep:ruzstd"]                         # .zst
+
+# 순수 Rust만 (RAR 제외)
+pure-rust = ["zip-format", "gzip", "xz", "bzip2", "lz4", "brotli", "snappy", "lzw", "tar-container", "sevenz", "zstd-decode"]
+
+# 반디집과 동일한 모든 포맷
+bandizip-compatible = ["rar", "pure-rust"]
+
+[dev-dependencies]
+tempfile = "3"

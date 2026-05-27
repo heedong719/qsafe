@@ -1,0 +1,49 @@
+[package]
+name = "qsafe-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "qsafe core: compression, integrity, file format, envelope"
+
+[dependencies]
+thiserror.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_bytes.workspace = true
+ciborium.workspace = true
+blake3.workspace = true
+chacha20poly1305.workspace = true
+rand.workspace = true
+zeroize.workspace = true
+
+# 다중 압축 — 모두 feature gate
+zstd = { workspace = true, optional = true }
+flate2 = { workspace = true, optional = true }
+lz4_flex = { workspace = true, optional = true }
+brotli = { workspace = true, optional = true }
+
+[features]
+# 기본: 가장 많이 쓰이는 알고리즘 (모두 순수 Rust)
+default = ["compress-gzip", "compress-lz4", "compress-brotli", "compress-zstd"]
+
+# 개별 알고리즘
+compress-zstd = ["dep:zstd"]          # C 코드 (외부 라이브러리 정적 링크)
+compress-gzip = ["dep:flate2"]        # 순수 Rust (miniz_oxide)
+compress-lz4 = ["dep:lz4_flex"]       # 순수 Rust
+compress-brotli = ["dep:brotli"]      # 순수 Rust
+
+# 순수 Rust만 빌드 (zstd 제외)
+pure-rust = ["compress-gzip", "compress-lz4", "compress-brotli"]
+
+# 모든 알고리즘
+all-compress = ["compress-zstd", "compress-gzip", "compress-lz4", "compress-brotli"]
+
+[dev-dependencies]
+tempfile = "3"
