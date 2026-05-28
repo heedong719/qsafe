@@ -29,6 +29,51 @@ fn write_public_json(path: &Path, data: &[u8]) -> std::io::Result<()> {
     Ok(())
 }
 
+/// OS 통합 시 argv로 전달되는 시작 명령. 파일 매니저(Finder/탐색기/Nautilus)가
+/// 우클릭 메뉴 또는 더블 클릭으로 우리 프로그램을 부를 때 사용. main.rs가 부팅 시
+/// std::env::args를 파싱해서 이걸 채우고, UI는 startup_args() command로 한 번
+/// 받아서 적절한 모달을 자동 연다.
+#[derive(Serialize, Debug, Clone, Default)]
+pub struct StartupArgs {
+    /// 명시적 action — "pack" / "unpack" / "info" / "" (없으면 path만 보고 자동 라우팅)
+    pub action: String,
+    /// 첫 번째 비-옵션 인자 (절대 경로로 정규화 시도)
+    pub path: String,
+}
+
+impl StartupArgs {
+    pub fn parse<I, S>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        let mut out = StartupArgs::default();
+        for raw in iter {
+            let s = raw.as_ref();
+            if let Some(v) = s.strip_prefix("--action=") {
+                out.action = v.to_string();
+            } else if s == "--action" {
+                // 다음 토큰 형태는 단순 케이스에서 지원하지 않음 (우리 install 스크립트는 항상 = 형식 사용)
+            } else if !s.starts_with("--") {
+                // 첫 번째 positional만 사용
+                if out.path.is_empty() {
+                    let p = std::path::PathBuf::from(s);
+                    out.path = std::fs::canonicalize(&p)
+                        .unwrap_or(p)
+                        .to_string_lossy()
+                        .into_owned();
+                }
+            }
+        }
+        out
+    }
+}
+
+#[tauri::command]
+pub fn startup_args(state: tauri::State<'_, StartupArgs>) -> StartupArgs {
+    state.inner().clone()
+}
+
 #[derive(Serialize, Debug)]
 pub struct AboutInfo {
     pub version: &'static str,
@@ -253,6 +298,60 @@ mod tests {
         assert!(a.cipher_suite.contains("XChaCha20"));
         assert!(!a.features.is_empty());
         assert!(!a.default_dir.is_empty());
+    }
+
+    #[test]
+    fn startup_args_empty() {
+        let a = StartupArgs::parse(Vec::<String>::new());
+        assert_eq!(a.action, "");
+        assert_eq!(a.path, "");
+    }
+
+    #[test]
+    fn startup_args_path_only() {
+        // non-existent path: canonicalize 실패 시 원본 유지
+        let a = StartupArgs::parse(vec!["/tmp/qsafe-nonexistent-xyz.qs".to_string()]);
+        assert_eq!(a.action, "");
+        assert!(a.path.ends_with("qsafe-nonexistent-xyz.qs"));
+    }
+
+    #[test]
+    fn startup_args_action_eq_form() {
+        let a = StartupArgs::parse(vec![
+            "--action=pack".to_string(),
+            "/tmp/foo.txt".to_string(),
+        ]);
+        assert_eq!(a.action, "pack");
+        assert!(a.path.ends_with("foo.txt"));
+    }
+
+    #[test]
+    fn startup_args_only_action() {
+        let a = StartupArgs::parse(vec!["--action=unpack".to_string()]);
+        assert_eq!(a.action, "unpack");
+        assert_eq!(a.path, "");
+    }
+
+    #[test]
+    fn startup_args_first_positional_wins() {
+        let a = StartupArgs::parse(vec![
+            "--action=info".to_string(),
+            "/tmp/first.qs".to_string(),
+            "/tmp/second.qs".to_string(),
+        ]);
+        assert_eq!(a.action, "info");
+        assert!(a.path.ends_with("first.qs"));
+    }
+
+    #[test]
+    fn startup_args_unknown_flag_ignored() {
+        let a = StartupArgs::parse(vec![
+            "--debug".to_string(),
+            "--verbose".to_string(),
+            "/tmp/x.qs".to_string(),
+        ]);
+        assert_eq!(a.action, "");
+        assert!(a.path.ends_with("x.qs"));
     }
 
     #[test]

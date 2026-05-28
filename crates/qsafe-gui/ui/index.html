@@ -1472,6 +1472,42 @@
         await navigateTo(h);
       } catch (e2) { showErr("홈 fallback도 실패: " + (e2.message || e2)); }
     }
+    // OS 통합: 우클릭 메뉴 / 더블 클릭으로 호출된 경우, argv로 받은 액션을 자동 실행.
+    try {
+      const sa = await invoke("startup_args");
+      if (sa && sa.path) {
+        const p = sa.path;
+        const action = (sa.action || "").toLowerCase();
+        const lower = p.toLowerCase();
+        const isArchive = /\.(qs|zip|rar|7z|tar|gz|xz|bz2)$/.test(lower);
+        const isDisc    = /\.(iso|img|dmg)$/.test(lower);
+        if (action === "pack") {
+          // 입력 prefill 후 압축 모달
+          const inp = document.getElementById("p-input"); if (inp) inp.value = p;
+          const out = document.getElementById("p-output");
+          if (out && !out.value) out.value = p + ".qs";
+          openModal("modal-pack");
+        } else if (action === "unpack") {
+          const inp = document.getElementById("u-input"); if (inp) inp.value = p;
+          openModal("modal-unpack");
+        } else if (action === "info" || isArchive) {
+          // 액션 없음 + .qs/외부 아카이브 → 정보 모달 자동 오픈 (R1 풀기 버튼 활성)
+          openInfoModal(p);
+        } else if (isDisc) {
+          // .iso/.img/.dmg → ISO 모달 자동 오픈
+          if (typeof openIsoModal === "function") openIsoModal(p);
+        } else {
+          // 일반 파일 → 압축 모달에 prefill
+          const inp = document.getElementById("p-input"); if (inp) inp.value = p;
+          const out = document.getElementById("p-output");
+          if (out && !out.value) out.value = p + ".qs";
+          openModal("modal-pack");
+        }
+      }
+    } catch (e) {
+      // startup_args 실패는 치명적이지 않음 — 단순히 무시
+      console.warn("startup_args 처리 실패:", e);
+    }
   }
   // 즉시 시각적 표시 - JS가 로드되었음을 증명
   try {
