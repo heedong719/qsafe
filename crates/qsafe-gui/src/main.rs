@@ -32,6 +32,8 @@ fn main() {
             commands::qsafe_info,
             commands::list_external_archive,
             commands::extract_external_archive,
+            commands::extract_archive_entry_to_temp,
+            commands::cleanup_temp_dir,
             commands::list_drives,
             commands::home_dir,
             commands::list_directory,

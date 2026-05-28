@@ -126,6 +126,68 @@ pub fn extract_rar(
     Ok(extracted)
 }
 
+/// RAR 아카이브에서 지정된 entry 하나만 추출. 반환: 추출된 절대 경로.
+///
+/// info 모달의 "더블 클릭으로 단일 파일 미리보기" 흐름에서 사용.
+/// entry_name 은 list_rar()가 반환한 RarEntry.filename 와 동일한 형태로 비교됨.
+/// 일치하는 entry 가 없거나 그것이 디렉토리면 에러.
+pub fn extract_rar_entry(
+    rar_path: impl AsRef<Path>,
+    entry_name: &str,
+    base_dir: impl AsRef<Path>,
+    password: Option<&str>,
+) -> Result<PathBuf> {
+    let rar_path = rar_path.as_ref();
+    let base_dir = base_dir.as_ref();
+
+    if !base_dir.is_dir() {
+        return Err(FormatError::Io(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("base_dir 가 없습니다: {}", base_dir.display()),
+        )));
+    }
+    let base_canon = base_dir.canonicalize().map_err(FormatError::Io)?;
+
+    let archive = match password {
+        Some(pw) => Archive::with_password(rar_path, pw),
+        None => Archive::new(rar_path),
+    };
+    let mut archive = archive
+        .open_for_processing()
+        .map_err(|e| FormatError::Rar(format!("open_for_processing: {}", e)))?;
+
+    while let Some(header) = archive
+        .read_header()
+        .map_err(|e| FormatError::Rar(format!("read_header: {}", e)))?
+    {
+        let this_name = header.entry().filename.to_string_lossy().to_string();
+        let is_directory = header.entry().is_directory();
+
+        if this_name == entry_name {
+            if is_directory {
+                return Err(FormatError::Rar(format!(
+                    "entry 가 디렉토리입니다: {}",
+                    entry_name
+                )));
+            }
+            let safe_path = sanitize_archive_path(&this_name, &base_canon)?;
+            if let Some(parent) = safe_path.parent() {
+                std::fs::create_dir_all(parent).map_err(FormatError::Io)?;
+            }
+            header
+                .extract_to(&safe_path)
+                .map_err(|e| FormatError::Rar(format!("extract {}: {}", entry_name, e)))?;
+            return Ok(safe_path);
+        } else {
+            archive = header
+                .skip()
+                .map_err(|e| FormatError::Rar(format!("skip {}: {}", this_name, e)))?;
+        }
+    }
+
+    Err(FormatError::Rar(format!("entry 미발견: {}", entry_name)))
+}
+
 /// 아카이브 내부 경로를 base 디렉토리 내로 정규화. ../ 공격 차단.
 fn sanitize_archive_path(entry_name: &str, base: &Path) -> Result<PathBuf> {
     let raw = PathBuf::from(entry_name);

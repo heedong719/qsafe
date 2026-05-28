@@ -558,7 +558,19 @@
     catch (e) { try { return await invoke("plugin:dialog|save", { options: o }); } catch (e2) { throw e; } }
   }
   function openModal(id) { document.getElementById(id).classList.add("show"); }
-  function closeModal(id) { document.getElementById(id).classList.remove("show"); }
+  function closeModal(id) {
+    // modal-info 가 닫힐 때마다 임시 추출 디렉토리 cleanup (ESC, 배경 클릭, 버튼 모두 통합)
+    if (id === "modal-info" && typeof infoTempDirs !== "undefined" && infoTempDirs.length > 0) {
+      const dirs = infoTempDirs.slice();
+      infoTempDirs = [];
+      Promise.all(dirs.map(d =>
+        invoke("cleanup_temp_dir", { dir: d }).catch(e =>
+          console.warn("cleanup_temp_dir 실패: " + d + " — " + (e.message || e))
+        )
+      ));
+    }
+    document.getElementById(id).classList.remove("show");
+  }
   function setResult(elId, txt, status) {
     const el = document.getElementById(elId);
     el.className = "result " + (status || "ok");
@@ -714,7 +726,9 @@
 
   // ===== 정보 모달 (.qs 헤더 또는 외부 아카이브 목록) =====
   // info 모달에서 클릭한 파일 경로를 추적해 "압축 풀기" 버튼이 이를 사용할 수 있게 함.
+  // tempDirs: dblclick으로 단일 추출한 임시 디렉토리들 — modal close 시 cleanup_temp_dir로 정리.
   var infoCurrent = { path: null, kind: null }; // kind: "qsafe" | "external"
+  var infoTempDirs = [];
   async function openInfoModal(path) {
     infoCurrent.path = path;
     infoCurrent.kind = null;
@@ -747,21 +761,49 @@
       if (lst.entries.length === 0) {
         listEl.innerHTML = '<div style="color:#666; padding:10px;">(이 포맷은 상세 목록 미리보기를 지원하지 않습니다. RAR만 가능합니다.)</div>';
       } else {
-        listEl.innerHTML = lst.entries.map(function(e) {
+        listEl.innerHTML = lst.entries.map(function(e, idx) {
           var ico = e.is_dir ? "📁" : "📄";
           var lock = e.is_encrypted ? "🔒" : "";
-          return '<div style="display:flex; gap:8px; padding:4px 8px; border-bottom:1px solid #2a2a2a;">' +
+          var clickable = !e.is_dir && !e.is_encrypted;
+          var cursor = clickable ? "cursor:pointer;" : "cursor:default; opacity:0.7;";
+          var title = clickable
+            ? 'title="더블 클릭: 임시 추출 + 실행"'
+            : 'title="' + (e.is_dir ? "디렉토리" : "암호 보호") + ' — 단일 추출 불가"';
+          return '<div class="info-entry" data-idx="' + idx + '" data-name="' +
+            escapeHtml(e.name) + '" data-clickable="' + clickable +
+            '" ' + title + ' style="display:flex; gap:8px; padding:4px 8px; border-bottom:1px solid #2a2a2a;' + cursor + '">' +
             '<span>' + ico + '</span>' +
             '<span style="flex:1;">' + escapeHtml(e.name) + '</span>' +
             '<span>' + lock + '</span>' +
             '<span style="color:#888; font-family:monospace;">' + fmtBytes(e.size) + '</span>' +
             '</div>';
         }).join("");
+        // dblclick — 단일 entry 추출 + 연결 프로그램 실행
+        listEl.querySelectorAll(".info-entry").forEach(function(row) {
+          if (row.dataset.clickable !== "true") return;
+          row.addEventListener("dblclick", async function() {
+            var entry = row.dataset.name;
+            row.style.background = "#1a3a4a";
+            try {
+              const r = await invoke("extract_archive_entry_to_temp", {
+                archivePath: path,
+                entryName: entry
+              });
+              infoTempDirs.push(r.temp_dir);
+              await invoke("open_with_associated", { path: r.extracted_path });
+            } catch (e) {
+              showErr("단일 추출 실패: " + (e.message || e));
+            } finally {
+              row.style.background = "";
+            }
+          });
+        });
       }
     } catch (e2) {
       setResult("m-info-summary", "❌ 알 수 없는 포맷: " + (e2.message || e2), "err");
     }
   }
+  // cleanup은 closeModal에서 통합 처리 (ESC + 배경 클릭 + 버튼 모두 커버)
   document.getElementById("btn-info-close").addEventListener("click", () => closeModal("modal-info"));
 
   // "압축 풀기" 버튼 — modal-info에서 호출. infoCurrent.path를 사용해

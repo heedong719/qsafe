@@ -344,6 +344,34 @@ mod tests {
     }
 
     #[test]
+    fn cleanup_temp_dir_rejects_non_qsafe_pattern() {
+        // /tmp 자체를 지우려고 시도 → 거부
+        let r = cleanup_temp_dir(std::env::temp_dir().to_string_lossy().into_owned());
+        assert!(r.is_err());
+        assert!(r.unwrap_err().contains("qsafe-info-"));
+    }
+
+    #[test]
+    fn cleanup_temp_dir_rejects_outside_tmp() {
+        // 홈 디렉토리를 지우려고 시도 → 거부
+        let r = cleanup_temp_dir("/".into());
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn cleanup_temp_dir_accepts_valid_pattern() {
+        let mut p = std::env::temp_dir();
+        p.push(format!("qsafe-info-{}-{}", std::process::id(), 99999));
+        std::fs::create_dir_all(&p).unwrap();
+        // 파일 하나 안에 넣어서 비어있지 않게
+        let f = p.join("dummy.txt");
+        std::fs::write(&f, b"x").unwrap();
+        let r = cleanup_temp_dir(p.to_string_lossy().into_owned());
+        assert!(r.is_ok(), "{:?}", r);
+        assert!(!p.exists());
+    }
+
+    #[test]
     fn startup_args_unknown_flag_ignored() {
         let a = StartupArgs::parse(vec![
             "--debug".to_string(),
@@ -988,6 +1016,95 @@ pub fn extract_external_archive(
         .map(|rd| rd.count() as u64)
         .unwrap_or(0);
     Ok(count)
+}
+
+/// info 모달에서 항목 더블 클릭 → 단일 entry 만 임시 디렉토리에 추출.
+/// 모달 닫기 시 cleanup_temp_dir 로 정리.
+#[derive(Serialize, Debug)]
+pub struct TempExtraction {
+    /// 추출된 파일의 절대 경로 (단일 파일)
+    pub extracted_path: String,
+    /// 그 파일을 포함하는 임시 디렉토리 (cleanup 시 사용)
+    pub temp_dir: String,
+}
+
+#[tauri::command]
+pub fn extract_archive_entry_to_temp(
+    archive_path: String,
+    entry_name: String,
+) -> Result<TempExtraction, String> {
+    use qsafe_formats::{detect_format, ExternalFormat};
+
+    // 임시 디렉토리: $TMP/qsafe-info-<pid>-<ts>-<rand>
+    let mut tmp = std::env::temp_dir();
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    tmp.push(format!("qsafe-info-{}-{}", std::process::id(), nanos));
+    std::fs::create_dir_all(&tmp).map_err(|e| format!("temp_dir 생성 실패: {}", e))?;
+
+    // Unix: temp_dir 권한 0700 (다른 사용자가 추출된 파일을 읽지 못하게)
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let perm = std::fs::Permissions::from_mode(0o700);
+        let _ = std::fs::set_permissions(&tmp, perm);
+    }
+
+    let bytes_for_detect = std::fs::read(&archive_path).map_err(|e| format!("read: {}", e))?;
+    let fmt = detect_format(&bytes_for_detect);
+    drop(bytes_for_detect);
+
+    let extracted_path = match fmt {
+        ExternalFormat::Rar => qsafe_formats::rar::extract_rar_entry(
+            PathBuf::from(&archive_path).as_path(),
+            &entry_name,
+            &tmp,
+            None,
+        )
+        .map_err(|e| format!("RAR 단일 추출 실패: {}", e))?,
+        other => {
+            // 다른 포맷은 list 자체가 비어있어서 UI에서 dblclick이 불가능 — 방어적
+            let _ = std::fs::remove_dir_all(&tmp);
+            return Err(format!(
+                "{} 포맷은 단일 entry 추출을 지원하지 않습니다",
+                other.name()
+            ));
+        }
+    };
+
+    Ok(TempExtraction {
+        extracted_path: extracted_path.to_string_lossy().into_owned(),
+        temp_dir: tmp.to_string_lossy().into_owned(),
+    })
+}
+
+/// info 모달이 닫힐 때 호출. 임시 추출 디렉토리를 통째로 삭제.
+/// 보안: dir 가 std::env::temp_dir() 아래의 "qsafe-info-*" 패턴인지 검증해서
+/// 사용자가 임의 디렉토리를 지우게 하는 사고를 방지.
+#[tauri::command]
+pub fn cleanup_temp_dir(dir: String) -> Result<(), String> {
+    let p = PathBuf::from(&dir);
+    let canon = p
+        .canonicalize()
+        .map_err(|e| format!("canonicalize: {}", e))?;
+    let tmp_root = std::env::temp_dir()
+        .canonicalize()
+        .map_err(|e| format!("temp_dir canonicalize: {}", e))?;
+    if !canon.starts_with(&tmp_root) {
+        return Err(format!(
+            "안전 가드: {} 가 temp_dir ({}) 안에 없음",
+            canon.display(),
+            tmp_root.display()
+        ));
+    }
+    let name = canon.file_name().and_then(|s| s.to_str()).unwrap_or("");
+    if !name.starts_with("qsafe-info-") {
+        return Err(format!("안전 가드: {} 가 qsafe-info-* 패턴 아님", name));
+    }
+    std::fs::remove_dir_all(&canon).map_err(|e| format!("remove_dir_all: {}", e))?;
+    Ok(())
 }
 
 // ════════════════════════════════════════════════════════════
