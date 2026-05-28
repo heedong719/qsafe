@@ -66,6 +66,24 @@ qsafe가 방어하는 위협:
   - SFX 받은 사용자도 가능하면 `qsafe unpack`으로 검증
 - **alarm**: macOS Gatekeeper / Windows SmartScreen이 unsigned SFX를 차단하는 것은 사용자 보호의 일부이므로 우회 가이드를 제공하지 않는다.
 
+### ⚠️ qsafe-gui process argv 노출 (v0.1.6+ qsafe-gui)
+
+`qsafe-gui`는 사용자 입력 패스워드를 `qsafe-cli` 호출 시 `--password <PW>` argv로
+전달합니다 (`crates/qsafe-gui/src/commands.rs`의 `cmd.arg("--password").arg(pw)`).
+
+- **위험**: 같은 머신의 다른 사용자가 `ps auxww` 또는 `/proc/<pid>/cmdline`에서 패스워드 평문을 볼 수 있다.
+- **단일 사용자 데스크톱**에서는 영향 미미하지만 multi-user 환경, container, 공용 시스템에서는 critical.
+- **후속 마이그레이션** (계획됨): GUI가 child process의 stdin에 패스워드를 pipe해서 `--password` argv 사용을 제거. 기존 `qsafe-cli`의 `rpassword::prompt_password`가 비대화형 stdin에서 한 줄 읽어주는 동작을 활용.
+- **임시 회피**: 단일 사용자 환경에서만 GUI 사용, 또는 SFX/pubkey 모드 (패스워드 불필요) 사용.
+
+### ⚠️ qsafe-gui "open mode" / `PUBLIC_PASSWORD` (v0.1.6+ qsafe-gui)
+
+`qsafe-gui`의 "기본 — 패스워드 없음" 압축 모드는 내부 고정값 `qsafe-public-v1`을 사용합니다.
+
+- **이건 암호화가 아닙니다**: 모든 사용자가 같은 패스워드 → plaintext와 동등.
+- 의도: "qsafe 포맷의 압축만 원하고 암호화는 불필요" 사용 사례에 편의 제공 (예: 단순 파일 묶음 + tar 자동화 + MD5 검증).
+- 진짜 비밀이 있는 파일은 반드시 사용자 패스워드 또는 `--pubkey` / `--fido2` 옵션 사용.
+
 ### ⚠️ Pubkey recipient 신뢰 모델 (v0.1.5+)
 
 - **transcript 바인딩**: HKDF salt에 `ephemeral_pk || recipient_x25519_pk || mlkem_ct || recipient_mlkem_pk`를 모두 포함하므로, 중간자가 일부 값만 바꿔도 wrap_key 도출이 실패한다.

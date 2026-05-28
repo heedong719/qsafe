@@ -18,6 +18,39 @@
 - `tests/e2e.rs`: 새 통합 테스트 2건 (총 10 → 12) — `identity_generate_show_export_roundtrip` (0600 권한 + fingerprint 일치 검증), `pack_unpack_with_pubkey_recipient` (X25519+ML-KEM-768 라운드트립).
 - `install.sh`: Windows에서 "install.ps1 권장" 안내가 misleading (스크립트 없음) → "Releases에서 .zip 직접 다운로드 + PATH 추가"로 수정. PowerShell 스크립트가 추가될 때 다시 갱신.
 
+### qsafe-gui 전면 재구축 (`626cd0a`, untagged main update)
+
+**Windows 탐색기 스타일 GUI로 완전 재작성**:
+- 좌측 드라이브/홈 트리 + 우측 파일 리스트 (이름/크기/종류/수정 날짜 컬럼).
+- 주소바, 뒤로/위로/홈/새로고침 네비, 폴더 더블 클릭 진입, 시작 폴더 = current working directory.
+- 모달 다이얼로그 (압축/풀기/삭제/정보).
+
+**압축/풀기 통합** (qsafe CLI shell-out):
+- 4가지 모드: `qsafe-open` (`PUBLIC_PASSWORD=qsafe-public-v1` 자동) / qsafe + password / qsafe + 친구 공개키 / qsafe + 둘 다 / 표준 ZIP.
+- 폴더 입력 시 자동 `tar` → 풀 때 tar magic 감지 → 자동 untar로 원본 폴더 복원.
+- 압축 알고리즘 선택 (auto/zstd/none), 보안 강도 (standard 64MiB / strong 256MiB), `--sfx` 옵션.
+- **MD5 사이드카**: 압축 시 원본 MD5 → `<out>.qs.md5` 자동 생성, 풀 때 자동 비교.
+- 결과 모달: 경과 시간, 압축률 + 절약 용량, MD5/SFX 경로 표시.
+
+**탐색기 부가 기능**:
+- 삭제 (안전 가드: 드라이브 루트 / 시스템 폴더 `C:\Windows`, `/usr`, `/etc` 등 거부).
+- 일반 파일 더블 클릭 → 연결된 프로그램 실행 (`cmd start` / `open` / `xdg-open`).
+- `.qs` / 외부 압축파일 더블 클릭 → 헤더 / 내부 목록 모달 (ZIP/7Z/RAR/TAR/GZ/XZ/BZ2/LZ4/ZSTD/BR).
+
+**Tauri 2 commands 22개** + **qsafe-gui 단위 테스트 36개** (총 workspace tests 97 → **133**).
+
+**의존성 추가**: `tauri-plugin-dialog 2.7`, `md-5 0.10`, `tar`, `zip` (workspace).
+
+**자산 추가**: `icons/icon.ico` (Windows tauri-build 요구사항 해결), 실제 `icon.png` (1223 bytes), `capabilities/default.json`.
+
+**SECURITY.md 보강** (v0.1.6+ qsafe-gui):
+- `qsafe-gui process argv 노출`: GUI가 `qsafe-cli`에 패스워드를 `--password` argv로 전달 → 다른 사용자가 `ps`로 볼 가능성. 후속에서 stdin pipe로 마이그레이션 예정.
+- `qsafe-gui "open mode" / PUBLIC_PASSWORD`: "암호 없는" 모드는 고정 상수 `qsafe-public-v1` 사용 → plaintext와 동등. 진짜 비밀은 사용자 패스워드 또는 `--pubkey` / `--fido2` 사용.
+
+### 추가 분석 사이클 (commit 미반영 main updates)
+- qsafe-gui clippy 위반 6건 fix (`vec_init_then_push`, `needless_borrow`, `too_many_arguments` allow, `redundant_closure` 2건, `manual_char_comparison`).
+- `cargo fmt` 적용.
+
 ---
 
 ## [0.1.6] — 2026-05-28 (v0.1.5 후속 분석 — secret file 권한 강화, CI 안정화)

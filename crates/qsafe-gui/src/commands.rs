@@ -257,13 +257,16 @@ mod tests {
     #[test]
     fn identity_generate_creates_both_files() {
         let path = tmp("gen-both");
-        let r = identity_generate(path.to_string_lossy().into_owned(), false)
-            .expect("generate");
+        let r = identity_generate(path.to_string_lossy().into_owned(), false).expect("generate");
         assert!(path.exists(), "secret file");
         let pub_path = derive_pub_path(&path);
         assert!(pub_path.exists(), "public file");
         assert!(r.public_path.is_some());
-        assert!(r.fingerprint.len() >= 8, "fingerprint too short: {}", r.fingerprint.len()); // 16 bytes hex
+        assert!(
+            r.fingerprint.len() >= 8,
+            "fingerprint too short: {}",
+            r.fingerprint.len()
+        ); // 16 bytes hex
         assert!(r.x25519_pk_len > 0);
         assert!(r.mlkem768_pk_len > 0);
         let _ = std::fs::remove_file(&path);
@@ -401,8 +404,7 @@ mod tests {
         let identity = secret.to_identity().unwrap();
 
         let pub_bytes = std::fs::read(&pub_path).unwrap();
-        let public: qsafe_identity::IdentityPublic =
-            serde_json::from_slice(&pub_bytes).unwrap();
+        let public: qsafe_identity::IdentityPublic = serde_json::from_slice(&pub_bytes).unwrap();
 
         assert_eq!(identity.fingerprint(), public.fingerprint());
 
@@ -410,7 +412,6 @@ mod tests {
         let _ = std::fs::remove_file(&pub_path);
     }
 }
-
 
 #[tauri::command]
 pub fn default_identity_path() -> String {
@@ -425,70 +426,113 @@ pub fn default_identity_path() -> String {
 // ════════════════════════════════════════════════════════════
 pub const PUBLIC_PASSWORD: &str = "qsafe-public-v1";
 
-
 // ════════════════════════════════════════════════════════════
 // 파일 탐색기 명령들
 // ════════════════════════════════════════════════════════════
 
 #[derive(Serialize, Debug)]
 pub struct DirEntry {
-    pub name: String, pub path: String, pub is_dir: bool, pub size: u64,
-    pub modified_unix: i64, pub is_qsafe: bool, pub is_archive: bool,
+    pub name: String,
+    pub path: String,
+    pub is_dir: bool,
+    pub size: u64,
+    pub modified_unix: i64,
+    pub is_qsafe: bool,
+    pub is_archive: bool,
 }
 
 #[derive(Serialize, Debug)]
 pub struct DirListing {
-    pub current_path: String, pub parent_path: Option<String>,
+    pub current_path: String,
+    pub parent_path: Option<String>,
     pub entries: Vec<DirEntry>,
 }
 
 #[tauri::command]
 pub fn list_drives() -> Vec<String> {
-    let mut drives = Vec::new();
+    // 플랫폼별 초기 후보로 시작 → 존재하는 드라이브만 push.
+    // Windows에서는 A:\\ ~ Z:\\ 스캔, Unix는 루트 하나.
     #[cfg(windows)]
-    for letter in b'A'..=b'Z' {
-        let p = format!("{}:\\", letter as char);
-        if std::path::Path::new(&p).exists() { drives.push(p); }
+    {
+        let mut drives = Vec::new();
+        for letter in b'A'..=b'Z' {
+            let p = format!("{}:\\", letter as char);
+            if std::path::Path::new(&p).exists() {
+                drives.push(p);
+            }
+        }
+        drives
     }
     #[cfg(unix)]
-    drives.push("/".to_string());
-    drives
+    {
+        vec!["/".to_string()]
+    }
 }
 
 #[tauri::command]
-pub fn home_dir() -> String { default_save_dir() }
+pub fn home_dir() -> String {
+    default_save_dir()
+}
 
 #[tauri::command]
 pub fn current_dir() -> String {
-    std::env::current_dir().map(|p| p.to_string_lossy().into_owned())
+    std::env::current_dir()
+        .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| default_save_dir())
 }
 
 #[tauri::command]
 pub fn list_directory(path: String) -> Result<DirListing, String> {
     let p = PathBuf::from(&path);
-    if !p.exists() { return Err(format!("경로가 없습니다: {}", path)); }
-    if !p.is_dir() { return Err(format!("폴더가 아닙니다: {}", path)); }
+    if !p.exists() {
+        return Err(format!("경로가 없습니다: {}", path));
+    }
+    if !p.is_dir() {
+        return Err(format!("폴더가 아닙니다: {}", path));
+    }
     let mut entries: Vec<DirEntry> = Vec::new();
     let rd = std::fs::read_dir(&p).map_err(|e| format!("디렉토리 읽기 실패: {}", e))?;
     for entry in rd.flatten() {
         let name = entry.file_name().to_string_lossy().into_owned();
-        if name.starts_with('.') { continue; }
-        let meta = match entry.metadata() { Ok(m) => m, Err(_) => continue };
+        if name.starts_with('.') {
+            continue;
+        }
+        let meta = match entry.metadata() {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
         let is_dir = meta.is_dir();
         let size = if is_dir { 0 } else { meta.len() };
-        let modified_unix = meta.modified().ok()
+        let modified_unix = meta
+            .modified()
+            .ok()
             .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-            .map(|d| d.as_secs() as i64).unwrap_or(0);
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
         let lower = name.to_lowercase();
         let is_qsafe = lower.ends_with(".qs");
-        let is_archive = !is_dir && (lower.ends_with(".zip") || lower.ends_with(".7z")
-            || lower.ends_with(".rar") || lower.ends_with(".tar") || lower.ends_with(".tgz")
-            || lower.ends_with(".tar.gz") || lower.ends_with(".gz") || lower.ends_with(".xz")
-            || lower.ends_with(".bz2") || lower.ends_with(".lz4") || lower.ends_with(".zst")
-            || lower.ends_with(".br"));
-        entries.push(DirEntry { name, path: entry.path().to_string_lossy().into_owned(),
-            is_dir, size, modified_unix, is_qsafe, is_archive });
+        let is_archive = !is_dir
+            && (lower.ends_with(".zip")
+                || lower.ends_with(".7z")
+                || lower.ends_with(".rar")
+                || lower.ends_with(".tar")
+                || lower.ends_with(".tgz")
+                || lower.ends_with(".tar.gz")
+                || lower.ends_with(".gz")
+                || lower.ends_with(".xz")
+                || lower.ends_with(".bz2")
+                || lower.ends_with(".lz4")
+                || lower.ends_with(".zst")
+                || lower.ends_with(".br"));
+        entries.push(DirEntry {
+            name,
+            path: entry.path().to_string_lossy().into_owned(),
+            is_dir,
+            size,
+            modified_unix,
+            is_qsafe,
+            is_archive,
+        });
     }
     entries.sort_by(|a, b| match (a.is_dir, b.is_dir) {
         (true, false) => std::cmp::Ordering::Less,
@@ -496,7 +540,11 @@ pub fn list_directory(path: String) -> Result<DirListing, String> {
         _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
     });
     let parent_path = p.parent().map(|pp| pp.to_string_lossy().into_owned());
-    Ok(DirListing { current_path: p.to_string_lossy().into_owned(), parent_path, entries })
+    Ok(DirListing {
+        current_path: p.to_string_lossy().into_owned(),
+        parent_path,
+        entries,
+    })
 }
 
 // ════════════════════════════════════════════════════════════
@@ -507,90 +555,158 @@ fn locate_qsafe_bin() -> Result<PathBuf, String> {
     let exe_path = std::env::current_exe().map_err(|e| format!("current_exe: {}", e))?;
     if let Some(dir) = exe_path.parent() {
         let c = dir.join(if cfg!(windows) { "qsafe.exe" } else { "qsafe" });
-        if c.exists() { return Ok(c); }
+        if c.exists() {
+            return Ok(c);
+        }
     }
     if let Some(home) = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")) {
-        let c = PathBuf::from(home).join(".cargo").join("bin")
+        let c = PathBuf::from(home)
+            .join(".cargo")
+            .join("bin")
             .join(if cfg!(windows) { "qsafe.exe" } else { "qsafe" });
-        if c.exists() { return Ok(c); }
+        if c.exists() {
+            return Ok(c);
+        }
     }
-    Ok(PathBuf::from(if cfg!(windows) { "qsafe.exe" } else { "qsafe" }))
+    Ok(PathBuf::from(if cfg!(windows) {
+        "qsafe.exe"
+    } else {
+        "qsafe"
+    }))
 }
 
 #[derive(Serialize, Debug)]
 pub struct PackResult {
-    pub output_path: String, pub original_size: u64, pub packed_size: u64, pub ratio_percent: f64,
+    pub output_path: String,
+    pub original_size: u64,
+    pub packed_size: u64,
+    pub ratio_percent: f64,
 }
 
 #[tauri::command]
-pub fn pack_one(input: String, output: Option<String>, password: Option<String>,
-    pubkeys: Vec<String>, no_password: bool, force: bool,
-    compression: Option<String>) -> Result<PackResult, String> {
+pub fn pack_one(
+    input: String,
+    output: Option<String>,
+    password: Option<String>,
+    pubkeys: Vec<String>,
+    no_password: bool,
+    force: bool,
+    compression: Option<String>,
+) -> Result<PackResult, String> {
     let qsafe = locate_qsafe_bin()?;
     let in_path = PathBuf::from(&input);
-    if !in_path.exists() { return Err(format!("입력 파일이 없습니다: {}", input)); }
+    if !in_path.exists() {
+        return Err(format!("입력 파일이 없습니다: {}", input));
+    }
     let original_size = std::fs::metadata(&in_path).map(|m| m.len()).unwrap_or(0);
     let out_path = output.unwrap_or_else(|| format!("{}.qs", input));
     let mut cmd = std::process::Command::new(&qsafe);
     cmd.arg("pack").arg(&in_path).arg("-o").arg(&out_path);
-    if force { cmd.arg("--force"); }
+    if force {
+        cmd.arg("--force");
+    }
     // 압축 알고리즘: "auto" | "none" | "zstd" (생략 시 auto)
     let comp = compression.as_deref().unwrap_or("auto");
     if comp == "none" || comp == "zstd" || comp == "auto" {
         cmd.arg("-c").arg(comp);
     }
-    if no_password { cmd.arg("--no-password"); }
-    else if let Some(pw) = password.as_ref() { cmd.arg("--password").arg(pw); }
-    for pk in &pubkeys { cmd.arg("--pubkey").arg(pk); }
-    let out = cmd.output().map_err(|e| format!("qsafe 실행 실패: {}", e))?;
+    if no_password {
+        cmd.arg("--no-password");
+    } else if let Some(pw) = password.as_ref() {
+        cmd.arg("--password").arg(pw);
+    }
+    for pk in &pubkeys {
+        cmd.arg("--pubkey").arg(pk);
+    }
+    let out = cmd
+        .output()
+        .map_err(|e| format!("qsafe 실행 실패: {}", e))?;
     if !out.status.success() {
-        return Err(format!("압축 실패: {}", String::from_utf8_lossy(&out.stderr).trim()));
+        return Err(format!(
+            "압축 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
     }
     let packed_size = std::fs::metadata(&out_path).map(|m| m.len()).unwrap_or(0);
-    Ok(PackResult { output_path: out_path, original_size, packed_size,
-        ratio_percent: if original_size > 0 { (packed_size as f64 / original_size as f64) * 100.0 } else { 100.0 } })
+    Ok(PackResult {
+        output_path: out_path,
+        original_size,
+        packed_size,
+        ratio_percent: if original_size > 0 {
+            (packed_size as f64 / original_size as f64) * 100.0
+        } else {
+            100.0
+        },
+    })
 }
 
 #[derive(Serialize, Debug)]
 pub struct UnpackResult {
     pub output_path: String,
     pub bytes_written: u64,
-    pub untarred_dir: Option<String>,  // tar 자동 풀기 결과 폴더
-    pub file_count: u64,                // untar 시 파일 수
+    pub untarred_dir: Option<String>, // tar 자동 풀기 결과 폴더
+    pub file_count: u64,              // untar 시 파일 수
 }
 
 #[tauri::command]
-pub fn unpack_qsafe(input: String, output: Option<String>, password: Option<String>,
-    identity: Option<String>, force: bool, open_mode: Option<bool>) -> Result<UnpackResult, String> {
+pub fn unpack_qsafe(
+    input: String,
+    output: Option<String>,
+    password: Option<String>,
+    identity: Option<String>,
+    force: bool,
+    open_mode: Option<bool>,
+) -> Result<UnpackResult, String> {
     // open_mode=true → 공개 패스워드 자동 사용
     let (password, identity) = if open_mode.unwrap_or(false) {
         (Some(PUBLIC_PASSWORD.to_string()), None)
-    } else { (password, identity) };
+    } else {
+        (password, identity)
+    };
 
     let qsafe = locate_qsafe_bin()?;
     let in_path = PathBuf::from(&input);
-    if !in_path.exists() { return Err(format!("입력 파일이 없습니다: {}", input)); }
+    if !in_path.exists() {
+        return Err(format!("입력 파일이 없습니다: {}", input));
+    }
     let out_path = output.unwrap_or_else(|| {
-        if input.ends_with(".qs") { input[..input.len() - 3].to_string() }
-        else { format!("{}.out", input) }
+        if input.ends_with(".qs") {
+            input[..input.len() - 3].to_string()
+        } else {
+            format!("{}.out", input)
+        }
     });
     let mut cmd = std::process::Command::new(&qsafe);
     cmd.arg("unpack").arg(&in_path).arg("-o").arg(&out_path);
-    if force { cmd.arg("--force"); }
-    if let Some(pw) = password.as_ref() { cmd.arg("--password").arg(pw); }
-    if let Some(id) = identity.as_ref() { cmd.arg("--identity").arg(id); }
-    let out = cmd.output().map_err(|e| format!("qsafe 실행 실패: {}", e))?;
+    if force {
+        cmd.arg("--force");
+    }
+    if let Some(pw) = password.as_ref() {
+        cmd.arg("--password").arg(pw);
+    }
+    if let Some(id) = identity.as_ref() {
+        cmd.arg("--identity").arg(id);
+    }
+    let out = cmd
+        .output()
+        .map_err(|e| format!("qsafe 실행 실패: {}", e))?;
     if !out.status.success() {
-        return Err(format!("풀기 실패: {}", String::from_utf8_lossy(&out.stderr).trim()));
+        return Err(format!(
+            "풀기 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
     }
     let bytes_written = std::fs::metadata(&out_path).map(|m| m.len()).unwrap_or(0);
 
     // 자동 untar: 풀어진 파일의 처음 263바이트에 "ustar" magic이 있는지
     let (untarred_dir, file_count) = try_auto_untar(&out_path);
-    Ok(UnpackResult { output_path: out_path, bytes_written, untarred_dir, file_count })
+    Ok(UnpackResult {
+        output_path: out_path,
+        bytes_written,
+        untarred_dir,
+        file_count,
+    })
 }
-
-
 
 /// 풀어진 파일이 tar이면 자동으로 untar — (untarred_dir, file_count) 반환.
 /// tar가 아니거나 실패하면 None.
@@ -601,30 +717,44 @@ fn try_auto_untar(file_path: &str) -> (Option<String>, u64) {
         Ok(b) => b,
         Err(_) => return (None, 0),
     };
-    if head.len() < 265 { return (None, 0); }
+    if head.len() < 265 {
+        return (None, 0);
+    }
     let magic = &head[257..262];
-    if magic != b"ustar" { return (None, 0); }
+    if magic != b"ustar" {
+        return (None, 0);
+    }
     drop(head);
 
     // untar 할 폴더: 같은 위치에 (파일명 - .tar 확장자) 또는 (파일명) + "_extracted"
     let dir_name = if p.extension().and_then(|s| s.to_str()) == Some("tar") {
-        p.file_stem().map(|s| s.to_string_lossy().into_owned())
+        p.file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_else(|| "extracted".into())
     } else {
-        format!("{}_extracted", p.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default())
+        format!(
+            "{}_extracted",
+            p.file_name()
+                .map(|s| s.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        )
     };
     let parent = p.parent().unwrap_or_else(|| std::path::Path::new("."));
     let out_dir = parent.join(dir_name);
     // 기존 폴더 비우기
     let _ = std::fs::remove_dir_all(&out_dir);
-    if std::fs::create_dir_all(&out_dir).is_err() { return (None, 0); }
+    if std::fs::create_dir_all(&out_dir).is_err() {
+        return (None, 0);
+    }
 
     let f = match std::fs::File::open(p) {
         Ok(f) => f,
         Err(_) => return (None, 0),
     };
     let mut ar = tar::Archive::new(f);
-    if ar.unpack(&out_dir).is_err() { return (None, 0); }
+    if ar.unpack(&out_dir).is_err() {
+        return (None, 0);
+    }
 
     // 파일 수 세기
     let mut count = 0u64;
@@ -632,8 +762,11 @@ fn try_auto_untar(file_path: &str) -> (Option<String>, u64) {
         if let Ok(rd) = std::fs::read_dir(p) {
             for e in rd.flatten() {
                 if let Ok(md) = e.metadata() {
-                    if md.is_dir() { walk(&e.path(), count); }
-                    else { *count += 1; }
+                    if md.is_dir() {
+                        walk(&e.path(), count);
+                    } else {
+                        *count += 1;
+                    }
                 }
             }
         }
@@ -648,10 +781,15 @@ fn try_auto_untar(file_path: &str) -> (Option<String>, u64) {
 
 #[derive(Serialize, Debug)]
 pub struct QsafeInfo {
-    pub path: String, pub size: u64, pub format: String,
-    pub cipher_suite: Option<String>, pub compression: Option<String>,
-    pub recipients: Vec<String>, pub original_size: u64,
-    pub label: Option<String>, pub created_at_unix: i64,
+    pub path: String,
+    pub size: u64,
+    pub format: String,
+    pub cipher_suite: Option<String>,
+    pub compression: Option<String>,
+    pub recipients: Vec<String>,
+    pub original_size: u64,
+    pub label: Option<String>,
+    pub created_at_unix: i64,
 }
 
 #[tauri::command]
@@ -664,8 +802,9 @@ pub fn qsafe_info(path: String) -> Result<QsafeInfo, String> {
     for r in &pf.header.recipients {
         let label: String = match r {
             qsafe_core::format::Recipient::Password(_) => "Password (Argon2id)".to_string(),
-            qsafe_core::format::Recipient::Fido2(f) => format!("FIDO2 ({})",
-                f.label.as_deref().unwrap_or("unnamed")),
+            qsafe_core::format::Recipient::Fido2(f) => {
+                format!("FIDO2 ({})", f.label.as_deref().unwrap_or("unnamed"))
+            }
             qsafe_core::format::Recipient::Bip39(_) => "BIP39 종이 백업".to_string(),
             qsafe_core::format::Recipient::Pubkey(_) => "X25519+ML-KEM-768 (PQ)".to_string(),
             qsafe_core::format::Recipient::Timelock(_) => "Timelock".to_string(),
@@ -673,21 +812,32 @@ pub fn qsafe_info(path: String) -> Result<QsafeInfo, String> {
         };
         recipients.push(label);
     }
-    Ok(QsafeInfo { path, size, format: "qsafe (.qs)".into(),
+    Ok(QsafeInfo {
+        path,
+        size,
+        format: "qsafe (.qs)".into(),
         cipher_suite: Some(format!("{:?}", pf.header.suite)),
         compression: Some(format!("{:?}", pf.header.compression)),
-        recipients, original_size: pf.header.original_size,
-        label: pf.header.label.clone(), created_at_unix: pf.header.created_at_unix })
+        recipients,
+        original_size: pf.header.original_size,
+        label: pf.header.label.clone(),
+        created_at_unix: pf.header.created_at_unix,
+    })
 }
 
 #[derive(Serialize, Debug)]
 pub struct ArchiveEntry {
-    pub name: String, pub size: u64, pub is_dir: bool, pub is_encrypted: bool,
+    pub name: String,
+    pub size: u64,
+    pub is_dir: bool,
+    pub is_encrypted: bool,
 }
 
 #[derive(Serialize, Debug)]
 pub struct ArchiveListing {
-    pub path: String, pub format: String, pub entries: Vec<ArchiveEntry>,
+    pub path: String,
+    pub format: String,
+    pub entries: Vec<ArchiveEntry>,
 }
 
 #[tauri::command]
@@ -698,28 +848,45 @@ pub fn list_external_archive(path: String) -> Result<ArchiveListing, String> {
     drop(bytes);
     let mut entries = Vec::new();
     if let ExternalFormat::Rar = fmt {
-        let list = qsafe_formats::rar::list_rar(&PathBuf::from(&path), None)
+        let list = qsafe_formats::rar::list_rar(PathBuf::from(&path).as_path(), None)
             .map_err(|e| format!("RAR 목록 실패: {}", e))?;
         for e in list {
-            entries.push(ArchiveEntry { name: e.filename, size: e.unpacked_size,
-                is_dir: e.is_directory, is_encrypted: e.is_encrypted });
+            entries.push(ArchiveEntry {
+                name: e.filename,
+                size: e.unpacked_size,
+                is_dir: e.is_directory,
+                is_encrypted: e.is_encrypted,
+            });
         }
     }
-    Ok(ArchiveListing { path, format: fmt.name().to_string(), entries })
+    Ok(ArchiveListing {
+        path,
+        format: fmt.name().to_string(),
+        entries,
+    })
 }
 
 #[tauri::command]
-pub fn extract_external_archive(input: String, output_dir: String,
-    password: Option<String>) -> Result<u64, String> {
+pub fn extract_external_archive(
+    input: String,
+    output_dir: String,
+    password: Option<String>,
+) -> Result<u64, String> {
     let qsafe = locate_qsafe_bin()?;
     let mut cmd = std::process::Command::new(&qsafe);
     cmd.arg("extract").arg(&input).arg("-o").arg(&output_dir);
-    if let Some(pw) = password.as_ref() { cmd.arg("--password").arg(pw); }
-    let out = cmd.output().map_err(|e| format!("qsafe 실행 실패: {}", e))?;
+    if let Some(pw) = password.as_ref() {
+        cmd.arg("--password").arg(pw);
+    }
+    let out = cmd
+        .output()
+        .map_err(|e| format!("qsafe 실행 실패: {}", e))?;
     if !out.status.success() {
         return Err(String::from_utf8_lossy(&out.stderr).trim().to_string());
     }
-    let count = std::fs::read_dir(&output_dir).map(|rd| rd.count() as u64).unwrap_or(0);
+    let count = std::fs::read_dir(&output_dir)
+        .map(|rd| rd.count() as u64)
+        .unwrap_or(0);
     Ok(count)
 }
 
@@ -729,56 +896,113 @@ pub fn extract_external_archive(input: String, output_dir: String,
 
 #[derive(Serialize, Debug)]
 pub struct PackPathResult {
-    pub output_path: String, pub source_kind: String,
-    pub source_size: u64, pub file_count: u64,
-    pub packed_size: u64, pub ratio_percent: f64,
+    pub output_path: String,
+    pub source_kind: String,
+    pub source_size: u64,
+    pub file_count: u64,
+    pub packed_size: u64,
+    pub ratio_percent: f64,
 }
 
 #[tauri::command]
-pub fn pack_path(input: String, output: Option<String>, password: Option<String>,
-    pubkeys: Vec<String>, no_password: bool, force: bool,
-    open_mode: Option<bool>, compression: Option<String>) -> Result<PackPathResult, String> {
+#[allow(clippy::too_many_arguments)] // Tauri command 시그니처는 frontend invoke 파라미터와 1:1 매핑이라 분할 시 UX 손상.
+pub fn pack_path(
+    input: String,
+    output: Option<String>,
+    password: Option<String>,
+    pubkeys: Vec<String>,
+    no_password: bool,
+    force: bool,
+    open_mode: Option<bool>,
+    compression: Option<String>,
+) -> Result<PackPathResult, String> {
     // open_mode=true → 공개 패스워드 자동 사용
     let (password, pubkeys, no_password) = if open_mode.unwrap_or(false) {
         (Some(PUBLIC_PASSWORD.to_string()), Vec::new(), false)
-    } else { (password, pubkeys, no_password) };
+    } else {
+        (password, pubkeys, no_password)
+    };
 
     let in_path = PathBuf::from(&input);
-    if !in_path.exists() { return Err(format!("입력이 존재하지 않습니다: {}", input)); }
+    if !in_path.exists() {
+        return Err(format!("입력이 존재하지 않습니다: {}", input));
+    }
 
     if in_path.is_file() {
-        let r = pack_one(input.clone(), output, password, pubkeys, no_password, force, compression.clone())?;
-        return Ok(PackPathResult { output_path: r.output_path, source_kind: "file".into(),
-            source_size: r.original_size, file_count: 1,
-            packed_size: r.packed_size, ratio_percent: r.ratio_percent });
+        let r = pack_one(
+            input.clone(),
+            output,
+            password,
+            pubkeys,
+            no_password,
+            force,
+            compression.clone(),
+        )?;
+        return Ok(PackPathResult {
+            output_path: r.output_path,
+            source_kind: "file".into(),
+            source_size: r.original_size,
+            file_count: 1,
+            packed_size: r.packed_size,
+            ratio_percent: r.ratio_percent,
+        });
     }
-    if !in_path.is_dir() { return Err("파일 또는 폴더만 압축 가능합니다.".into()); }
+    if !in_path.is_dir() {
+        return Err("파일 또는 폴더만 압축 가능합니다.".into());
+    }
 
     let out_path = output.unwrap_or_else(|| format!("{}.qs", input));
     let tmp_tar = {
-        let parent = in_path.parent().unwrap_or_else(|| std::path::Path::new("."));
-        parent.join(format!(".qsafe-tmp-{}-{}.tar", std::process::id(),
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_secs()).unwrap_or(0)))
+        let parent = in_path
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."));
+        parent.join(format!(
+            ".qsafe-tmp-{}-{}.tar",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0)
+        ))
     };
-    let (source_size, file_count) = create_tar(&in_path, &tmp_tar)
-        .map_err(|e| format!("tar 생성 실패: {}", e))?;
-    let pack_result = pack_one(tmp_tar.to_string_lossy().into_owned(),
-        Some(out_path.clone()), password, pubkeys, no_password, force, compression.clone());
+    let (source_size, file_count) =
+        create_tar(&in_path, &tmp_tar).map_err(|e| format!("tar 생성 실패: {}", e))?;
+    let pack_result = pack_one(
+        tmp_tar.to_string_lossy().into_owned(),
+        Some(out_path.clone()),
+        password,
+        pubkeys,
+        no_password,
+        force,
+        compression.clone(),
+    );
     let _ = std::fs::remove_file(&tmp_tar);
     let r = pack_result?;
-    Ok(PackPathResult { output_path: r.output_path, source_kind: "directory".into(),
-        source_size, file_count, packed_size: r.packed_size,
-        ratio_percent: if source_size > 0 { (r.packed_size as f64 / source_size as f64) * 100.0 } else { 100.0 } })
+    Ok(PackPathResult {
+        output_path: r.output_path,
+        source_kind: "directory".into(),
+        source_size,
+        file_count,
+        packed_size: r.packed_size,
+        ratio_percent: if source_size > 0 {
+            (r.packed_size as f64 / source_size as f64) * 100.0
+        } else {
+            100.0
+        },
+    })
 }
 
 fn create_tar(src: &std::path::Path, dst: &std::path::Path) -> Result<(u64, u64), String> {
     let file = std::fs::File::create(dst).map_err(|e| format!("tar 파일 생성: {}", e))?;
     let mut builder = tar::Builder::new(file);
     builder.follow_symlinks(false);
-    let base_name = src.file_name().map(|s| std::path::PathBuf::from(s))
+    let base_name = src
+        .file_name()
+        .map(std::path::PathBuf::from)
         .unwrap_or_else(|| std::path::PathBuf::from("data"));
-    builder.append_dir_all(&base_name, src).map_err(|e| format!("tar append: {}", e))?;
+    builder
+        .append_dir_all(&base_name, src)
+        .map_err(|e| format!("tar append: {}", e))?;
     builder.finish().map_err(|e| format!("tar finish: {}", e))?;
     drop(builder);
     let mut total_size: u64 = 0;
@@ -787,8 +1011,12 @@ fn create_tar(src: &std::path::Path, dst: &std::path::Path) -> Result<(u64, u64)
         if let Ok(rd) = std::fs::read_dir(p) {
             for e in rd.flatten() {
                 if let Ok(md) = e.metadata() {
-                    if md.is_dir() { walk(&e.path(), total, count); }
-                    else { *total += md.len(); *count += 1; }
+                    if md.is_dir() {
+                        walk(&e.path(), total, count);
+                    } else {
+                        *total += md.len();
+                        *count += 1;
+                    }
                 }
             }
         }
@@ -803,43 +1031,67 @@ fn create_tar(src: &std::path::Path, dst: &std::path::Path) -> Result<(u64, u64)
 
 #[derive(Serialize, Debug)]
 pub struct ZipResult {
-    pub output_path: String, pub source_kind: String,
-    pub source_size: u64, pub file_count: u64,
-    pub packed_size: u64, pub ratio_percent: f64,
+    pub output_path: String,
+    pub source_kind: String,
+    pub source_size: u64,
+    pub file_count: u64,
+    pub packed_size: u64,
+    pub ratio_percent: f64,
 }
 
 #[tauri::command]
-pub fn pack_to_zip(input: String, output: Option<String>, force: bool) -> Result<ZipResult, String> {
+pub fn pack_to_zip(
+    input: String,
+    output: Option<String>,
+    force: bool,
+) -> Result<ZipResult, String> {
     let in_path = PathBuf::from(&input);
-    if !in_path.exists() { return Err(format!("입력이 존재하지 않습니다: {}", input)); }
+    if !in_path.exists() {
+        return Err(format!("입력이 존재하지 않습니다: {}", input));
+    }
     let out_path = output.unwrap_or_else(|| format!("{}.zip", input));
     let out = PathBuf::from(&out_path);
-    if out.exists() && !force { return Err(format!("파일이 이미 있어요: {}", out.display())); }
+    if out.exists() && !force {
+        return Err(format!("파일이 이미 있어요: {}", out.display()));
+    }
     let f = std::fs::File::create(&out).map_err(|e| format!("zip 파일 생성: {}", e))?;
     let mut writer = zip::ZipWriter::new(f);
-    let opts: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default()
-        .compression_method(zip::CompressionMethod::Deflated);
+    let opts: zip::write::FileOptions<'_, ()> =
+        zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     let mut source_size: u64 = 0;
     let mut file_count: u64 = 0;
     let kind: &str;
     if in_path.is_file() {
         kind = "file";
-        let name = in_path.file_name().map(|s| s.to_string_lossy().into_owned())
+        let name = in_path
+            .file_name()
+            .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_else(|| "file".into());
         let bytes = std::fs::read(&in_path).map_err(|e| format!("입력 읽기: {}", e))?;
         source_size = bytes.len() as u64;
-        writer.start_file(&name, opts).map_err(|e| format!("zip start_file: {}", e))?;
+        writer
+            .start_file(&name, opts)
+            .map_err(|e| format!("zip start_file: {}", e))?;
         use std::io::Write;
-        writer.write_all(&bytes).map_err(|e| format!("zip write: {}", e))?;
+        writer
+            .write_all(&bytes)
+            .map_err(|e| format!("zip write: {}", e))?;
         file_count = 1;
     } else if in_path.is_dir() {
         kind = "directory";
-        let base = in_path.file_name().map(|s| std::path::PathBuf::from(s))
+        let base = in_path
+            .file_name()
+            .map(std::path::PathBuf::from)
             .unwrap_or_else(|| std::path::PathBuf::from("data"));
-        fn walk_zip<W: std::io::Write + std::io::Seek>(writer: &mut zip::ZipWriter<W>,
-            opts: &zip::write::FileOptions<'_, ()>, _base_dir: &std::path::Path,
-            cur: &std::path::Path, archive_prefix: &std::path::Path,
-            source_size: &mut u64, file_count: &mut u64) -> Result<(), String> {
+        fn walk_zip<W: std::io::Write + std::io::Seek>(
+            writer: &mut zip::ZipWriter<W>,
+            opts: &zip::write::FileOptions<'_, ()>,
+            _base_dir: &std::path::Path,
+            cur: &std::path::Path,
+            archive_prefix: &std::path::Path,
+            source_size: &mut u64,
+            file_count: &mut u64,
+        ) -> Result<(), String> {
             for entry in std::fs::read_dir(cur).map_err(|e| format!("read_dir: {}", e))? {
                 let entry = entry.map_err(|e| format!("entry: {}", e))?;
                 let path = entry.path();
@@ -848,28 +1100,59 @@ pub fn pack_to_zip(input: String, output: Option<String>, force: bool) -> Result
                 let archive_str = archive_path.to_string_lossy().replace('\\', "/");
                 let md = entry.metadata().map_err(|e| format!("metadata: {}", e))?;
                 if md.is_dir() {
-                    writer.add_directory(format!("{}/", archive_str), *opts)
+                    writer
+                        .add_directory(format!("{}/", archive_str), *opts)
                         .map_err(|e| format!("zip add_dir: {}", e))?;
-                    walk_zip(writer, opts, _base_dir, &path, &archive_path, source_size, file_count)?;
+                    walk_zip(
+                        writer,
+                        opts,
+                        _base_dir,
+                        &path,
+                        &archive_path,
+                        source_size,
+                        file_count,
+                    )?;
                 } else {
                     let data = std::fs::read(&path).map_err(|e| format!("read: {}", e))?;
                     *source_size += data.len() as u64;
                     *file_count += 1;
-                    writer.start_file(&archive_str, *opts)
+                    writer
+                        .start_file(&archive_str, *opts)
                         .map_err(|e| format!("zip start_file: {}", e))?;
                     use std::io::Write;
-                    writer.write_all(&data).map_err(|e| format!("zip write: {}", e))?;
+                    writer
+                        .write_all(&data)
+                        .map_err(|e| format!("zip write: {}", e))?;
                 }
             }
             Ok(())
         }
-        walk_zip(&mut writer, &opts, &in_path, &in_path, &base, &mut source_size, &mut file_count)?;
-    } else { return Err("파일 또는 폴더만 압축 가능합니다.".into()); }
+        walk_zip(
+            &mut writer,
+            &opts,
+            &in_path,
+            &in_path,
+            &base,
+            &mut source_size,
+            &mut file_count,
+        )?;
+    } else {
+        return Err("파일 또는 폴더만 압축 가능합니다.".into());
+    }
     writer.finish().map_err(|e| format!("zip finish: {}", e))?;
     let packed_size = std::fs::metadata(&out).map(|m| m.len()).unwrap_or(0);
-    Ok(ZipResult { output_path: out.to_string_lossy().into_owned(),
-        source_kind: kind.into(), source_size, file_count, packed_size,
-        ratio_percent: if source_size > 0 { (packed_size as f64 / source_size as f64) * 100.0 } else { 100.0 } })
+    Ok(ZipResult {
+        output_path: out.to_string_lossy().into_owned(),
+        source_kind: kind.into(),
+        source_size,
+        file_count,
+        packed_size,
+        ratio_percent: if source_size > 0 {
+            (packed_size as f64 / source_size as f64) * 100.0
+        } else {
+            100.0
+        },
+    })
 }
 
 #[cfg(test)]
@@ -887,7 +1170,12 @@ mod open_mode_tests {
     #[test]
     fn pack_path_open_mode_then_unpack_open_mode_roundtrip() {
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let input = tmp("input.txt");
@@ -899,9 +1187,14 @@ mod open_mode_tests {
         let r = pack_path(
             input.to_string_lossy().into_owned(),
             Some(packed.to_string_lossy().into_owned()),
-            None, vec![], false, true,
-            Some(true), None,
-        ).unwrap();
+            None,
+            vec![],
+            false,
+            true,
+            Some(true),
+            None,
+        )
+        .unwrap();
         assert!(packed.exists());
         assert_eq!(r.source_kind, "file");
 
@@ -909,9 +1202,12 @@ mod open_mode_tests {
         let u = unpack_qsafe(
             packed.to_string_lossy().into_owned(),
             Some(restored.to_string_lossy().into_owned()),
-            None, None, true,
+            None,
+            None,
+            true,
             Some(true),
-        ).unwrap();
+        )
+        .unwrap();
         assert!(restored.exists());
         assert_eq!(std::fs::read(&restored).unwrap(), b"public qsafe roundtrip");
         assert_eq!(u.bytes_written, 22);
@@ -924,20 +1220,36 @@ mod open_mode_tests {
     fn open_mode_pack_then_user_password_unpack_fails() {
         // open_mode로 만든 .qs는 PUBLIC_PASSWORD를 모르는 사용자가 풀 수 없어야
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let input = tmp("inp.txt");
         let packed = tmp("pk.qs");
         std::fs::write(&input, b"x").unwrap();
-        pack_path(input.to_string_lossy().into_owned(),
+        pack_path(
+            input.to_string_lossy().into_owned(),
             Some(packed.to_string_lossy().into_owned()),
-            None, vec![], false, true, Some(true), None).unwrap();
+            None,
+            vec![],
+            false,
+            true,
+            Some(true),
+            None,
+        )
+        .unwrap();
         // 다른 패스워드로 풀기 시도 → 실패
         let r = unpack_qsafe(
             packed.to_string_lossy().into_owned(),
             Some(tmp("out").to_string_lossy().into_owned()),
-            Some("wrong-password".into()), None, true, Some(false),
+            Some("wrong-password".into()),
+            None,
+            true,
+            Some(false),
         );
         assert!(r.is_err());
         let _ = std::fs::remove_file(&input);
@@ -948,19 +1260,38 @@ mod open_mode_tests {
     fn pack_path_user_password_still_works() {
         // open_mode=false면 사용자 패스워드 사용
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let input = tmp("u.txt");
         let packed = tmp("u.qs");
         let restored = tmp("u.out");
         std::fs::write(&input, b"user pw").unwrap();
-        pack_path(input.to_string_lossy().into_owned(),
+        pack_path(
+            input.to_string_lossy().into_owned(),
             Some(packed.to_string_lossy().into_owned()),
-            Some("myuser-pw".into()), vec![], false, true, Some(false), None).unwrap();
-        unpack_qsafe(packed.to_string_lossy().into_owned(),
+            Some("myuser-pw".into()),
+            vec![],
+            false,
+            true,
+            Some(false),
+            None,
+        )
+        .unwrap();
+        unpack_qsafe(
+            packed.to_string_lossy().into_owned(),
             Some(restored.to_string_lossy().into_owned()),
-            Some("myuser-pw".into()), None, true, Some(false)).unwrap();
+            Some("myuser-pw".into()),
+            None,
+            true,
+            Some(false),
+        )
+        .unwrap();
         assert_eq!(std::fs::read(&restored).unwrap(), b"user pw");
         let _ = std::fs::remove_file(&input);
         let _ = std::fs::remove_file(&packed);
@@ -974,8 +1305,12 @@ mod open_mode_tests {
         let input = dir.join("a.txt");
         std::fs::write(&input, b"hello zip").unwrap();
         let out = dir.join("a.zip");
-        pack_to_zip(input.to_string_lossy().into_owned(),
-            Some(out.to_string_lossy().into_owned()), true).unwrap();
+        pack_to_zip(
+            input.to_string_lossy().into_owned(),
+            Some(out.to_string_lossy().into_owned()),
+            true,
+        )
+        .unwrap();
         assert!(out.exists());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -999,9 +1334,9 @@ mod open_mode_tests {
 #[derive(Serialize, Debug)]
 pub struct DeleteResult {
     pub deleted_path: String,
-    pub kind: String,        // "file" | "directory"
-    pub size_bytes: u64,     // 폴더면 모든 파일 합계
-    pub item_count: u64,     // 폴더면 항목 수
+    pub kind: String,    // "file" | "directory"
+    pub size_bytes: u64, // 폴더면 모든 파일 합계
+    pub item_count: u64, // 폴더면 항목 수
 }
 
 #[tauri::command]
@@ -1018,9 +1353,19 @@ pub fn delete_path(path: String) -> Result<DeleteResult, String> {
     // 안전 가드 2: 시스템 폴더 거부
     let lower = path.to_lowercase().replace('\\', "/");
     let dangerous = [
-        "/windows", "/program files", "/program files (x86)",
-        "/programdata", "/system32", "/system",
-        "/usr", "/etc", "/bin", "/sbin", "/boot", "/var", "/lib",
+        "/windows",
+        "/program files",
+        "/program files (x86)",
+        "/programdata",
+        "/system32",
+        "/system",
+        "/usr",
+        "/etc",
+        "/bin",
+        "/sbin",
+        "/boot",
+        "/var",
+        "/lib",
     ];
     for d in &dangerous {
         // path가 해당 폴더 자체 또는 그 직계 부모인 경우
@@ -1032,7 +1377,7 @@ pub fn delete_path(path: String) -> Result<DeleteResult, String> {
     // 안전 가드 3: 루트 디렉토리 직접 거부 (Windows: c:/, Unix: /)
     if cfg!(windows) {
         // c:/, d:/, e:/ 같은 패턴
-        let trimmed = path.trim_end_matches(|c| c == '/' || c == '\\');
+        let trimmed = path.trim_end_matches(['/', '\\']);
         if trimmed.len() <= 3 {
             return Err("시스템 최상위 폴더는 삭제할 수 없습니다.".into());
         }
@@ -1047,8 +1392,11 @@ pub fn delete_path(path: String) -> Result<DeleteResult, String> {
                 for e in rd.flatten() {
                     *count += 1;
                     if let Ok(md) = e.metadata() {
-                        if md.is_dir() { walk(&e.path(), total, count); }
-                        else { *total += md.len(); }
+                        if md.is_dir() {
+                            walk(&e.path(), total, count);
+                        } else {
+                            *total += md.len();
+                        }
                     }
                 }
             }
@@ -1141,7 +1489,12 @@ mod delete_and_untar_tests {
     #[test]
     fn auto_untar_after_unpack_directory_archive() {
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let base = tmp_dir("untar");
@@ -1151,14 +1504,28 @@ mod delete_and_untar_tests {
         std::fs::write(src.join("b.txt"), b"BB").unwrap();
 
         let qs = base.join("packed.qs");
-        pack_path(src.to_string_lossy().into_owned(),
+        pack_path(
+            src.to_string_lossy().into_owned(),
             Some(qs.to_string_lossy().into_owned()),
-            None, vec![], false, true, Some(true), None).unwrap();
+            None,
+            vec![],
+            false,
+            true,
+            Some(true),
+            None,
+        )
+        .unwrap();
 
         let tar_out = base.join("restored.tar");
-        let r = unpack_qsafe(qs.to_string_lossy().into_owned(),
+        let r = unpack_qsafe(
+            qs.to_string_lossy().into_owned(),
             Some(tar_out.to_string_lossy().into_owned()),
-            None, None, true, Some(true)).unwrap();
+            None,
+            None,
+            true,
+            Some(true),
+        )
+        .unwrap();
 
         // 자동 untar 됐어야: untarred_dir이 Some
         assert!(r.untarred_dir.is_some(), "auto untar 발생 안 함");
@@ -1177,7 +1544,12 @@ mod delete_and_untar_tests {
     #[test]
     fn unpack_single_file_no_untar() {
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let base = tmp_dir("notar");
@@ -1185,13 +1557,27 @@ mod delete_and_untar_tests {
         let inp = base.join("single.txt");
         std::fs::write(&inp, b"just text").unwrap();
         let qs = base.join("s.qs");
-        pack_path(inp.to_string_lossy().into_owned(),
+        pack_path(
+            inp.to_string_lossy().into_owned(),
             Some(qs.to_string_lossy().into_owned()),
-            None, vec![], false, true, Some(true), None).unwrap();
+            None,
+            vec![],
+            false,
+            true,
+            Some(true),
+            None,
+        )
+        .unwrap();
         let out = base.join("out.txt");
-        let r = unpack_qsafe(qs.to_string_lossy().into_owned(),
+        let r = unpack_qsafe(
+            qs.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
-            None, None, true, Some(true)).unwrap();
+            None,
+            None,
+            true,
+            Some(true),
+        )
+        .unwrap();
         // 일반 파일은 untar 안 됨
         assert!(r.untarred_dir.is_none());
         assert!(out.exists());
@@ -1257,29 +1643,34 @@ mod open_assoc_tests {
 // MD5 helper
 // ════════════════════════════════════════════════════════════
 fn compute_md5_file(path: &std::path::Path) -> Result<String, String> {
-    use md5::{Md5, Digest};
+    use md5::{Digest, Md5};
     use std::io::Read;
     let mut f = std::fs::File::open(path).map_err(|e| format!("md5 read: {}", e))?;
     let mut h = Md5::new();
     let mut buf = vec![0u8; 64 * 1024];
     loop {
         let n = f.read(&mut buf).map_err(|e| format!("md5 read: {}", e))?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         h.update(&buf[..n]);
     }
     Ok(hex::encode(h.finalize()))
 }
 
 fn compute_dir_md5_aggregate(dir: &std::path::Path) -> Result<String, String> {
-    use md5::{Md5, Digest};
+    use md5::{Digest, Md5};
     use std::io::Read;
     let mut entries: Vec<std::path::PathBuf> = Vec::new();
     fn walk(p: &std::path::Path, list: &mut Vec<std::path::PathBuf>) {
         if let Ok(rd) = std::fs::read_dir(p) {
             for e in rd.flatten() {
                 if let Ok(md) = e.metadata() {
-                    if md.is_dir() { walk(&e.path(), list); }
-                    else { list.push(e.path()); }
+                    if md.is_dir() {
+                        walk(&e.path(), list);
+                    } else {
+                        list.push(e.path());
+                    }
                 }
             }
         }
@@ -1287,17 +1678,26 @@ fn compute_dir_md5_aggregate(dir: &std::path::Path) -> Result<String, String> {
     walk(dir, &mut entries);
     entries.sort();
     let mut h = Md5::new();
-    let prefix_len = dir.parent().map(|p| p.to_string_lossy().len() + 1).unwrap_or(0);
+    let prefix_len = dir
+        .parent()
+        .map(|p| p.to_string_lossy().len() + 1)
+        .unwrap_or(0);
     for path in &entries {
         let rel = path.to_string_lossy();
-        let rel = if prefix_len < rel.len() { &rel[prefix_len..] } else { rel.as_ref() };
+        let rel = if prefix_len < rel.len() {
+            &rel[prefix_len..]
+        } else {
+            rel.as_ref()
+        };
         h.update(rel.as_bytes());
         h.update(b"\n");
         let mut f = std::fs::File::open(path).map_err(|e| format!("md5 read: {}", e))?;
         let mut buf = vec![0u8; 64 * 1024];
         loop {
             let n = f.read(&mut buf).map_err(|e| format!("read: {}", e))?;
-            if n == 0 { break; }
+            if n == 0 {
+                break;
+            }
             h.update(&buf[..n]);
         }
         h.update(b"\n");
@@ -1312,7 +1712,8 @@ pub fn md5_of_file(path: String) -> Result<String, String> {
 
 fn basename_of(path: &str) -> String {
     let p = std::path::PathBuf::from(path);
-    p.file_name().map(|s| s.to_string_lossy().into_owned())
+    p.file_name()
+        .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.to_string())
 }
 
@@ -1347,18 +1748,27 @@ pub fn pack_path_ext(
 ) -> Result<PackPathExtResult, String> {
     let (password, pubkeys, no_password) = if open_mode.unwrap_or(false) {
         (Some(PUBLIC_PASSWORD.to_string()), Vec::new(), false)
-    } else { (password, pubkeys, no_password) };
+    } else {
+        (password, pubkeys, no_password)
+    };
 
     let in_path = PathBuf::from(&input);
-    if !in_path.exists() { return Err(format!("입력이 없습니다: {}", input)); }
+    if !in_path.exists() {
+        return Err(format!("입력이 없습니다: {}", input));
+    }
     let is_dir = in_path.is_dir();
     let want_md5 = include_md5.unwrap_or(false);
     let want_sfx = sfx.unwrap_or(false);
 
     let md5_value = if want_md5 {
-        Some(if is_dir { compute_dir_md5_aggregate(&in_path)? }
-             else      { compute_md5_file(&in_path)? })
-    } else { None };
+        Some(if is_dir {
+            compute_dir_md5_aggregate(&in_path)?
+        } else {
+            compute_md5_file(&in_path)?
+        })
+    } else {
+        None
+    };
 
     let final_label = match (&label, &md5_value) {
         (Some(l), Some(m)) => Some(format!("{} | MD5:{}", l, &m[..16])),
@@ -1369,15 +1779,34 @@ pub fn pack_path_ext(
 
     let out_path = output.unwrap_or_else(|| {
         if want_sfx {
-            if cfg!(windows) { format!("{}.run.exe", input) } else { format!("{}.run", input) }
-        } else { format!("{}.qs", input) }
+            if cfg!(windows) {
+                format!("{}.run.exe", input)
+            } else {
+                format!("{}.run", input)
+            }
+        } else {
+            format!("{}.qs", input)
+        }
     });
 
-    let (source_size, file_count, real_input_for_pack, tmp_tar): (u64, u64, String, Option<PathBuf>) = if is_dir {
+    let (source_size, file_count, real_input_for_pack, tmp_tar): (
+        u64,
+        u64,
+        String,
+        Option<PathBuf>,
+    ) = if is_dir {
         let tmp = {
-            let parent = in_path.parent().unwrap_or_else(|| std::path::Path::new("."));
-            parent.join(format!(".qsafe-tmp-{}-{}.tar", std::process::id(),
-                std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)))
+            let parent = in_path
+                .parent()
+                .unwrap_or_else(|| std::path::Path::new("."));
+            parent.join(format!(
+                ".qsafe-tmp-{}-{}.tar",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0)
+            ))
         };
         let (sz, cnt) = create_tar(&in_path, &tmp).map_err(|e| format!("tar: {}", e))?;
         let s = tmp.to_string_lossy().into_owned();
@@ -1389,8 +1818,13 @@ pub fn pack_path_ext(
 
     let qsafe = locate_qsafe_bin()?;
     let mut cmd = std::process::Command::new(&qsafe);
-    cmd.arg("pack").arg(&real_input_for_pack).arg("-o").arg(&out_path);
-    if force { cmd.arg("--force"); }
+    cmd.arg("pack")
+        .arg(&real_input_for_pack)
+        .arg("-o")
+        .arg(&out_path);
+    if force {
+        cmd.arg("--force");
+    }
     let comp = compression.as_deref().unwrap_or("auto");
     if comp == "none" || comp == "zstd" || comp == "auto" {
         cmd.arg("-c").arg(comp);
@@ -1400,19 +1834,35 @@ pub fn pack_path_ext(
             cmd.arg("--profile").arg(prof);
         }
     }
-    if no_password { cmd.arg("--no-password"); }
-    else if let Some(pw) = password.as_ref() { cmd.arg("--password").arg(pw); }
-    for pk in &pubkeys { cmd.arg("--pubkey").arg(pk); }
-    if want_sfx { cmd.arg("--sfx"); }
-    if let Some(l) = &final_label { cmd.arg("--label").arg(l); }
+    if no_password {
+        cmd.arg("--no-password");
+    } else if let Some(pw) = password.as_ref() {
+        cmd.arg("--password").arg(pw);
+    }
+    for pk in &pubkeys {
+        cmd.arg("--pubkey").arg(pk);
+    }
+    if want_sfx {
+        cmd.arg("--sfx");
+    }
+    if let Some(l) = &final_label {
+        cmd.arg("--label").arg(l);
+    }
 
     let out = cmd.output().map_err(|e| {
-        if let Some(t) = &tmp_tar { let _ = std::fs::remove_file(t); }
+        if let Some(t) = &tmp_tar {
+            let _ = std::fs::remove_file(t);
+        }
         format!("qsafe 실행 실패: {}", e)
     })?;
-    if let Some(t) = &tmp_tar { let _ = std::fs::remove_file(t); }
+    if let Some(t) = &tmp_tar {
+        let _ = std::fs::remove_file(t);
+    }
     if !out.status.success() {
-        return Err(format!("압축 실패: {}", String::from_utf8_lossy(&out.stderr).trim()));
+        return Err(format!(
+            "압축 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
     }
     let packed_size = std::fs::metadata(&out_path).map(|m| m.len()).unwrap_or(0);
 
@@ -1421,15 +1871,31 @@ pub fn pack_path_ext(
         let body = format!("{}  {}\n", m, basename_of(&input));
         std::fs::write(&mp, body).map_err(|e| format!("md5 사이드카: {}", e))?;
         Some(mp)
-    } else { None };
+    } else {
+        None
+    };
 
-    let sfx_path = if want_sfx { Some(out_path.clone()) } else { None };
+    let sfx_path = if want_sfx {
+        Some(out_path.clone())
+    } else {
+        None
+    };
 
     Ok(PackPathExtResult {
         output_path: out_path.clone(),
-        source_kind: if is_dir { "directory".into() } else { "file".into() },
-        source_size, file_count, packed_size,
-        ratio_percent: if source_size > 0 { (packed_size as f64 / source_size as f64) * 100.0 } else { 100.0 },
+        source_kind: if is_dir {
+            "directory".into()
+        } else {
+            "file".into()
+        },
+        source_size,
+        file_count,
+        packed_size,
+        ratio_percent: if source_size > 0 {
+            (packed_size as f64 / source_size as f64) * 100.0
+        } else {
+            100.0
+        },
         md5: md5_value,
         md5_file_path,
         sfx_path,
@@ -1463,9 +1929,9 @@ pub fn unpack_qsafe_ext(
 
     let original_md5 = {
         let sidecar = format!("{}.md5", input);
-        std::fs::read_to_string(&sidecar).ok().and_then(|s| {
-            s.split_whitespace().next().map(|s| s.to_string())
-        })
+        std::fs::read_to_string(&sidecar)
+            .ok()
+            .and_then(|s| s.split_whitespace().next().map(|s| s.to_string()))
     };
 
     let mut restored_md5: Option<String> = None;
@@ -1482,7 +1948,9 @@ pub fn unpack_qsafe_ext(
             compute_dir_md5_aggregate(&target_path).ok()
         } else if target_path.is_file() {
             compute_md5_file(&target_path).ok()
-        } else { None };
+        } else {
+            None
+        };
 
         if let Some(c) = &computed {
             let sidecar = format!("{}.md5", base.output_path);
@@ -1536,7 +2004,12 @@ mod ext_tests {
     #[test]
     fn pack_ext_with_md5_creates_sidecar() {
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let dir = tmp_dir("packmd5");
@@ -1547,10 +2020,18 @@ mod ext_tests {
         let r = pack_path_ext(
             inp.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
-            None, vec![], false, true,
-            Some(true), None, None, None, None,
-            Some(true),  // include_md5
-        ).unwrap();
+            None,
+            vec![],
+            false,
+            true,
+            Some(true),
+            None,
+            None,
+            None,
+            None,
+            Some(true), // include_md5
+        )
+        .unwrap();
         assert!(r.md5.is_some());
         assert_eq!(r.md5.as_ref().unwrap().len(), 32);
         assert!(r.md5_file_path.is_some());
@@ -1563,7 +2044,12 @@ mod ext_tests {
     #[test]
     fn pack_ext_without_md5_no_sidecar() {
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let dir = tmp_dir("nomd5");
@@ -1574,10 +2060,18 @@ mod ext_tests {
         let r = pack_path_ext(
             inp.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
-            None, vec![], false, true,
-            Some(true), None, None, None, None,
+            None,
+            vec![],
+            false,
+            true,
+            Some(true),
+            None,
+            None,
+            None,
+            None,
             Some(false),
-        ).unwrap();
+        )
+        .unwrap();
         assert!(r.md5.is_none());
         assert!(r.md5_file_path.is_none());
         let _ = std::fs::remove_dir_all(&dir);
@@ -1586,7 +2080,12 @@ mod ext_tests {
     #[test]
     fn pack_ext_strong_profile() {
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let dir = tmp_dir("strong");
@@ -1597,10 +2096,18 @@ mod ext_tests {
         let r = pack_path_ext(
             inp.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
-            Some("pw".into()), vec![], false, true,
-            None, None, Some("strong".into()), None, None,
+            Some("pw".into()),
+            vec![],
+            false,
+            true,
+            None,
+            None,
+            Some("strong".into()),
+            None,
+            None,
             Some(false),
-        ).unwrap();
+        )
+        .unwrap();
         assert!(out.exists());
         // strong profile은 더 큰 헤더 (Argon2 m=256MiB) → packed_size 약간 더 큼
         assert!(r.packed_size > 0);
@@ -1610,7 +2117,12 @@ mod ext_tests {
     #[test]
     fn unpack_ext_creates_md5_sidecar_and_compares() {
         let qsafe = locate_qsafe_bin().unwrap();
-        if !qsafe.exists() && std::process::Command::new(&qsafe).arg("--version").output().is_err() {
+        if !qsafe.exists()
+            && std::process::Command::new(&qsafe)
+                .arg("--version")
+                .output()
+                .is_err()
+        {
             return;
         }
         let dir = tmp_dir("upmd5");
@@ -1621,21 +2133,36 @@ mod ext_tests {
         let pack_r = pack_path_ext(
             inp.to_string_lossy().into_owned(),
             Some(qs.to_string_lossy().into_owned()),
-            None, vec![], false, true,
-            Some(true), None, None, None, None,
+            None,
+            vec![],
+            false,
+            true,
             Some(true),
-        ).unwrap();
+            None,
+            None,
+            None,
+            None,
+            Some(true),
+        )
+        .unwrap();
         assert!(pack_r.md5.is_some());
 
         let out = dir.join("restored.txt");
         let un = unpack_qsafe_ext(
             qs.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
-            None, None, true, Some(true),
+            None,
+            None,
+            true,
             Some(true),
-        ).unwrap();
+            Some(true),
+        )
+        .unwrap();
         assert!(un.restored_md5.is_some());
-        assert_eq!(un.restored_md5.as_ref().unwrap(), pack_r.md5.as_ref().unwrap());
+        assert_eq!(
+            un.restored_md5.as_ref().unwrap(),
+            pack_r.md5.as_ref().unwrap()
+        );
         assert_eq!(un.original_md5_matches, Some(true));
         assert!(un.md5_file_path.is_some());
         let _ = std::fs::remove_dir_all(&dir);
