@@ -1954,6 +1954,250 @@ fn iso_unmount_impl(_handle: &str) -> Result<(), String> {
     Err("이 플랫폼은 ISO 마운트를 지원하지 않습니다".to_string())
 }
 
+// ════════════════════════════════════════════════════════════
+// USB 부팅 디스크 만들기 — B1 Phase
+//
+// 안전 모델:
+//   1. `list_writable_disks` → external/removable로 식별된 디스크만 반환,
+//      시스템 부팅 디스크 (mount된 root, EFI partition 보유)는 제외.
+//   2. `write_iso_to_disk(iso, disk, confirm_token)` (다음 commit) →
+//      클라이언트가 disk 식별 정보를 token으로 다시 확인해야 실행.
+//
+// 시스템 디스크 보호는 매우 critical — 잘못된 disk 선택 시 OS 파괴.
+// 그래서 list 함수가 가능한 한 보수적: removable=false거나 root mount된
+// 디스크는 반환 자체를 안 함.
+// ════════════════════════════════════════════════════════════
+
+#[derive(Serialize, Debug)]
+pub struct WritableDisk {
+    pub id: String, // OS별 식별자 — macOS: /dev/disk4, Linux: /dev/sdb, Windows: \\.\PhysicalDrive1
+    pub label: String, // 사용자 표시용 — "SanDisk Cruzer 16 GB"
+    pub size_bytes: u64, // 총 용량
+    pub removable: bool, // hot-pluggable (USB/SD)인지
+    pub is_system: bool, // 부팅/시스템 디스크로 판단되면 true (반환에서 제외해야 함)
+    pub mount_points: Vec<String>, // 현재 마운트된 위치들
+}
+
+#[tauri::command]
+pub fn list_writable_disks() -> Result<Vec<WritableDisk>, String> {
+    list_writable_disks_impl()
+}
+
+#[cfg(target_os = "macos")]
+fn list_writable_disks_impl() -> Result<Vec<WritableDisk>, String> {
+    use std::process::Command;
+    // `diskutil list -plist external physical` — 외장 물리 디스크만.
+    // -plist parsing 대신 더 간단한 출력 형식 (`list external`)을 파싱하는 게
+    // 의존성 없이 안전.
+    let out = Command::new("diskutil")
+        .args(["list", "external", "physical"])
+        .output()
+        .map_err(|e| format!("diskutil 실행 실패: {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "diskutil 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    let stdout = String::from_utf8_lossy(&out.stdout);
+
+    let mut disks = Vec::new();
+    let mut current_id: Option<String> = None;
+    let mut current_label = String::new();
+    let mut current_size: u64 = 0;
+    let mut current_mounts: Vec<String> = Vec::new();
+    for line in stdout.lines() {
+        let trim = line.trim();
+        if trim.starts_with("/dev/disk") {
+            // 새 디스크 시작 — 이전 거 저장
+            if let Some(id) = current_id.take() {
+                disks.push(WritableDisk {
+                    id,
+                    label: std::mem::take(&mut current_label),
+                    size_bytes: current_size,
+                    removable: true,
+                    is_system: false, // external physical만 골랐으니 시스템 아님
+                    mount_points: std::mem::take(&mut current_mounts),
+                });
+                current_size = 0;
+            }
+            let id = trim.split_whitespace().next().unwrap_or("").to_string();
+            current_id = Some(id);
+        } else if trim.starts_with("0:") || trim.starts_with("1:") {
+            // 형식: "  0:    GUID_partition_scheme    *15.5 GB    disk4"
+            //       "  1:                  EFI EFI   209.7 MB    disk4s1"
+            // 첫 partition 줄에서 라벨/크기 추출 시도
+            let cols: Vec<&str> = trim.split_whitespace().collect();
+            if cols.len() >= 4 && current_label.is_empty() {
+                // "0:" 라인이면 disk 전체 크기. *15.5 GB 처럼 별표 붙음
+                let size_str = cols.iter().find(|s| s.starts_with('*')).unwrap_or(&"");
+                let size_str = size_str.trim_start_matches('*');
+                current_size = parse_size(size_str);
+                if cols[0] == "0:" {
+                    // 0번 row는 partition table, label은 다음 row
+                    current_label = "USB Disk".to_string();
+                }
+            }
+        }
+    }
+    // 마지막 디스크 flush
+    if let Some(id) = current_id {
+        disks.push(WritableDisk {
+            id,
+            label: current_label,
+            size_bytes: current_size,
+            removable: true,
+            is_system: false,
+            mount_points: current_mounts,
+        });
+    }
+    Ok(disks)
+}
+
+#[cfg(target_os = "linux")]
+fn list_writable_disks_impl() -> Result<Vec<WritableDisk>, String> {
+    use std::process::Command;
+    // lsblk -d -n -o NAME,SIZE,TYPE,RM,MOUNTPOINT,VENDOR,MODEL -b -P
+    // RM=1 인 디스크만 + ROOT mountpoint 없는 것
+    let out = Command::new("lsblk")
+        .args([
+            "-d",
+            "-n",
+            "-b",
+            "-P",
+            "-o",
+            "NAME,SIZE,TYPE,RM,MOUNTPOINT,VENDOR,MODEL",
+        ])
+        .output()
+        .map_err(|e| format!("lsblk 실패 (설치 안 됨?): {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "lsblk 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let mut out_vec = Vec::new();
+    for line in stdout.lines() {
+        // 형식: NAME="sda" SIZE="..." TYPE="disk" RM="0" MOUNTPOINT="..." ...
+        let kv: std::collections::HashMap<String, String> = line
+            .split(' ')
+            .filter_map(|kv| {
+                let mut sp = kv.splitn(2, '=');
+                let k = sp.next()?.to_string();
+                let v = sp.next()?.trim_matches('"').to_string();
+                Some((k, v))
+            })
+            .collect();
+        let typ = kv.get("TYPE").map(String::as_str).unwrap_or("");
+        if typ != "disk" {
+            continue;
+        }
+        let removable = kv.get("RM").map(|s| s == "1").unwrap_or(false);
+        if !removable {
+            continue; // 보수적: 내장 디스크 제외
+        }
+        let name = kv.get("NAME").cloned().unwrap_or_default();
+        let mp = kv.get("MOUNTPOINT").cloned().unwrap_or_default();
+        let is_system = mp == "/" || mp == "/boot" || mp.starts_with("/boot/");
+        if is_system {
+            continue;
+        }
+        let size: u64 = kv.get("SIZE").and_then(|s| s.parse().ok()).unwrap_or(0);
+        let label = format!(
+            "{} {}",
+            kv.get("VENDOR").cloned().unwrap_or_default(),
+            kv.get("MODEL").cloned().unwrap_or_default()
+        )
+        .trim()
+        .to_string();
+        out_vec.push(WritableDisk {
+            id: format!("/dev/{}", name),
+            label: if label.is_empty() {
+                name.clone()
+            } else {
+                label
+            },
+            size_bytes: size,
+            removable,
+            is_system,
+            mount_points: if mp.is_empty() { vec![] } else { vec![mp] },
+        });
+    }
+    Ok(out_vec)
+}
+
+#[cfg(target_os = "windows")]
+fn list_writable_disks_impl() -> Result<Vec<WritableDisk>, String> {
+    use std::process::Command;
+    // PowerShell: Get-Disk → Number, FriendlyName, Size, BusType, IsBoot, IsSystem
+    // BusType "USB"인 것만, IsBoot/IsSystem 제외.
+    let script = "Get-Disk | Where-Object { $_.BusType -eq 'USB' -and -not $_.IsBoot -and -not $_.IsSystem } \
+                  | Select-Object Number,FriendlyName,Size | ConvertTo-Json -Compress";
+    let out = Command::new("powershell")
+        .args(["-NoProfile", "-Command", script])
+        .output()
+        .map_err(|e| format!("powershell 실패: {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "Get-Disk 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    if stdout.is_empty() {
+        return Ok(vec![]);
+    }
+    // 단일 객체일 때 PowerShell이 array가 아닌 단일 JSON 객체를 반환 — 둘 다 처리.
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).map_err(|e| format!("JSON 파싱: {}", e))?;
+    let arr = if parsed.is_array() {
+        parsed.as_array().cloned().unwrap_or_default()
+    } else {
+        vec![parsed]
+    };
+    let mut out_vec = Vec::new();
+    for item in arr {
+        let num = item.get("Number").and_then(|v| v.as_u64()).unwrap_or(0);
+        let name = item
+            .get("FriendlyName")
+            .and_then(|v| v.as_str())
+            .unwrap_or("USB Drive")
+            .to_string();
+        let size = item.get("Size").and_then(|v| v.as_u64()).unwrap_or(0);
+        out_vec.push(WritableDisk {
+            id: format!("\\\\.\\PhysicalDrive{}", num),
+            label: name,
+            size_bytes: size,
+            removable: true,
+            is_system: false,
+            mount_points: vec![],
+        });
+    }
+    Ok(out_vec)
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+fn list_writable_disks_impl() -> Result<Vec<WritableDisk>, String> {
+    Err("이 플랫폼은 USB 디스크 목록을 지원하지 않습니다".to_string())
+}
+
+#[cfg(target_os = "macos")]
+fn parse_size(s: &str) -> u64 {
+    // "15.5" "GB" 형식. diskutil은 SI 단위 (10^9).
+    let mut parts = s.split_whitespace();
+    let num: f64 = parts.next().and_then(|n| n.parse().ok()).unwrap_or(0.0);
+    let unit = parts.next().unwrap_or("");
+    let mul = match unit {
+        "KB" => 1_000u64,
+        "MB" => 1_000_000,
+        "GB" => 1_000_000_000,
+        "TB" => 1_000_000_000_000,
+        _ => 1,
+    };
+    (num * mul as f64) as u64
+}
+
 fn basename_of(path: &str) -> String {
     let p = std::path::PathBuf::from(path);
     p.file_name()
