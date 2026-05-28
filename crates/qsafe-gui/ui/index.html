@@ -394,11 +394,28 @@
 
 <!-- 정보 -->
 <div class="modal-bg" id="modal-about">
-  <div class="modal">
-    <h2>ℹ️ qsafe 정보</h2>
-    <div class="result ok" id="m-about-content" style="display:block;"></div>
+  <div class="modal" style="max-width:520px;">
+    <div style="text-align:center; padding:8px 0 4px;">
+      <div style="font-size:42px; line-height:1;">🔐</div>
+      <h2 style="margin:8px 0 2px; font-size:22px;" data-i18n="modal.about.title">qsafe 정보</h2>
+      <div style="color:#888; font-size:12px;" data-i18n="modal.about.tagline">양자 안전 압축·암호화</div>
+      <div style="color:#6cf; font-size:14px; margin-top:8px; font-family:'Consolas',monospace;">
+        <span data-i18n="modal.about.version">버전</span>
+        &nbsp;<span id="about-version">…</span>
+      </div>
+    </div>
+    <div class="result ok" id="m-about-content" style="display:block; margin-top:12px;"></div>
+    <div style="display:grid; grid-template-columns: max-content 1fr; gap:6px 12px; margin-top:14px; font-size:12px;">
+      <div style="color:#888;" data-i18n="modal.about.license">라이선스</div>
+      <code style="color:#cef;">MIT OR Apache-2.0</code>
+      <div style="color:#888;" data-i18n="modal.about.built_with">빌드</div>
+      <code style="color:#cef;">Rust · Tauri 2 · BLAKE3 · XChaCha20-Poly1305 · Argon2id · ML-KEM-768</code>
+      <div style="color:#888;" data-i18n="modal.about.repo">GitHub</div>
+      <a href="https://github.com/heedong719/qsafe" target="_blank" style="color:#6cf;">github.com/heedong719/qsafe</a>
+    </div>
+    <p class="help" style="text-align:center; margin-top:12px;" data-i18n="modal.about.copyright">© 2026 heedong719 · MIT 또는 Apache-2.0</p>
     <div class="actions">
-      <button id="btn-about-close">닫기</button>
+      <button id="btn-about-close" data-i18n="modal.about.close">닫기</button>
     </div>
   </div>
 </div>
@@ -1085,9 +1102,11 @@
   document.getElementById("btn-about").addEventListener("click", async () => {
     try {
       const a = await invoke("about");
-      const t = "qsafe v" + a.version + "\n\n" +
-        "암호 방식: " + a.cipher_suite + "\n\n" +
-        "지원 기능:\n" + a.features.map(function(f) { return "  • " + f; }).join("\n");
+      document.getElementById("about-version").textContent = "v" + a.version;
+      const cipher = window.qsafeI18n.t("modal.about.cipher");
+      const feats = window.qsafeI18n.t("modal.about.features");
+      const t = cipher + " : " + a.cipher_suite + "\n\n" +
+        feats + " :\n" + a.features.map(function(f) { return "  • " + f; }).join("\n");
       document.getElementById("m-about-content").textContent = t;
       openModal("modal-about");
     } catch (e) { showErr("about: " + (e.message || e)); }

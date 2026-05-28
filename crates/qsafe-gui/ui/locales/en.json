@@ -101,6 +101,17 @@
   "modal.lang.apply": "Apply",
   "modal.lang.cancel": "Cancel",
 
+  "modal.about.title": "About qsafe",
+  "modal.about.tagline": "Quantum-safe compression & encryption",
+  "modal.about.version": "Version",
+  "modal.about.cipher": "Cipher suite",
+  "modal.about.features": "Features",
+  "modal.about.built_with": "Built with",
+  "modal.about.license": "License",
+  "modal.about.copyright": "© 2026 heedong719 · MIT OR Apache-2.0",
+  "modal.about.repo": "GitHub",
+  "modal.about.close": "Close",
+
   "modal.iso.title": "💿 ISO file",
   "modal.iso.action.mount": "📀 Mount as virtual disc",
   "modal.iso.action.write_usb": "💾 Create bootable USB",

@@ -101,6 +101,17 @@
   "modal.lang.apply": "적용",
   "modal.lang.cancel": "취소",
 
+  "modal.about.title": "qsafe 정보",
+  "modal.about.tagline": "양자 안전 압축·암호화",
+  "modal.about.version": "버전",
+  "modal.about.cipher": "암호 방식",
+  "modal.about.features": "지원 기능",
+  "modal.about.built_with": "빌드",
+  "modal.about.license": "라이선스",
+  "modal.about.copyright": "© 2026 heedong719 · MIT 또는 Apache-2.0",
+  "modal.about.repo": "GitHub",
+  "modal.about.close": "닫기",
+
   "modal.iso.title": "💿 ISO 파일",
   "modal.iso.action.mount": "📀 가상 마운트 (CD 삽입처럼)",
   "modal.iso.action.write_usb": "💾 USB 부팅 디스크 만들기",
