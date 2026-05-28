@@ -343,11 +343,13 @@
 <!-- 정보 보기 (qsafe 헤더 / 외부 아카이브 목록) -->
 <div class="modal-bg" id="modal-info">
   <div class="modal" style="max-width: 640px;">
-    <h2>🔍 파일 정보</h2>
+    <h2 data-i18n="modal.info.title">🔍 파일 정보</h2>
     <div class="result ok" id="m-info-summary" style="display:none;"></div>
     <div id="m-info-list" style="max-height:280px; overflow-y:auto; margin-top:10px; font-family:Consolas,monospace; font-size:11px;"></div>
+    <p class="help" id="m-info-tip" data-i18n="modal.info.extract_one" style="margin-top:8px;">💡 파일을 더블 클릭하면 임시로 풀어 실행합니다. 창을 닫으면 자동 삭제됩니다.</p>
     <div class="actions">
-      <button id="btn-info-close">닫기</button>
+      <button class="cancel" id="btn-info-close" data-i18n="modal.info.close">닫기</button>
+      <button id="btn-info-unpack" data-i18n="modal.info.unpack" disabled>📂 압축 풀기</button>
     </div>
   </div>
 </div>
@@ -694,8 +696,13 @@
   });
 
   // ===== 정보 모달 (.qs 헤더 또는 외부 아카이브 목록) =====
+  // info 모달에서 클릭한 파일 경로를 추적해 "압축 풀기" 버튼이 이를 사용할 수 있게 함.
+  var infoCurrent = { path: null, kind: null }; // kind: "qsafe" | "external"
   async function openInfoModal(path) {
+    infoCurrent.path = path;
+    infoCurrent.kind = null;
     document.getElementById("m-info-list").innerHTML = "";
+    document.getElementById("btn-info-unpack").disabled = true;
     setResult("m-info-summary", "로딩 중…", "ok");
     openModal("modal-info");
     try {
@@ -710,11 +717,15 @@
       if (info.label) t += "\n라벨       : " + info.label;
       if (info.created_at_unix) t += "\n생성       : " + fmtTime(info.created_at_unix);
       setResult("m-info-summary", t, "ok");
+      infoCurrent.kind = "qsafe";
+      document.getElementById("btn-info-unpack").disabled = false;
       return;
     } catch (e) { /* fall through */ }
     try {
       const lst = await invoke("list_external_archive", { path });
       setResult("m-info-summary", "📦 외부 아카이브: " + lst.format + " — " + lst.entries.length + "개 항목", "ok");
+      infoCurrent.kind = "external";
+      document.getElementById("btn-info-unpack").disabled = false;
       const listEl = document.getElementById("m-info-list");
       if (lst.entries.length === 0) {
         listEl.innerHTML = '<div style="color:#666; padding:10px;">(이 포맷은 상세 목록 미리보기를 지원하지 않습니다. RAR만 가능합니다.)</div>';
@@ -735,6 +746,41 @@
     }
   }
   document.getElementById("btn-info-close").addEventListener("click", () => closeModal("modal-info"));
+
+  // "압축 풀기" 버튼 — modal-info에서 호출. infoCurrent.path를 사용해
+  // 적절한 풀기 모달을 띄움 (.qs는 modal-unpack, 외부 아카이브는 즉시 풀기 또는
+  // 동일 modal-unpack에 fallback). v0.1.6 시점에선 단순화: qsafe 파일은
+  // modal-unpack을 prefill, 외부 아카이브는 사용자 디렉토리에 extract.
+  document.getElementById("btn-info-unpack").addEventListener("click", () => {
+    if (!infoCurrent.path) return;
+    if (infoCurrent.kind === "qsafe") {
+      // qsafe 파일 → 기존 modal-unpack 흐름 재사용
+      closeModal("modal-info");
+      document.getElementById("unpack-input").value = infoCurrent.path;
+      document.getElementById("unpack-output").value = infoCurrent.path.replace(/\.qs$/i, "");
+      document.getElementById("m-unpack-pw").value = "";
+      document.getElementById("m-unpack-id").value = "";
+      document.getElementById("m-unpack-result").style.display = "none";
+      document.getElementById("m-unpack-prog").style.display = "none";
+      document.querySelector('input[name="m-unpack-mode"][value="open"]').checked = true;
+      document.getElementById("m-unpack-pw-row").style.display = "none";
+      document.getElementById("m-unpack-id-row").style.display = "none";
+      var ugBtn = document.getElementById("btn-unpack-go");
+      ugBtn.textContent = "🔓 풀기";
+      ugBtn.onclick = null;
+      openModal("modal-unpack");
+    } else if (infoCurrent.kind === "external") {
+      // 외부 아카이브 → 같은 디렉토리에 extract
+      const parent = infoCurrent.path.replace(/[\/\\][^\/\\]+$/, "");
+      const out = parent + "/" + basename(infoCurrent.path).replace(/\.[^.]+$/, "");
+      invoke("extract_external_archive", { path: infoCurrent.path, outDir: out })
+        .then(() => {
+          closeModal("modal-info");
+          navigateTo(parent, false);
+        })
+        .catch(err => showErr("외부 아카이브 풀기 실패: " + (err.message || err)));
+    }
+  });
 
   // ===== 압축 모달 =====
   document.getElementById("btn-pack").addEventListener("click", () => {
