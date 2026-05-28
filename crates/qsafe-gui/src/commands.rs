@@ -2,6 +2,7 @@
 
 use serde::Serialize;
 use std::path::{Path, PathBuf};
+use tauri::Emitter; // Tauri 2.x: emit는 Emitter trait의 method
 
 fn write_secret_json(path: &Path, data: &[u8]) -> std::io::Result<()> {
     use std::io::Write;
@@ -2196,6 +2197,302 @@ fn parse_size(s: &str) -> u64 {
         _ => 1,
     };
     (num * mul as f64) as u64
+}
+
+// ════════════════════════════════════════════════════════════
+// B1.2 + B1.5 — write_iso_to_disk (dd-style raw write) + progress events
+//
+// 흐름:
+//   1. confirm_token 검증 (list_writable_disks가 발급한 토큰과 일치해야)
+//   2. macOS/Linux: 해당 디스크의 모든 마운트 해제
+//   3. dd if=<iso> of=<disk> bs=4M status=progress 를 background thread에서 실행
+//   4. stderr 라인 파싱 → iso-write-progress 이벤트로 frontend에 emit
+//   5. 종료 → iso-write-done 또는 iso-write-error 이벤트
+//
+// 권한 모델:
+//   - macOS: /dev/rdiskN 직접 쓰기는 admin 필요. Tauri GUI에서 'sudo dd ...'를
+//     하려면 osascript의 "with administrator privileges" 사용 (다이얼로그 popup).
+//   - Linux: 같은 dd가 root 필요. pkexec 또는 sudo. 우선 sudo 시도 (TTY 없으면 실패).
+//   - Windows: PowerShell raw disk write는 admin 필요 + DeviceIoControl. 이 commit
+//     에서는 macOS/Linux만 지원. Windows는 미지원 에러 반환.
+//   - 단순화: 이 함수는 elevation을 직접 시도하지 않고, GUI가 이미 admin/root로
+//     실행 중이면 동작. 아니면 EPERM. 향후 osascript / pkexec 통합.
+//
+// ⚠️ 데이터 파괴 가드:
+//   - confirm_token 형식: "<disk_id>:<size_bytes>". 호출자가 직전 list 결과의
+//     동일 token을 제출해야. 디스크가 그새 바뀌었으면 mismatch로 거부.
+// ════════════════════════════════════════════════════════════
+
+#[derive(Serialize, Clone, Debug)]
+pub struct IsoWriteProgress {
+    pub bytes_written: u64,
+    pub total_bytes: u64,
+    pub percent: f64,
+    pub stage: String, // "preparing" | "writing" | "syncing" | "done" | "error"
+    pub message: String,
+}
+
+/// list_writable_disks가 발급한 token 생성 (id + size 결합).
+/// frontend는 이 helper를 사용 안 함 — list 결과의 (id, size_bytes)를 직접 결합한 문자열만 보내면 됨.
+fn confirm_token_for(disk_id: &str, size_bytes: u64) -> String {
+    format!("{}:{}", disk_id, size_bytes)
+}
+
+#[tauri::command]
+pub fn write_iso_to_disk(
+    app: tauri::AppHandle,
+    iso_path: String,
+    disk_id: String,
+    confirm_token: String,
+) -> Result<(), String> {
+    // 1) 디스크 다시 조회 + token 검증
+    let disks = list_writable_disks_impl()?;
+    let disk = disks
+        .iter()
+        .find(|d| d.id == disk_id)
+        .ok_or_else(|| format!("디스크 {}가 더 이상 보이지 않습니다 (분리됨?)", disk_id))?;
+    let expected = confirm_token_for(&disk.id, disk.size_bytes);
+    if expected != confirm_token {
+        return Err(format!(
+            "confirm_token 불일치 — 디스크가 바뀌었거나 안전 가드 실패. expected={}, got={}",
+            expected, confirm_token
+        ));
+    }
+    if disk.is_system {
+        return Err("시스템/부팅 디스크에는 쓸 수 없습니다".into());
+    }
+
+    // 2) ISO 크기
+    let iso_meta = std::fs::metadata(&iso_path).map_err(|e| format!("ISO stat: {}", e))?;
+    let total_bytes = iso_meta.len();
+    if total_bytes == 0 {
+        return Err("ISO 파일이 비어 있습니다".into());
+    }
+    if total_bytes > disk.size_bytes {
+        return Err(format!(
+            "ISO({} bytes)가 디스크({} bytes)보다 큽니다",
+            total_bytes, disk.size_bytes
+        ));
+    }
+
+    // 3) background thread에서 dd 실행 + progress emit
+    let app_clone = app.clone();
+    let iso_clone = iso_path.clone();
+    let disk_clone = disk.id.clone();
+    std::thread::spawn(move || {
+        let _ = run_iso_write(app_clone, iso_clone, disk_clone, total_bytes);
+    });
+
+    // 즉시 반환 — 진행은 event로
+    Ok(())
+}
+
+fn emit_progress(app: &tauri::AppHandle, p: IsoWriteProgress) {
+    let _ = app.emit("iso-write-progress", p);
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn run_iso_write(
+    app: tauri::AppHandle,
+    iso_path: String,
+    disk_id: String,
+    total_bytes: u64,
+) -> Result<(), String> {
+    use std::io::{BufRead, BufReader};
+    use std::process::{Command, Stdio};
+
+    emit_progress(
+        &app,
+        IsoWriteProgress {
+            bytes_written: 0,
+            total_bytes,
+            percent: 0.0,
+            stage: "preparing".into(),
+            message: "디스크 마운트 해제 중…".into(),
+        },
+    );
+
+    // 마운트 해제 (best-effort)
+    #[cfg(target_os = "macos")]
+    {
+        let _ = Command::new("diskutil")
+            .args(["unmountDisk", "force", &disk_id])
+            .output();
+    }
+    #[cfg(target_os = "linux")]
+    {
+        // 모든 파티션 umount (best-effort)
+        if let Ok(out) = Command::new("lsblk")
+            .args(["-ln", "-o", "MOUNTPOINT", &disk_id])
+            .output()
+        {
+            for mp in String::from_utf8_lossy(&out.stdout).lines() {
+                let mp = mp.trim();
+                if !mp.is_empty() {
+                    let _ = Command::new("umount").arg(mp).output();
+                }
+            }
+        }
+    }
+
+    // macOS: raw device (/dev/rdiskN) 가 일반 dev보다 훨씬 빠름
+    #[cfg(target_os = "macos")]
+    let target = disk_id.replacen("/dev/disk", "/dev/rdisk", 1);
+    #[cfg(target_os = "linux")]
+    let target = disk_id.clone();
+
+    emit_progress(
+        &app,
+        IsoWriteProgress {
+            bytes_written: 0,
+            total_bytes,
+            percent: 0.0,
+            stage: "writing".into(),
+            message: format!("dd → {}", target),
+        },
+    );
+
+    let mut child = Command::new("dd")
+        .arg(format!("if={}", iso_path))
+        .arg(format!("of={}", target))
+        .arg("bs=4m")
+        .arg("status=progress")
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| {
+            let msg = format!("dd 실행 실패: {}", e);
+            emit_progress(
+                &app,
+                IsoWriteProgress {
+                    bytes_written: 0,
+                    total_bytes,
+                    percent: 0.0,
+                    stage: "error".into(),
+                    message: msg.clone(),
+                },
+            );
+            msg
+        })?;
+
+    // stderr 라인별 읽기 — dd progress 파싱
+    if let Some(stderr) = child.stderr.take() {
+        let reader = BufReader::new(stderr);
+        for line in reader.lines().map_while(Result::ok) {
+            // 형식 예: "1234567890 bytes (1.2 GB, 1.1 GiB) transferred ..."
+            //        "1234567890 bytes transferred in 12.345 secs"
+            if let Some(idx) = line.find(" bytes") {
+                let num: Option<u64> = line[..idx]
+                    .trim()
+                    .split_whitespace()
+                    .last()
+                    .and_then(|s| s.parse().ok());
+                if let Some(b) = num {
+                    let pct = if total_bytes > 0 {
+                        (b as f64 / total_bytes as f64) * 100.0
+                    } else {
+                        0.0
+                    };
+                    emit_progress(
+                        &app,
+                        IsoWriteProgress {
+                            bytes_written: b,
+                            total_bytes,
+                            percent: pct.min(100.0),
+                            stage: "writing".into(),
+                            message: line.trim().to_string(),
+                        },
+                    );
+                }
+            }
+        }
+    }
+
+    let status = child.wait().map_err(|e| format!("dd wait: {}", e))?;
+    if !status.success() {
+        let msg = format!("dd 종료 코드 {}", status.code().unwrap_or(-1));
+        emit_progress(
+            &app,
+            IsoWriteProgress {
+                bytes_written: 0,
+                total_bytes,
+                percent: 0.0,
+                stage: "error".into(),
+                message: msg.clone(),
+            },
+        );
+        return Err(msg);
+    }
+
+    // sync (Linux 특히 — dd가 끝나도 버퍼가 디스크에 안 내려갔을 수 있음)
+    emit_progress(
+        &app,
+        IsoWriteProgress {
+            bytes_written: total_bytes,
+            total_bytes,
+            percent: 100.0,
+            stage: "syncing".into(),
+            message: "디스크 sync 중…".into(),
+        },
+    );
+    #[cfg(unix)]
+    {
+        let _ = Command::new("sync").output();
+    }
+
+    emit_progress(
+        &app,
+        IsoWriteProgress {
+            bytes_written: total_bytes,
+            total_bytes,
+            percent: 100.0,
+            stage: "done".into(),
+            message: "쓰기 완료".into(),
+        },
+    );
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn run_iso_write(
+    app: tauri::AppHandle,
+    _iso_path: String,
+    _disk_id: String,
+    total_bytes: u64,
+) -> Result<(), String> {
+    let msg = "Windows raw disk write는 다음 사이클에 추가됩니다 (PowerShell + admin)".to_string();
+    emit_progress(
+        &app,
+        IsoWriteProgress {
+            bytes_written: 0,
+            total_bytes,
+            percent: 0.0,
+            stage: "error".into(),
+            message: msg.clone(),
+        },
+    );
+    Err(msg)
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+fn run_iso_write(
+    app: tauri::AppHandle,
+    _iso_path: String,
+    _disk_id: String,
+    total_bytes: u64,
+) -> Result<(), String> {
+    let msg = "이 플랫폼은 ISO 쓰기를 지원하지 않습니다".to_string();
+    emit_progress(
+        &app,
+        IsoWriteProgress {
+            bytes_written: 0,
+            total_bytes,
+            percent: 0.0,
+            stage: "error".into(),
+            message: msg.clone(),
+        },
+    );
+    Err(msg)
 }
 
 fn basename_of(path: &str) -> String {

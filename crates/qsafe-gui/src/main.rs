@@ -34,6 +34,7 @@ fn main() {
             commands::iso_mount,
             commands::iso_unmount,
             commands::list_writable_disks,
+            commands::write_iso_to_disk,
         ])
         .run(tauri::generate_context!())
         .expect("error while running qsafe GUI");
