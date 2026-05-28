@@ -1,0 +1,44 @@
+{
+  "_meta": { "code": "ja", "name": "Japanese", "native": "日本語" },
+
+  "app.title": "qsafe — 量子安全圧縮",
+  "app.subtitle": "量子安全ファイル圧縮・暗号化",
+
+  "toolbar.back": "⬅️ 戻る",
+  "toolbar.up": "⬆️ 上へ",
+  "toolbar.home": "🏠 ホーム",
+  "toolbar.refresh": "🔄 更新",
+  "toolbar.pack": "📦 圧縮",
+  "toolbar.unpack": "📂 解凍",
+  "toolbar.open": "▶ 開く",
+  "toolbar.delete": "🗑 削除",
+  "toolbar.identity": "🔑 鍵管理",
+  "toolbar.mnemonic": "📝 BIP39",
+  "toolbar.lang": "🌐 言語",
+
+  "modal.pack.title": "圧縮",
+  "modal.pack.start": "圧縮開始",
+  "modal.pack.cancel": "キャンセル",
+  "modal.pack.close": "完了 — 閉じる",
+  "modal.pack.running": "圧縮中…",
+
+  "modal.unpack.title": "解凍",
+  "modal.unpack.start": "解凍開始",
+  "modal.unpack.cancel": "キャンセル",
+  "modal.unpack.close": "完了 — 閉じる",
+  "modal.unpack.running": "解凍中…",
+
+  "modal.info.title": "圧縮ファイル情報",
+  "modal.info.unpack": "📂 解凍",
+  "modal.info.close": "閉じる",
+
+  "modal.lang.title": "🌐 言語 / Language",
+  "modal.lang.apply": "適用",
+  "modal.lang.cancel": "キャンセル",
+
+  "result.success": "✅ 完了",
+  "result.fail": "❌ 失敗",
+
+  "error.title": "エラー",
+  "error.wrong_password": "パスワードが違います"
+}

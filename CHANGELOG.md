@@ -14,6 +14,28 @@
 - 별도 Tauri release workflow (icon.ico/.icns 자산 포함, OS-native bundle)
 - Windows 정식 PowerShell 설치 스크립트 (install.ps1)
 
+### qsafe-gui 후속 마일스톤 (사용자 합의)
+- 압축 파일 더블 클릭 시 팝업에 **압축 풀기 버튼** 추가
+- 팝업 안의 파일 더블 클릭 → 임시 디렉토리에 **단일 파일 추출 + 연결 프로그램 실행**
+- 모달 닫기 시 **임시 추출 파일 자동 cleanup**
+- 압축/풀기 **진행 % 팝업** (qsafe-cli `--progress` 플래그 + GUI stderr 파싱)
+- 8 locale (ja/zh/es/fr/de/it)의 **native speaker 번역 보강** (현재 핵심만 + 영어 fallback)
+
+### qsafe-gui 다국어 지원 — Phase 1+2 (post-a093a06 main update)
+- 새 `ui/locales/` 디렉토리 + 8개 locale JSON: `ko, en, ja, zh, es, fr, de, it`.
+  - `ko` / `en`: 모든 키 완전 번역 (~90 키, app/toolbar/modal/result/error 카테고리).
+  - 나머지 6개: `_meta` (native 이름) + 핵심 (toolbar/modal title/result) 번역, 미번역 키는 `en` fallback.
+- 새 `ui/i18n.js` loader (의존성 0, vanilla JS, ~120 줄):
+  - `localStorage` → `navigator.language` 자동 감지 (`navigator.language.split('-')[0]`).
+  - `data-i18n="key"` / `data-i18n-title="key"` / `data-i18n-placeholder="key"` 속성을 DOM 적용.
+  - `{placeholder}` 보간 (`progress.percent`, `status.items` 등).
+  - `setLocale(code)` → `localStorage` 저장 + `applyDom()` + `qsafe-locale-changed` 이벤트 dispatch.
+- `index.html` 통합:
+  - `<html lang>` / `<title>` 자동 갱신.
+  - titlebar, toolbar, filelist 헤더, delete 모달, 새 language 모달에 `data-i18n` 마킹.
+  - 도구바에 **🌐 언어** 버튼 추가 → 모달에서 8개 native 이름으로 선택.
+- ⚠️ 점진적 마이그레이션: modal-pack / modal-unpack / modal-info 내부 텍스트와 JS 동적 텍스트의 일부는 다음 사이클에 처리. 영어 fallback이 작동하므로 미번역 키도 깨지지 않음.
+
 ### v0.1.6 직후 post-release 정리 (untagged main updates)
 - `tests/e2e.rs`: 새 통합 테스트 2건 (총 10 → 12) — `identity_generate_show_export_roundtrip` (0600 권한 + fingerprint 일치 검증), `pack_unpack_with_pubkey_recipient` (X25519+ML-KEM-768 라운드트립).
 - `install.sh`: Windows에서 "install.ps1 권장" 안내가 misleading (스크립트 없음) → "Releases에서 .zip 직접 다운로드 + PATH 추가"로 수정. PowerShell 스크립트가 추가될 때 다시 갱신.

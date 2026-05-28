@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-i18n-title="app.title">
 <head>
   <meta charset="UTF-8" />
-  <title>qsafe — 양자 안전 압축</title>
+  <title>qsafe</title>
+  <script src="i18n.js"></script>
   <style>
     * { box-sizing: border-box; }
     html, body {
@@ -200,47 +201,47 @@
   </style>
 </head>
 <body>
-<div id="boot-banner" style="position:fixed; top:0; left:0; right:0; background:#0a0; color:white; padding:6px; text-align:center; font-weight:bold; font-size:13px; z-index:99998;">⏳ HTML 로드됨 — JS 대기...</div>
 <div class="app">
   <div class="titlebar">
-    <span class="logo" style="background:#2c5dff; padding:3px 10px; border-radius:4px; color:white;">🔐 qsafe FULL 16:05:51</span>
+    <span class="logo">🔐 qsafe</span>
     <span class="ver" id="version">v…</span>
-    <span style="color:#666; margin-left:8px;">— 양자 안전 파일 압축/암호화</span>
+    <span style="color:#666; margin-left:8px;" data-i18n="app.subtitle">— 양자 안전 파일 압축/암호화</span>
   </div>
 
   <div class="toolbar">
-    <button id="btn-back" title="뒤로">⬅️ 뒤로</button>
-    <button id="btn-up" title="상위 폴더">⬆️ 위로</button>
-    <button id="btn-home" title="홈">🏠 홈</button>
-    <button id="btn-refresh" title="새로 고침">🔄</button>
+    <button id="btn-back" data-i18n="toolbar.back">⬅️ 뒤로</button>
+    <button id="btn-up" data-i18n="toolbar.up">⬆️ 위로</button>
+    <button id="btn-home" data-i18n="toolbar.home">🏠 홈</button>
+    <button id="btn-refresh" data-i18n="toolbar.refresh" data-i18n-title="toolbar.refresh">🔄</button>
     <div class="sep"></div>
-    <button id="btn-pack" class="primary" disabled>📦 압축</button>
-    <button id="btn-unpack" disabled>📂 풀기</button>
-    <button id="btn-open" disabled>🔍 열기 (헤더만 보기)</button>
-    <button id="btn-delete" class="danger" disabled>🗑️ 삭제</button>
+    <button id="btn-pack" class="primary" disabled data-i18n="toolbar.pack">📦 압축</button>
+    <button id="btn-unpack" disabled data-i18n="toolbar.unpack">📂 풀기</button>
+    <button id="btn-open" disabled data-i18n="toolbar.open">🔍 열기 (헤더만 보기)</button>
+    <button id="btn-delete" class="danger" disabled data-i18n="toolbar.delete">🗑️ 삭제</button>
     <div class="sep"></div>
-    <button id="btn-key">🔑 키 관리</button>
-    <button id="btn-mnemonic">📝 단어 백업</button>
+    <button id="btn-key" data-i18n="toolbar.identity">🔑 키 관리</button>
+    <button id="btn-mnemonic" data-i18n="toolbar.mnemonic">📝 단어 백업</button>
+    <button id="btn-lang" data-i18n="toolbar.lang">🌐 언어</button>
     <div class="spacer"></div>
     <button id="btn-about" class="secondary" title="정보">ℹ️</button>
   </div>
 
   <div class="addressbar">
     <span style="color:#888;">📁</span>
-    <input type="text" id="addr" placeholder="경로" />
+    <input type="text" id="addr" data-i18n-placeholder="addressbar.placeholder" placeholder="경로" />
   </div>
 
   <div class="body">
     <div class="sidebar" id="sidebar"></div>
     <div class="filelist">
       <div class="filelist-header">
-        <div>이름</div>
-        <div>크기</div>
-        <div>종류</div>
-        <div>수정 날짜</div>
+        <div data-i18n="filelist.col.name">이름</div>
+        <div data-i18n="filelist.col.size">크기</div>
+        <div data-i18n="filelist.col.kind">종류</div>
+        <div data-i18n="filelist.col.modified">수정 날짜</div>
       </div>
       <div class="filelist-body" id="filelist-body">
-        <div class="filelist-empty">로딩 중…</div>
+        <div class="filelist-empty" data-i18n="modal.info.summary.loading">로딩 중…</div>
       </div>
     </div>
   </div>
@@ -403,12 +404,23 @@
 <!-- 삭제 확인 모달 -->
 <div class="modal-bg" id="modal-delete">
   <div class="modal">
-    <h2 style="color:#fcc;">🗑️ 삭제 확인</h2>
-    <p class="help">다음 항목을 영구 삭제합니다. 휴지통으로 가지 않습니다.</p>
+    <h2 style="color:#fcc;" data-i18n="modal.delete.title">🗑️ 삭제 확인</h2>
+    <p class="help" data-i18n="modal.delete.warning">다음 항목을 영구 삭제합니다. 휴지통으로 가지 않습니다.</p>
     <div class="result err" id="m-delete-target" style="display:block;"></div>
     <div class="actions">
-      <button class="cancel" id="btn-delete-cancel">취소</button>
-      <button class="danger" id="btn-delete-go" style="background:#a33;">🗑️ 영구 삭제</button>
+      <button class="cancel" id="btn-delete-cancel" data-i18n="modal.delete.cancel">취소</button>
+      <button class="danger" id="btn-delete-go" style="background:#a33;" data-i18n="modal.delete.button">🗑️ 영구 삭제</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-lang">
+  <div class="modal">
+    <h2 data-i18n="modal.lang.title">🌐 언어 / Language</h2>
+    <p class="help" data-i18n="modal.lang.description">표시 언어를 선택하세요. 선택은 자동 저장됩니다.</p>
+    <div id="lang-list" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; margin:12px 0;"></div>
+    <div class="actions">
+      <button class="cancel" id="btn-lang-cancel" data-i18n="modal.lang.cancel">취소</button>
     </div>
   </div>
 </div>
@@ -419,19 +431,18 @@
 </div>
 
 <script>
-  // ===== 부팅 검증 =====
-  try {
-    var b = document.getElementById("boot-banner");
-    if (b) {
-      b.style.background = "#080";
-      b.textContent = "✓ JS 실행됨 — Tauri 검사 중...";
+  // ===== i18n 초기화 — DOM이 보이기 전에 locale 결정 후 텍스트 채움 =====
+  // qsafeI18n은 i18n.js에서 window에 등록됨. fetch 비동기라 init 끝난 후
+  // applyDom()이 data-i18n 마킹된 요소를 모두 갱신.
+  (async function bootI18n() {
+    try {
+      if (window.qsafeI18n) {
+        await window.qsafeI18n.init();
+      }
+    } catch (e) {
+      console.warn("[i18n] init failed:", e);
     }
-  } catch(e) {}
-
-try {
-    document.getElementById("boot-banner").textContent = "✓ JS 실행됨 — Tauri 검사 중...";
-    document.getElementById("boot-banner").style.background = "#080";
-  } catch(_){}
+  })();
 
   // ===== 에러 가시화 =====
   const errBanner = document.getElementById("error-banner");
@@ -1046,13 +1057,41 @@ try {
   // init 호출
   try { init(); } catch(e) { showErr("init 동기 에러: " + (e.message || e)); }
 
-  // ===== 부트 배너 제거 (init 성공 시) =====
-  setTimeout(function() {
-    var b = document.getElementById("boot-banner");
-    if (b && b.textContent.indexOf("준비 완료") !== -1) {
-      b.style.display = "none";
+  // ===== 언어 선택 모달 wiring =====
+  // 도구바 🌐 버튼 → 사용 가능한 8개 언어를 native 이름으로 나열 → 클릭 시 setLocale
+  // localStorage에 저장되어 다음 실행 시 자동 적용.
+  document.getElementById("btn-lang").addEventListener("click", async () => {
+    try {
+      const langs = await window.qsafeI18n.available();
+      const cur = window.qsafeI18n.current();
+      const list = document.getElementById("lang-list");
+      list.innerHTML = "";
+      for (const l of langs) {
+        const btn = document.createElement("button");
+        btn.style.cssText = "background:" + (l.code === cur ? "#1a3a5a" : "#383838") +
+          "; color:#e8e8e8; border:1px solid #444; border-radius:4px; padding:10px; cursor:pointer; text-align:left;";
+        btn.innerHTML = '<div style="font-size:13px; font-weight:600;">' + l.native + '</div>' +
+          '<div style="font-size:11px; color:#888;">' + l.name + ' (' + l.code + ')</div>';
+        btn.addEventListener("click", async () => {
+          await window.qsafeI18n.setLocale(l.code);
+          closeModal("modal-lang");
+        });
+        list.appendChild(btn);
+      }
+      openModal("modal-lang");
+    } catch (e) {
+      showErr("언어 목록 로드 실패: " + (e.message || e));
     }
-  }, 1000);
+  });
+  document.getElementById("btn-lang-cancel").addEventListener("click", () => closeModal("modal-lang"));
+
+  // ===== locale 변경 시 동적 텍스트 (status bar 등) 다시 채우기 =====
+  // data-i18n 마킹된 정적 요소는 applyDom()이 자동으로 처리. 동적 텍스트는 별도.
+  document.addEventListener("qsafe-locale-changed", () => {
+    if (typeof updateStatus === "function") {
+      try { updateStatus(); } catch (_) {}
+    }
+  });
 </script>
 </body>
 </html>

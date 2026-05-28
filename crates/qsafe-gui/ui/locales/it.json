@@ -1,0 +1,42 @@
+{
+  "_meta": { "code": "it", "name": "Italian", "native": "Italiano" },
+
+  "app.title": "qsafe — compressione quantum-safe",
+  "app.subtitle": "Compressione e cifratura file quantum-safe",
+
+  "toolbar.back": "⬅️ Indietro",
+  "toolbar.up": "⬆️ Su",
+  "toolbar.home": "🏠 Home",
+  "toolbar.refresh": "🔄 Aggiorna",
+  "toolbar.pack": "📦 Comprimi",
+  "toolbar.unpack": "📂 Decomprimi",
+  "toolbar.open": "▶ Apri",
+  "toolbar.delete": "🗑 Elimina",
+  "toolbar.identity": "🔑 Chiavi",
+  "toolbar.mnemonic": "📝 BIP39",
+  "toolbar.lang": "🌐 Lingua",
+
+  "modal.pack.title": "Comprimi",
+  "modal.pack.start": "Avvia compressione",
+  "modal.pack.cancel": "Annulla",
+  "modal.pack.close": "Fatto — Chiudi",
+
+  "modal.unpack.title": "Decomprimi",
+  "modal.unpack.start": "Avvia decompressione",
+  "modal.unpack.cancel": "Annulla",
+  "modal.unpack.close": "Fatto — Chiudi",
+
+  "modal.info.title": "Info archivio",
+  "modal.info.unpack": "📂 Decomprimi",
+  "modal.info.close": "Chiudi",
+
+  "modal.lang.title": "🌐 Lingua / Language",
+  "modal.lang.apply": "Applica",
+  "modal.lang.cancel": "Annulla",
+
+  "result.success": "✅ Fatto",
+  "result.fail": "❌ Errore",
+
+  "error.title": "Errore",
+  "error.wrong_password": "Password errata"
+}

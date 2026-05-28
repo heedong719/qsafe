@@ -1,0 +1,42 @@
+{
+  "_meta": { "code": "es", "name": "Spanish", "native": "Español" },
+
+  "app.title": "qsafe — compresión cuántica segura",
+  "app.subtitle": "Compresión y cifrado de archivos cuántico-seguro",
+
+  "toolbar.back": "⬅️ Atrás",
+  "toolbar.up": "⬆️ Arriba",
+  "toolbar.home": "🏠 Inicio",
+  "toolbar.refresh": "🔄 Actualizar",
+  "toolbar.pack": "📦 Comprimir",
+  "toolbar.unpack": "📂 Descomprimir",
+  "toolbar.open": "▶ Abrir",
+  "toolbar.delete": "🗑 Eliminar",
+  "toolbar.identity": "🔑 Claves",
+  "toolbar.mnemonic": "📝 BIP39",
+  "toolbar.lang": "🌐 Idioma",
+
+  "modal.pack.title": "Comprimir",
+  "modal.pack.start": "Iniciar compresión",
+  "modal.pack.cancel": "Cancelar",
+  "modal.pack.close": "Hecho — Cerrar",
+
+  "modal.unpack.title": "Descomprimir",
+  "modal.unpack.start": "Iniciar descompresión",
+  "modal.unpack.cancel": "Cancelar",
+  "modal.unpack.close": "Hecho — Cerrar",
+
+  "modal.info.title": "Información del archivo",
+  "modal.info.unpack": "📂 Descomprimir",
+  "modal.info.close": "Cerrar",
+
+  "modal.lang.title": "🌐 Idioma / Language",
+  "modal.lang.apply": "Aplicar",
+  "modal.lang.cancel": "Cancelar",
+
+  "result.success": "✅ Listo",
+  "result.fail": "❌ Error",
+
+  "error.title": "Error",
+  "error.wrong_password": "Contraseña incorrecta"
+}

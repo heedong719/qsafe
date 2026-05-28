@@ -1,0 +1,44 @@
+{
+  "_meta": { "code": "zh", "name": "Chinese (Simplified)", "native": "简体中文" },
+
+  "app.title": "qsafe — 量子安全压缩",
+  "app.subtitle": "量子安全文件压缩与加密",
+
+  "toolbar.back": "⬅️ 返回",
+  "toolbar.up": "⬆️ 上级",
+  "toolbar.home": "🏠 主页",
+  "toolbar.refresh": "🔄 刷新",
+  "toolbar.pack": "📦 压缩",
+  "toolbar.unpack": "📂 解压",
+  "toolbar.open": "▶ 打开",
+  "toolbar.delete": "🗑 删除",
+  "toolbar.identity": "🔑 密钥",
+  "toolbar.mnemonic": "📝 BIP39",
+  "toolbar.lang": "🌐 语言",
+
+  "modal.pack.title": "压缩",
+  "modal.pack.start": "开始压缩",
+  "modal.pack.cancel": "取消",
+  "modal.pack.close": "完成 — 关闭",
+  "modal.pack.running": "压缩中…",
+
+  "modal.unpack.title": "解压",
+  "modal.unpack.start": "开始解压",
+  "modal.unpack.cancel": "取消",
+  "modal.unpack.close": "完成 — 关闭",
+  "modal.unpack.running": "解压中…",
+
+  "modal.info.title": "压缩文件信息",
+  "modal.info.unpack": "📂 解压",
+  "modal.info.close": "关闭",
+
+  "modal.lang.title": "🌐 语言 / Language",
+  "modal.lang.apply": "应用",
+  "modal.lang.cancel": "取消",
+
+  "result.success": "✅ 完成",
+  "result.fail": "❌ 失败",
+
+  "error.title": "错误",
+  "error.wrong_password": "密码错误"
+}

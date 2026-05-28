@@ -1,0 +1,42 @@
+{
+  "_meta": { "code": "fr", "name": "French", "native": "Français" },
+
+  "app.title": "qsafe — compression post-quantique",
+  "app.subtitle": "Compression et chiffrement de fichiers post-quantique",
+
+  "toolbar.back": "⬅️ Retour",
+  "toolbar.up": "⬆️ Dossier parent",
+  "toolbar.home": "🏠 Accueil",
+  "toolbar.refresh": "🔄 Actualiser",
+  "toolbar.pack": "📦 Compresser",
+  "toolbar.unpack": "📂 Décompresser",
+  "toolbar.open": "▶ Ouvrir",
+  "toolbar.delete": "🗑 Supprimer",
+  "toolbar.identity": "🔑 Clés",
+  "toolbar.mnemonic": "📝 BIP39",
+  "toolbar.lang": "🌐 Langue",
+
+  "modal.pack.title": "Compresser",
+  "modal.pack.start": "Démarrer la compression",
+  "modal.pack.cancel": "Annuler",
+  "modal.pack.close": "Terminé — Fermer",
+
+  "modal.unpack.title": "Décompresser",
+  "modal.unpack.start": "Démarrer la décompression",
+  "modal.unpack.cancel": "Annuler",
+  "modal.unpack.close": "Terminé — Fermer",
+
+  "modal.info.title": "Infos de l'archive",
+  "modal.info.unpack": "📂 Décompresser",
+  "modal.info.close": "Fermer",
+
+  "modal.lang.title": "🌐 Langue / Language",
+  "modal.lang.apply": "Appliquer",
+  "modal.lang.cancel": "Annuler",
+
+  "result.success": "✅ Terminé",
+  "result.fail": "❌ Échec",
+
+  "error.title": "Erreur",
+  "error.wrong_password": "Mot de passe incorrect"
+}

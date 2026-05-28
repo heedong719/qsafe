@@ -1,0 +1,42 @@
+{
+  "_meta": { "code": "de", "name": "German", "native": "Deutsch" },
+
+  "app.title": "qsafe — quantensichere Kompression",
+  "app.subtitle": "Quantensichere Dateikompression und Verschlüsselung",
+
+  "toolbar.back": "⬅️ Zurück",
+  "toolbar.up": "⬆️ Übergeordneter Ordner",
+  "toolbar.home": "🏠 Startseite",
+  "toolbar.refresh": "🔄 Aktualisieren",
+  "toolbar.pack": "📦 Komprimieren",
+  "toolbar.unpack": "📂 Entpacken",
+  "toolbar.open": "▶ Öffnen",
+  "toolbar.delete": "🗑 Löschen",
+  "toolbar.identity": "🔑 Schlüssel",
+  "toolbar.mnemonic": "📝 BIP39",
+  "toolbar.lang": "🌐 Sprache",
+
+  "modal.pack.title": "Komprimieren",
+  "modal.pack.start": "Komprimierung starten",
+  "modal.pack.cancel": "Abbrechen",
+  "modal.pack.close": "Fertig — Schließen",
+
+  "modal.unpack.title": "Entpacken",
+  "modal.unpack.start": "Entpacken starten",
+  "modal.unpack.cancel": "Abbrechen",
+  "modal.unpack.close": "Fertig — Schließen",
+
+  "modal.info.title": "Archiv-Info",
+  "modal.info.unpack": "📂 Entpacken",
+  "modal.info.close": "Schließen",
+
+  "modal.lang.title": "🌐 Sprache / Language",
+  "modal.lang.apply": "Anwenden",
+  "modal.lang.cancel": "Abbrechen",
+
+  "result.success": "✅ Fertig",
+  "result.fail": "❌ Fehlgeschlagen",
+
+  "error.title": "Fehler",
+  "error.wrong_password": "Falsches Passwort"
+}
