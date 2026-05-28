@@ -22,3 +22,13 @@ conversations/*.jsonl
 # Markdown README는 git에 유지 (그래서 -README.md 예외):
 !conversations/README.md
 !.bkit-snapshot/README.md
+
+# GUI 작업 중 생성되는 임시/백업 파일
+_check.js
+*.bak
+*.bak2
+image.png
+image copy*.png
+.bkit/
+.claude/
+EBWebView/

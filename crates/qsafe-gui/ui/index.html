@@ -2,179 +2,1057 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>qsafe</title>
+  <title>qsafe — 양자 안전 압축</title>
   <style>
     * { box-sizing: border-box; }
     html, body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 14px;
-      background: #1a1a1a;
-      color: #e8e8e8;
-      height: 100%;
-    }
-    header {
-      padding: 16px 24px;
-      border-bottom: 1px solid #303030;
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-    header h1 { margin: 0; font-size: 18px; letter-spacing: 0.04em; }
-    header .ver { font-size: 12px; color: #888; }
-    main { padding: 24px; max-width: 880px; margin: 0 auto; }
-    section { margin-bottom: 32px; }
-    section h2 {
+      margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "맑은 고딕", sans-serif;
       font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #999;
-      margin: 0 0 12px;
+      background: #1a1a1a; color: #e8e8e8;
+      height: 100vh; line-height: 1.4;
+      overflow: hidden;
+      user-select: none;
     }
-    .card {
-      background: #242424;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 16px;
-    }
-    .row { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
-    .row > label { width: 120px; color: #aaa; }
-    .row > code { color: #6cf; }
-    button {
-      background: #2c5dff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    button:hover { background: #4f7aff; }
-    button.secondary { background: #404040; }
-    button.secondary:hover { background: #505050; }
-    .features { display: flex; flex-wrap: wrap; gap: 6px; }
-    .features span {
-      background: #1f3a5f;
-      color: #9cf;
-      padding: 4px 10px;
-      border-radius: 12px;
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* 상단 타이틀바 */
+    .titlebar {
+      background: #222; border-bottom: 1px solid #303030;
+      padding: 6px 12px; display: flex; align-items: center; gap: 12px;
       font-size: 12px;
     }
-    .empty { color: #666; font-style: italic; }
-    pre {
-      background: #111;
-      padding: 12px;
-      border-radius: 6px;
-      overflow-x: auto;
-      color: #cfc;
+    .titlebar .logo { font-weight: 600; color: #cfc; }
+    .titlebar .ver { color: #888; font-size: 11px; }
+
+    /* 도구 모음 */
+    .toolbar {
+      background: #2a2a2a; border-bottom: 1px solid #303030;
+      padding: 6px 12px; display: flex; align-items: center; gap: 6px;
+      flex-wrap: wrap;
+    }
+    .toolbar button {
+      background: #383838; color: #e8e8e8; border: 1px solid #444;
+      border-radius: 4px; padding: 6px 12px; font-size: 12px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .toolbar button:hover:not(:disabled) { background: #444; border-color: #555; }
+    .toolbar button:disabled { background: #2a2a2a; color: #666; cursor: not-allowed; }
+    .toolbar button.primary { background: #2c5dff; border-color: #5b8dff; color: white; }
+    .toolbar button.primary:hover { background: #4f7aff; }
+    .toolbar .sep { width: 1px; height: 22px; background: #444; margin: 0 4px; }
+    .toolbar .spacer { flex: 1; }
+
+    /* 주소 표시줄 */
+    .addressbar {
+      background: #1f1f1f; border-bottom: 1px solid #303030;
+      padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .addressbar input {
+      flex: 1; background: #111; color: #e8e8e8; border: 1px solid #444;
+      border-radius: 4px; padding: 5px 10px; font-size: 12px;
+      font-family: "Consolas", "Cascadia Mono", monospace;
+      user-select: text;
+    }
+    .addressbar input:focus { outline: none; border-color: #2c5dff; }
+
+    /* 본문: 좌측 트리 + 우측 리스트 */
+    .body {
+      flex: 1; display: flex; overflow: hidden;
+    }
+    .sidebar {
+      width: 240px; min-width: 180px;
+      background: #1f1f1f; border-right: 1px solid #303030;
+      overflow-y: auto; padding: 8px 0;
+    }
+    .sidebar .group {
+      padding: 6px 12px; color: #888; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .sidebar .item {
+      padding: 6px 12px 6px 24px;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      color: #cfc; font-size: 12px;
+    }
+    .sidebar .item:hover { background: #2a2a2a; }
+    .sidebar .item.active { background: #1a3a5a; color: #cef; }
+    .sidebar .item .ico { color: #fc6; width: 16px; }
+
+    /* 파일 리스트 (우측) */
+    .filelist {
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .filelist-header {
+      background: #2a2a2a; border-bottom: 1px solid #303030;
+      display: grid; grid-template-columns: 1fr 110px 130px 160px;
+      padding: 6px 12px; font-size: 11px; color: #888;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .filelist-body {
+      flex: 1; overflow-y: auto; padding: 4px 0;
+    }
+    .filelist-row {
+      display: grid; grid-template-columns: 1fr 110px 130px 160px;
+      padding: 5px 12px; cursor: pointer; align-items: center;
       font-size: 12px;
     }
-    .danger { color: #f88; }
+    .filelist-row:hover { background: #252525; }
+    .filelist-row.selected { background: #1a3a5a; color: #cef; }
+    .filelist-row .name {
+      display: flex; align-items: center; gap: 8px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .filelist-row .name .ico { font-size: 14px; }
+    .filelist-row .name .ico.dir { color: #fc6; }
+    .filelist-row .name .ico.qsafe { color: #6cf; }
+    .filelist-row .name .ico.archive { color: #fa6; }
+    .filelist-row .size { color: #888; font-family: "Consolas", monospace; }
+    .filelist-row .kind { color: #888; font-size: 11px; }
+    .filelist-row .modified { color: #888; font-size: 11px; font-family: "Consolas", monospace; }
+    .filelist-empty {
+      padding: 40px; text-align: center; color: #666; font-style: italic;
+    }
+
+    /* 하단 상태바 */
+    .statusbar {
+      background: #222; border-top: 1px solid #303030;
+      padding: 4px 12px; font-size: 11px; color: #888;
+      display: flex; gap: 16px;
+    }
+    .statusbar .selection { color: #6cf; }
+
+    /* 모달 다이얼로그 */
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal-bg.show { display: flex; }
+    .modal {
+      background: #242424; border: 1px solid #444; border-radius: 8px;
+      padding: 20px; max-width: 520px; width: 90%;
+      user-select: text;
+    }
+    .modal h2 { margin: 0 0 14px; font-size: 16px; color: #cfc; }
+    .modal .row {
+      display: flex; gap: 8px; align-items: center; margin: 10px 0; flex-wrap: wrap;
+    }
+    .modal .row label { color: #aaa; min-width: 90px; font-size: 12px; }
+    .modal input[type="text"], .modal input[type="password"] {
+      flex: 1; min-width: 200px;
+      background: #111; color: #e8e8e8; border: 1px solid #444;
+      border-radius: 4px; padding: 7px 10px; font-size: 12px;
+      font-family: "Consolas", monospace;
+    }
+    .modal input[type="text"]:focus, .modal input[type="password"]:focus {
+      outline: none; border-color: #2c5dff;
+    }
+    .modal .actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 16px; padding-top: 12px; border-top: 1px solid #333;
+    }
+    .modal button {
+      background: #2c5dff; color: white; border: none; border-radius: 5px;
+      padding: 8px 18px; cursor: pointer; font-size: 13px;
+    }
+    .modal button:hover { background: #4f7aff; }
+    .modal button.cancel { background: #404040; }
+    .modal button.cancel:hover { background: #555; }
+    .modal .progress {
+      height: 4px; background: #222; border-radius: 2px; overflow: hidden;
+      margin: 12px 0;
+    }
+    .modal .progress .bar {
+      height: 100%; background: linear-gradient(90deg, #2c5dff, #5b8dff);
+      width: 30%; animation: indet 1.2s ease-in-out infinite;
+    }
+    @keyframes indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+    .modal .result {
+      background: #111; padding: 10px 12px; border-radius: 5px;
+      font-family: "Consolas", monospace; font-size: 11px;
+      white-space: pre-wrap; word-break: break-all; margin-top: 10px;
+      max-height: 200px; overflow-y: auto;
+      user-select: text;
+    }
+    .modal .result.ok { border-left: 3px solid #4caf50; color: #cfc; }
+    .modal .result.err { border-left: 3px solid #f55; color: #fcc; }
+    .modal .help { color: #888; font-size: 11px; margin: 4px 0 0; }
+    .modal .radio-group label {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-right: 14px; cursor: pointer; color: #ddd;
+    }
+    .modal .radio-group input { accent-color: #2c5dff; }
+
+    /* 에러 배너 */
+    #error-banner {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #4a1a1a; color: #fcc;
+      padding: 8px 14px; font-size: 11px; font-family: monospace;
+      max-height: 140px; overflow-y: auto;
+      border-top: 2px solid #f55; display: none; z-index: 9999;
+    }
+    #error-banner .clear {
+      float: right; cursor: pointer; color: #f88;
+      padding: 0 8px; font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>qsafe</h1>
-    <span class="ver" id="version">loading…</span>
-  </header>
+<div id="boot-banner" style="position:fixed; top:0; left:0; right:0; background:#0a0; color:white; padding:6px; text-align:center; font-weight:bold; font-size:13px; z-index:99998;">⏳ HTML 로드됨 — JS 대기...</div>
+<div class="app">
+  <div class="titlebar">
+    <span class="logo" style="background:#2c5dff; padding:3px 10px; border-radius:4px; color:white;">🔐 qsafe FULL 16:05:51</span>
+    <span class="ver" id="version">v…</span>
+    <span style="color:#666; margin-left:8px;">— 양자 안전 파일 압축/암호화</span>
+  </div>
 
-  <main>
-    <section>
-      <h2>About this build</h2>
-      <div class="card">
-        <div class="row">
-          <label>Cipher suite</label>
-          <code id="cipher-suite"></code>
-        </div>
-        <div class="row">
-          <label>Features</label>
-          <div class="features" id="features"></div>
-        </div>
+  <div class="toolbar">
+    <button id="btn-back" title="뒤로">⬅️ 뒤로</button>
+    <button id="btn-up" title="상위 폴더">⬆️ 위로</button>
+    <button id="btn-home" title="홈">🏠 홈</button>
+    <button id="btn-refresh" title="새로 고침">🔄</button>
+    <div class="sep"></div>
+    <button id="btn-pack" class="primary" disabled>📦 압축</button>
+    <button id="btn-unpack" disabled>📂 풀기</button>
+    <button id="btn-open" disabled>🔍 열기 (헤더만 보기)</button>
+    <button id="btn-delete" class="danger" disabled>🗑️ 삭제</button>
+    <div class="sep"></div>
+    <button id="btn-key">🔑 키 관리</button>
+    <button id="btn-mnemonic">📝 단어 백업</button>
+    <div class="spacer"></div>
+    <button id="btn-about" class="secondary" title="정보">ℹ️</button>
+  </div>
+
+  <div class="addressbar">
+    <span style="color:#888;">📁</span>
+    <input type="text" id="addr" placeholder="경로" />
+  </div>
+
+  <div class="body">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="filelist">
+      <div class="filelist-header">
+        <div>이름</div>
+        <div>크기</div>
+        <div>종류</div>
+        <div>수정 날짜</div>
       </div>
-    </section>
-
-    <section>
-      <h2>Identity (X25519 + ML-KEM-768)</h2>
-      <div class="card">
-        <p style="margin-top:0; color:#aaa;">
-          하이브리드 identity 키쌍을 생성하거나 기존 파일을 검사합니다.
-          이 키파일은 <span class="danger">절대 외부에 공유하지 마세요.</span>
-        </p>
-        <div class="row">
-          <button id="btn-gen">새 키쌍 생성</button>
-          <button class="secondary" id="btn-show">기존 키 검사</button>
-        </div>
-        <pre id="identity-result" class="empty">아직 작업이 없습니다.</pre>
+      <div class="filelist-body" id="filelist-body">
+        <div class="filelist-empty">로딩 중…</div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <section>
-      <h2>다음 단계</h2>
-      <div class="card empty">
-        파일 pack / unpack / 진행 바 / 드래그 앤 드롭 / 외부 아카이브 탐색기는
-        다음 마일스톤에 추가됩니다 (M2~M8).
+  <div class="statusbar">
+    <span id="status-count">0 항목</span>
+    <span class="selection" id="status-selection"></span>
+    <span style="flex:1;"></span>
+    <span id="status-msg" style="color:#fa3; font-weight:600;"></span>
+  </div>
+</div>
+
+<!-- 압축 다이얼로그 -->
+<div class="modal-bg" id="modal-pack">
+  <div class="modal">
+    <h2>📦 파일 압축</h2>
+    <div class="row"><label>원본 파일</label><input type="text" id="pack-input" readonly /></div>
+    <div class="row"><label>저장 위치</label><input type="text" id="pack-output" /><button class="cancel" id="btn-pack-pick">📁 변경…</button></div>
+    <div class="row radio-group">
+      <label><input type="radio" name="m-pack-mode" value="qsafe-open" checked /> 🌐 qsafe (암호 없음, 기본)</label>
+      <label><input type="radio" name="m-pack-mode" value="password" /> 🔐 패스워드</label>
+      <label><input type="radio" name="m-pack-mode" value="pubkey" /> 🔑 친구의 공개키</label>
+      <label><input type="radio" name="m-pack-mode" value="both" /> 패스워드+공개키</label>
+      <label><input type="radio" name="m-pack-mode" value="zip" /> 📁 표준 ZIP</label>
+    </div>
+    <div class="row" id="m-pack-pw-row">
+      <label>패스워드</label>
+      <input type="password" id="m-pack-pw" placeholder="8자 이상 추천" />
+    </div>
+    <div class="row" id="m-pack-pk-row" style="display:none;">
+      <label>공개키 파일</label>
+      <input type="text" id="m-pack-pk" placeholder="친구.pub.json" />
+      <button class="cancel" id="btn-pack-pk-pick">📁</button>
+    </div>
+    <div class="row">
+      <label>압축 알고리즘</label>
+      <select id="pack-compression" style="background:#111; color:#e8e8e8; border:1px solid #444; border-radius:5px; padding:7px 10px; font-size:12px;">
+        <option value="auto" selected>auto (이득 있을 때만 zstd)</option>
+        <option value="zstd">zstd (강력한 압축, 권장)</option>
+        <option value="none">none (압축 안 함, 빠름)</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>보안 강도</label>
+      <select id="pack-profile" style="background:#111; color:#e8e8e8; border:1px solid #444; border-radius:5px; padding:7px 10px; font-size:12px;">
+        <option value="standard" selected>standard — Argon2id 64MiB/3/4 (약 1초)</option>
+        <option value="strong">strong — Argon2id 256MiB/4/4 (약 3초, 부루트포스 저항성↑)</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>고급 옵션</label>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-sfx" /> 📦 자기 압축해제(SFX) 실행파일로 만들기 (받는 사람이 더블클릭으로 풀기)</label>
+        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-md5" /> 🔐 원본 MD5 계산 + .md5 사이드카 생성 (변조 검증용)</label>
+        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-add-label" /> 타임스탬프 라벨 헤더에 추가</label>
       </div>
-    </section>
-  </main>
+    </div>
+    <div class="row" id="pack-sfx-warn" style="display:none;">
+      <span style="color:#fa3; font-size:11px;">⚠️ SFX는 패스워드 모드만 지원 (암호 없음 모드에서는 자동으로 기본 패스워드 사용)</span>
+    </div>
+    <div class="progress" id="m-pack-prog" style="display:none;"><div class="bar"></div></div>
+    <div class="result" id="m-pack-result" style="display:none;"></div>
+    <div class="actions">
+      <button class="cancel" id="btn-pack-cancel">취소</button>
+      <button id="btn-pack-go">🚀 시작</button>
+    </div>
+  </div>
+</div>
 
-  <script>
-    const invoke = window.__TAURI__.core.invoke;
+<!-- 풀기 다이얼로그 -->
+<div class="modal-bg" id="modal-unpack">
+  <div class="modal">
+    <h2>📂 파일 풀기</h2>
+    <div class="row"><label>원본 .qs</label><input type="text" id="unpack-input" readonly /></div>
+    <div class="row"><label>저장 위치</label><input type="text" id="unpack-output" /><button class="cancel" id="btn-unpack-pick">📁 변경…</button></div>
+    <div class="row radio-group">
+      <label><input type="radio" name="m-unpack-mode" value="open" checked /> 🌐 암호 없음 (qsafe-open)</label>
+      <label><input type="radio" name="m-unpack-mode" value="password" /> 🔐 패스워드</label>
+      <label><input type="radio" name="m-unpack-mode" value="identity" /> 🔑 내 비밀키</label>
+    </div>
+    <div class="row" id="m-unpack-pw-row">
+      <label>패스워드</label>
+      <input type="password" id="m-unpack-pw" />
+    </div>
+    <div class="row" id="m-unpack-id-row" style="display:none;">
+      <label>비밀키 파일</label>
+      <input type="text" id="m-unpack-id" placeholder="내키.json" />
+      <button class="cancel" id="btn-unpack-id-pick">📁</button>
+    </div>
+    <div class="progress" id="m-unpack-prog" style="display:none;"><div class="bar"></div></div>
+    <div class="result" id="m-unpack-result" style="display:none;"></div>
+    <div class="actions">
+      <button class="cancel" id="btn-unpack-cancel">취소</button>
+      <button id="btn-unpack-go">🔓 풀기</button>
+    </div>
+  </div>
+</div>
 
-    async function refreshAbout() {
-      try {
-        const info = await invoke("about");
-        document.getElementById("version").textContent = "v" + info.version;
-        document.getElementById("cipher-suite").textContent = info.cipher_suite;
-        const feats = document.getElementById("features");
-        feats.innerHTML = "";
-        for (const f of info.features) {
-          const el = document.createElement("span");
-          el.textContent = f;
-          feats.appendChild(el);
-        }
-      } catch (e) {
-        document.getElementById("version").textContent = "error";
-        console.error(e);
+<!-- 정보 보기 (qsafe 헤더 / 외부 아카이브 목록) -->
+<div class="modal-bg" id="modal-info">
+  <div class="modal" style="max-width: 640px;">
+    <h2>🔍 파일 정보</h2>
+    <div class="result ok" id="m-info-summary" style="display:none;"></div>
+    <div id="m-info-list" style="max-height:280px; overflow-y:auto; margin-top:10px; font-family:Consolas,monospace; font-size:11px;"></div>
+    <div class="actions">
+      <button id="btn-info-close">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 키 관리 다이얼로그 -->
+<div class="modal-bg" id="modal-key">
+  <div class="modal">
+    <h2>🔑 디지털 신원 (키쌍) 관리</h2>
+    <p class="help">친구와 안전하게 파일을 주고받기 위한 X25519+ML-KEM-768 하이브리드 키쌍입니다 (양자 안전).</p>
+    <div class="row"><label>저장 경로</label><input type="text" id="m-key-path" /><button class="cancel" id="btn-key-pick">📁</button></div>
+    <div class="row">
+      <button id="btn-key-gen-go">🔑 새 키쌍 만들기</button>
+      <button class="cancel" id="btn-key-show-go">기존 키 확인</button>
+    </div>
+    <div class="result" id="m-key-result" style="display:none;"></div>
+    <div class="actions">
+      <button class="cancel" id="btn-key-close">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 니모닉 다이얼로그 -->
+<div class="modal-bg" id="modal-mnemonic">
+  <div class="modal" style="max-width: 640px;">
+    <h2>📝 BIP39 종이 백업 단어</h2>
+    <p class="help">키 파일이 망가져도 복구할 수 있도록 단어를 종이에 적어두세요.</p>
+    <div class="row">
+      <label>단어 개수</label>
+      <select id="m-mn-count" style="background:#111; color:#e8e8e8; border:1px solid #444; border-radius:4px; padding:6px 10px;">
+        <option value="24" selected>24단어 (권장)</option>
+        <option value="18">18단어</option>
+        <option value="12">12단어</option>
+      </select>
+      <button id="btn-mn-go">생성</button>
+    </div>
+    <div id="m-mn-result" style="margin-top:12px;"></div>
+    <div class="actions">
+      <button class="cancel" id="btn-mn-close">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 정보 -->
+<div class="modal-bg" id="modal-about">
+  <div class="modal">
+    <h2>ℹ️ qsafe 정보</h2>
+    <div class="result ok" id="m-about-content" style="display:block;"></div>
+    <div class="actions">
+      <button id="btn-about-close">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal-bg" id="modal-delete">
+  <div class="modal">
+    <h2 style="color:#fcc;">🗑️ 삭제 확인</h2>
+    <p class="help">다음 항목을 영구 삭제합니다. 휴지통으로 가지 않습니다.</p>
+    <div class="result err" id="m-delete-target" style="display:block;"></div>
+    <div class="actions">
+      <button class="cancel" id="btn-delete-cancel">취소</button>
+      <button class="danger" id="btn-delete-go" style="background:#a33;">🗑️ 영구 삭제</button>
+    </div>
+  </div>
+</div>
+
+<div id="error-banner">
+  <span class="clear" id="err-clear">✕</span>
+  <span id="err-text"></span>
+</div>
+
+<script>
+  // ===== 부팅 검증 =====
+  try {
+    var b = document.getElementById("boot-banner");
+    if (b) {
+      b.style.background = "#080";
+      b.textContent = "✓ JS 실행됨 — Tauri 검사 중...";
+    }
+  } catch(e) {}
+
+try {
+    document.getElementById("boot-banner").textContent = "✓ JS 실행됨 — Tauri 검사 중...";
+    document.getElementById("boot-banner").style.background = "#080";
+  } catch(_){}
+
+  // ===== 에러 가시화 =====
+  const errBanner = document.getElementById("error-banner");
+  const errText = document.getElementById("err-text");
+  function showErr(m) {
+    console.error("[qsafe-gui]", m);
+    errText.textContent = String(m);
+    errBanner.style.display = "block";
+  }
+  document.getElementById("err-clear").addEventListener("click", () => errBanner.style.display = "none");
+  window.addEventListener("error", e => showErr("JS: " + e.message + " @ " + e.filename + ":" + e.lineno));
+  window.addEventListener("unhandledrejection", e => showErr("Promise: " + (e.reason && e.reason.message ? e.reason.message : e.reason)));
+
+  // ===== Tauri =====
+  const T = window.__TAURI__;
+  if (!T || !T.core || !T.core.invoke) showErr("Tauri API 부재");
+  const invoke = T && T.core && T.core.invoke;
+
+  // ===== 유틸 =====
+  function fmtBytes(n) {
+    if (n == null) return "—";
+    if (n < 1024) return n + " B";
+    if (n < 1024*1024) return (n/1024).toFixed(1) + " KB";
+    if (n < 1024*1024*1024) return (n/1024/1024).toFixed(1) + " MB";
+    return (n/1024/1024/1024).toFixed(2) + " GB";
+  }
+  function fmtTime(unix) {
+    if (!unix) return "—";
+    const d = new Date(unix * 1000);
+    var p = function(n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function basename(p) {
+    if (!p) return "";
+    var x = p.replace(/\\/g, "/").split("/");
+    return x[x.length - 1] || x[x.length - 2] || p;
+  }
+  async function pickFile(opts) {
+    opts = opts || {};
+    const o = { title: opts.title, multiple: !!opts.multiple, directory: !!opts.directory, defaultPath: opts.defaultPath, filters: opts.filters };
+    try { return await invoke("plugin:dialog|open", o); }
+    catch (e) { try { return await invoke("plugin:dialog|open", { options: o }); } catch (e2) { throw e; } }
+  }
+  async function pickSave(opts) {
+    opts = opts || {};
+    const o = { title: opts.title, defaultPath: opts.defaultPath, filters: opts.filters };
+    try { return await invoke("plugin:dialog|save", o); }
+    catch (e) { try { return await invoke("plugin:dialog|save", { options: o }); } catch (e2) { throw e; } }
+  }
+  function openModal(id) { document.getElementById(id).classList.add("show"); }
+  function closeModal(id) { document.getElementById(id).classList.remove("show"); }
+  function setResult(elId, txt, status) {
+    const el = document.getElementById(elId);
+    el.className = "result " + (status || "ok");
+    el.style.display = "block";
+    el.textContent = txt;
+  }
+
+  // ===== 상태 =====
+  let currentPath = "";
+  let history = [];
+  let histIdx = -1;
+  let entries = [];
+  let selectedIdx = -1;
+
+  // ===== 탐색 핵심 =====
+  async function navigateTo(path, pushHistory = true) {
+    try {
+      const listing = await invoke("list_directory", { path });
+      currentPath = listing.current_path;
+      entries = listing.entries;
+      selectedIdx = -1;
+      document.getElementById("addr").value = currentPath;
+      renderFileList();
+      updateToolbarState();
+      updateStatus();
+      if (pushHistory) {
+        history = history.slice(0, histIdx + 1);
+        history.push(currentPath);
+        histIdx = history.length - 1;
       }
+      // 사이드바 active 표시 갱신
+      document.querySelectorAll(".sidebar .item").forEach(el => {
+        el.classList.toggle("active", el.dataset.path === currentPath);
+      });
+    } catch (e) {
+      showErr("폴더 열기 실패: " + (e.message || e));
     }
+  }
 
-    function showIdentity(summary) {
-      const out = document.getElementById("identity-result");
-      out.classList.remove("empty");
-      out.textContent =
-        `path        : ${summary.path}\n` +
-        `fingerprint : ${summary.fingerprint}\n` +
-        `x25519_pk   : ${summary.x25519_pk_len} bytes\n` +
-        `mlkem768_pk : ${summary.mlkem768_pk_len} bytes`;
+  function renderFileList() {
+    const body = document.getElementById("filelist-body");
+    if (entries.length === 0) {
+      body.innerHTML = '<div class="filelist-empty">(빈 폴더)</div>';
+      return;
     }
-
-    document.getElementById("btn-gen").addEventListener("click", async () => {
-      const path = prompt(
-        "저장할 경로를 입력하세요 (예: ~/qsafe-identity.json)",
-        "qsafe-identity.json"
+    var rows = [];
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      var ico = "📄";
+      var icoClass = "";
+      if (e.is_dir) { ico = "📁"; icoClass = "dir"; }
+      else if (e.is_qsafe) { ico = "🔐"; icoClass = "qsafe"; }
+      else if (e.is_archive) { ico = "📦"; icoClass = "archive"; }
+      var kind = e.is_dir ? "폴더" : (e.is_qsafe ? "🔐 qsafe (.qs)" : (e.is_archive ? "📦 압축파일 (qsafe로 풀기 가능)" : "파일"));
+      rows.push(
+        '<div class="filelist-row" data-idx="' + i + '">' +
+          '<div class="name"><span class="ico ' + icoClass + '">' + ico + '</span>' + escapeHtml(e.name) + '</div>' +
+          '<div class="size">' + (e.is_dir ? "—" : fmtBytes(e.size)) + '</div>' +
+          '<div class="kind">' + kind + '</div>' +
+          '<div class="modified">' + fmtTime(e.modified_unix) + '</div>' +
+        '</div>'
       );
-      if (!path) return;
-      try {
-        const summary = await invoke("identity_generate", { outputPath: path, force: false });
-        showIdentity(summary);
-      } catch (e) {
-        alert(String(e));
+    }
+    body.innerHTML = rows.join("");
+    body.querySelectorAll(".filelist-row").forEach(row => {
+      row.addEventListener("click", () => selectRow(parseInt(row.dataset.idx, 10)));
+      row.addEventListener("dblclick", () => activateRow(parseInt(row.dataset.idx, 10)));
+    });
+  }
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function selectRow(i) {
+    selectedIdx = i;
+    document.querySelectorAll(".filelist-row").forEach((r, idx) => {
+      r.classList.toggle("selected", idx === i);
+    });
+    updateToolbarState();
+    updateStatus();
+  }
+  function activateRow(i) {
+    const e = entries[i];
+    if (!e) return;
+    if (e.is_dir) {
+      navigateTo(e.path);
+    } else if (e.is_qsafe) {
+      openInfoModal(e.path);
+    } else if (e.is_archive) {
+      openInfoModal(e.path);
+    } else {
+      // 연결된 프로그램으로 열기 (Windows: start, Mac: open, Linux: xdg-open)
+      invoke("open_with_associated", { path: e.path }).catch(function(err) {
+        showErr("파일 열기 실패: " + (err.message || err));
+      });
+    }
+  }
+  function updateToolbarState() {
+    const e = selectedIdx >= 0 ? entries[selectedIdx] : null;
+    document.getElementById("btn-pack").disabled = !e;
+    document.getElementById("btn-unpack").disabled = !e || !e.is_qsafe;
+    document.getElementById("btn-open").disabled = !e || e.is_dir;
+    document.getElementById("btn-delete").disabled = !e;
+    document.getElementById("btn-back").disabled = histIdx <= 0;
+  }
+  function updateStatus() {
+    document.getElementById("status-count").textContent = entries.length + " 항목";
+    const e = selectedIdx >= 0 ? entries[selectedIdx] : null;
+    document.getElementById("status-selection").textContent =
+      e ? "선택: " + e.name + (e.is_dir ? "" : " (" + fmtBytes(e.size) + ")") : "";
+  }
+
+  // ===== 사이드바 =====
+  async function buildSidebar() {
+    const sb = document.getElementById("sidebar");
+    const drives = await invoke("list_drives");
+    const home = await invoke("home_dir");
+    const cur = await invoke("current_dir");
+    var html = '<div class="group">Quick Access</div>';
+    html += '<div class="item" data-path="' + escapeHtml(cur) + '"><span class="ico">📂</span>현재 폴더</div>';
+    html += '<div class="item" data-path="' + escapeHtml(home) + '"><span class="ico">🏠</span>홈</div>';
+    html += '<div class="group">드라이브</div>';
+    for (var i = 0; i < drives.length; i++) {
+      var d = drives[i];
+      html += '<div class="item" data-path="' + escapeHtml(d) + '"><span class="ico">💾</span>' + escapeHtml(d) + '</div>';
+    }
+    sb.innerHTML = html;
+    sb.querySelectorAll(".item").forEach(el => {
+      el.addEventListener("click", () => navigateTo(el.dataset.path));
+    });
+  }
+
+  // ===== 도구바 핸들러 =====
+  document.getElementById("btn-back").addEventListener("click", () => {
+    if (histIdx > 0) { histIdx--; navigateTo(history[histIdx], false); }
+  });
+  document.getElementById("btn-up").addEventListener("click", async () => {
+    try {
+      const listing = await invoke("list_directory", { path: currentPath });
+      if (listing.parent_path) navigateTo(listing.parent_path);
+    } catch (e) { showErr("상위로 이동 실패: " + (e.message || e)); }
+  });
+  document.getElementById("btn-home").addEventListener("click", async () => {
+    navigateTo(await invoke("home_dir"));
+  });
+  document.getElementById("btn-refresh").addEventListener("click", () => navigateTo(currentPath, false));
+  document.getElementById("addr").addEventListener("keypress", e => {
+    if (e.key === "Enter") navigateTo(e.target.value);
+  });
+
+  // ===== 정보 모달 (.qs 헤더 또는 외부 아카이브 목록) =====
+  async function openInfoModal(path) {
+    document.getElementById("m-info-list").innerHTML = "";
+    setResult("m-info-summary", "로딩 중…", "ok");
+    openModal("modal-info");
+    try {
+      const info = await invoke("qsafe_info", { path });
+      var t = "📄 " + basename(path) + "\n\n" +
+        "포맷       : " + info.format + "\n" +
+        "파일 크기  : " + fmtBytes(info.size) + "\n" +
+        "원본 크기  : " + fmtBytes(info.original_size) + "\n" +
+        "암호 방식  : " + (info.cipher_suite || "?") + "\n" +
+        "압축       : " + (info.compression || "none") + "\n" +
+        "수신자     : " + (info.recipients.length ? info.recipients.join(", ") : "none");
+      if (info.label) t += "\n라벨       : " + info.label;
+      if (info.created_at_unix) t += "\n생성       : " + fmtTime(info.created_at_unix);
+      setResult("m-info-summary", t, "ok");
+      return;
+    } catch (e) { /* fall through */ }
+    try {
+      const lst = await invoke("list_external_archive", { path });
+      setResult("m-info-summary", "📦 외부 아카이브: " + lst.format + " — " + lst.entries.length + "개 항목", "ok");
+      const listEl = document.getElementById("m-info-list");
+      if (lst.entries.length === 0) {
+        listEl.innerHTML = '<div style="color:#666; padding:10px;">(이 포맷은 상세 목록 미리보기를 지원하지 않습니다. RAR만 가능합니다.)</div>';
+      } else {
+        listEl.innerHTML = lst.entries.map(function(e) {
+          var ico = e.is_dir ? "📁" : "📄";
+          var lock = e.is_encrypted ? "🔒" : "";
+          return '<div style="display:flex; gap:8px; padding:4px 8px; border-bottom:1px solid #2a2a2a;">' +
+            '<span>' + ico + '</span>' +
+            '<span style="flex:1;">' + escapeHtml(e.name) + '</span>' +
+            '<span>' + lock + '</span>' +
+            '<span style="color:#888; font-family:monospace;">' + fmtBytes(e.size) + '</span>' +
+            '</div>';
+        }).join("");
+      }
+    } catch (e2) {
+      setResult("m-info-summary", "❌ 알 수 없는 포맷: " + (e2.message || e2), "err");
+    }
+  }
+  document.getElementById("btn-info-close").addEventListener("click", () => closeModal("modal-info"));
+
+  // ===== 압축 모달 =====
+  document.getElementById("btn-pack").addEventListener("click", () => {
+    const e = entries[selectedIdx];
+    if (!e) return;
+    document.getElementById("pack-input").value = e.path + (e.is_dir ? "  (📁 폴더 — tar로 묶어 압축됨)" : "");
+    document.getElementById("pack-output").value = e.path + ".qs";
+    // 기본 = qsafe-open: pw/pk 모두 숨김
+    document.querySelector('input[name="m-pack-mode"][value="qsafe-open"]').checked = true;
+    document.getElementById("m-pack-pw-row").style.display = "none";
+    document.getElementById("m-pack-pk-row").style.display = "none";
+    var goBtn = document.getElementById("btn-pack-go");
+    goBtn.textContent = "🚀 시작";
+    goBtn.onclick = null;
+    document.getElementById("m-pack-pw").value = "";
+    document.getElementById("m-pack-pk").value = "";
+    document.getElementById("m-pack-result").style.display = "none";
+    document.getElementById("m-pack-prog").style.display = "none";
+    openModal("modal-pack");
+  });
+  document.querySelectorAll('input[name="m-pack-mode"]').forEach(r => {
+    r.addEventListener("change", function() {
+      var v = this.value;
+      document.getElementById("m-pack-pw-row").style.display = (v === "password" || v === "both") ? "" : "none";
+      document.getElementById("m-pack-pk-row").style.display = (v === "pubkey" || v === "both") ? "" : "none";
+      var ent = entries[selectedIdx];
+      if (ent) {
+        var ext = (v === "zip") ? ".zip" : ".qs";
+        document.getElementById("pack-output").value = ent.path + ext;
       }
     });
-
-    document.getElementById("btn-show").addEventListener("click", async () => {
-      const path = prompt("검사할 identity JSON 경로를 입력하세요");
-      if (!path) return;
-      try {
-        const summary = await invoke("identity_show", { path });
-        showIdentity(summary);
-      } catch (e) {
-        alert(String(e));
+  });
+  document.getElementById("btn-pack-pick").addEventListener("click", async () => {
+    try {
+      const r = await pickSave({ title: "저장 위치", defaultPath: document.getElementById("pack-output").value, filters: [{ name: "qsafe", extensions: ["qs"] }] });
+      if (r) document.getElementById("pack-output").value = r;
+    } catch (e) { showErr("선택 실패: " + (e.message || e)); }
+  });
+  document.getElementById("btn-pack-pk-pick").addEventListener("click", async () => {
+    try {
+      const r = await pickFile({ title: "친구의 공개키", filters: [{ name: "public key", extensions: ["json"] }] });
+      if (r) document.getElementById("m-pack-pk").value = r;
+    } catch (e) { showErr("선택 실패: " + (e.message || e)); }
+  });
+  document.getElementById("btn-pack-cancel").addEventListener("click", () => closeModal("modal-pack"));
+  document.getElementById("btn-pack-go").addEventListener("click", async () => {
+    const output = document.getElementById("pack-output").value;
+    const mode = document.querySelector('input[name="m-pack-mode"]:checked').value;
+    const pw = document.getElementById("m-pack-pw").value;
+    const pk = document.getElementById("m-pack-pk").value.trim();
+    let password = null, pubkeys = [], noPassword = false, openMode = false;
+    if (mode === "qsafe-open") { openMode = true; }
+    else if (mode === "password" || mode === "both") {
+      if (!pw) { setResult("m-pack-result", "❌ 패스워드를 입력하세요.", "err"); return; }
+      password = pw;
+    }
+    if (mode === "pubkey" || mode === "both") {
+      if (!pk) { setResult("m-pack-result", "❌ 공개키 파일을 선택하세요.", "err"); return; }
+      pubkeys = [pk];
+    }
+    if (mode === "pubkey") noPassword = true;
+    var packStartTs = Date.now();
+    document.getElementById("btn-pack-go").disabled = true;
+    document.getElementById("m-pack-prog").style.display = "block";
+    document.getElementById("m-pack-result").style.display = "none";
+    try {
+      const e_sel = entries[selectedIdx];
+      const realInput = e_sel ? e_sel.path : document.getElementById("pack-input").value;
+      let r;
+      if (mode === "zip") {
+        r = await invoke("pack_to_zip", { input: realInput, output, force: true });
+      } else {
+        const comp = document.getElementById("pack-compression").value;
+        const profile = document.getElementById("pack-profile").value;
+        const sfx = document.getElementById("pack-sfx").checked;
+        const includeMd5 = document.getElementById("pack-md5").checked;
+        const addLabel = document.getElementById("pack-add-label").checked;
+        const labelVal = addLabel ? (new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19) : null;
+        // SFX는 패스워드 필수 (open도 기본 패스워드라 가능)
+        r = await invoke("pack_path_ext", { input: realInput, output, password, pubkeys, noPassword, force: true, openMode, compression: comp, profile: profile, sfx: sfx, label: labelVal, includeMd5 });
       }
-    });
+      var kindLabel = r.source_kind === "directory" ? ("📁 폴더 (" + r.file_count + "개 파일)") : "📄 파일";
+      var ratioStr = r.ratio_percent.toFixed(1) + "%";
+      var savedStr = "";
+      if (r.source_size > 0 && r.packed_size < r.source_size) savedStr = " — " + fmtBytes(r.source_size - r.packed_size) + " 절약";
+      var elapsedStr = ((Date.now() - packStartTs) / 1000).toFixed(1) + "s";
+      var extraInfo = "";
+      if (r.md5) extraInfo += "\nMD5         : " + r.md5;
+      if (r.md5_file_path) extraInfo += "\nMD5 사이드카 : " + r.md5_file_path;
+      if (r.sfx_path) extraInfo += "\n📦 SFX         : " + r.sfx_path;
+      setResult("m-pack-result",
+        "✅ 압축 성공! (걸린 시간: " + elapsedStr + ")\n\n" +
+        "원본 종류  : " + kindLabel + "\n" +
+        "원본 크기  : " + fmtBytes(r.source_size) + "\n" +
+        "압축 크기  : " + fmtBytes(r.packed_size) + " (" + ratioStr + ")" + savedStr + "\n" +
+        "저장 위치  : " + r.output_path + extraInfo, "ok");
+      navigateTo(currentPath, false);
+      document.getElementById("m-pack-prog").style.display = "none";
+      var goBtn = document.getElementById("btn-pack-go");
+      goBtn.disabled = false;
+      goBtn.textContent = "✅ 완료 — 닫기";
+      goBtn.onclick = function() { closeModal("modal-pack"); };
+      return;
+    } catch (e) {
+      setResult("m-pack-result", "❌ 실패: " + (e.message || e), "err");
+      document.getElementById("btn-pack-go").disabled = false;
+      document.getElementById("m-pack-prog").style.display = "none";
+    }
+  });
 
-    refreshAbout();
-  </script>
+  // ===== 풀기 모달 =====
+  document.getElementById("btn-unpack").addEventListener("click", () => {
+    const e = entries[selectedIdx];
+    if (!e || !e.is_qsafe) return;
+    document.getElementById("unpack-input").value = e.path;
+    document.getElementById("unpack-output").value = e.path.replace(/\.qs$/i, "");
+    document.getElementById("m-unpack-pw").value = "";
+    document.getElementById("m-unpack-id").value = "";
+    document.getElementById("m-unpack-result").style.display = "none";
+    document.getElementById("m-unpack-prog").style.display = "none";
+    document.querySelector('input[name="m-unpack-mode"][value="open"]').checked = true;
+    document.getElementById("m-unpack-pw-row").style.display = "none";
+    document.getElementById("m-unpack-id-row").style.display = "none";
+    var ugBtn = document.getElementById("btn-unpack-go");
+    ugBtn.textContent = "🔓 풀기";
+    ugBtn.onclick = null;
+    openModal("modal-unpack");
+  });
+  document.querySelectorAll('input[name="m-unpack-mode"]').forEach(r => {
+    r.addEventListener("change", () => {
+      const v = r.value;
+      document.getElementById("m-unpack-pw-row").style.display = v === "password" ? "" : "none";
+      document.getElementById("m-unpack-id-row").style.display = v === "identity" ? "" : "none";
+    });
+  });
+  document.getElementById("btn-unpack-pick").addEventListener("click", async () => {
+    try {
+      const r = await pickSave({ title: "복원 저장 위치", defaultPath: document.getElementById("unpack-output").value });
+      if (r) document.getElementById("unpack-output").value = r;
+    } catch (e) { showErr("선택 실패: " + (e.message || e)); }
+  });
+  document.getElementById("btn-unpack-id-pick").addEventListener("click", async () => {
+    try {
+      const r = await pickFile({ title: "내 비밀키 파일", filters: [{ name: "identity", extensions: ["json"] }] });
+      if (r) document.getElementById("m-unpack-id").value = r;
+    } catch (e) { showErr("선택 실패: " + (e.message || e)); }
+  });
+  document.getElementById("btn-unpack-cancel").addEventListener("click", () => closeModal("modal-unpack"));
+  document.getElementById("btn-unpack-go").addEventListener("click", async () => {
+    const input = document.getElementById("unpack-input").value;
+    const output = document.getElementById("unpack-output").value;
+    const mode = document.querySelector('input[name="m-unpack-mode"]:checked').value;
+    let password = null, identity = null, openMode = false;
+    if (mode === "open") { openMode = true; }
+    else if (mode === "password") {
+      password = document.getElementById("m-unpack-pw").value;
+      if (!password) { setResult("m-unpack-result", "❌ 패스워드를 입력하세요.", "err"); return; }
+    } else {
+      identity = document.getElementById("m-unpack-id").value.trim();
+      if (!identity) { setResult("m-unpack-result", "❌ 비밀키 파일을 선택하세요.", "err"); return; }
+    }
+    document.getElementById("btn-unpack-go").disabled = true;
+    document.getElementById("m-unpack-prog").style.display = "block";
+    document.getElementById("m-unpack-result").style.display = "none";
+    try {
+      var unpackStartTs = Date.now();
+      const r = await invoke("unpack_qsafe_ext", { input, output, password, identity, force: true, openMode, computeMd5: true });
+      var elapsed = ((Date.now() - unpackStartTs) / 1000).toFixed(1) + "s";
+      var msg = "✅ 풀기 성공! (걸린 시간: " + elapsed + ")\n\n";
+      if (r.untarred_dir) {
+        msg += "📁 폴더로 자동 복원 (" + r.file_count + "개 파일)\n";
+        msg += "복원 위치 : " + r.untarred_dir + "\n";
+      } else {
+        msg += "복원 위치 : " + r.output_path + "\n";
+        msg += "복원 크기 : " + fmtBytes(r.bytes_written) + "\n";
+      }
+      if (r.restored_md5) msg += "\n🔐 MD5 : " + r.restored_md5;
+      if (r.md5_file_path) msg += "\n   .md5 사이드카 : " + r.md5_file_path;
+      if (r.original_md5_matches === true) msg += "\n\n✅ 원본 MD5와 일치 — 변조 없음!";
+      else if (r.original_md5_matches === false) msg += "\n\n❌ MD5 불일치! 원본: " + r.original_md5_value + " — 변조 가능성!";
+      setResult("m-unpack-result", msg, "ok");
+      navigateTo(currentPath, false);
+      document.getElementById("m-unpack-prog").style.display = "none";
+      var ugBtn = document.getElementById("btn-unpack-go");
+      ugBtn.disabled = false;
+      ugBtn.textContent = "✅ 완료 — 닫기";
+      ugBtn.onclick = function() { closeModal("modal-unpack"); };
+      return;
+    } catch (e) {
+      setResult("m-unpack-result", "❌ 실패: " + (e.message || e), "err");
+      document.getElementById("btn-unpack-go").disabled = false;
+      document.getElementById("m-unpack-prog").style.display = "none";
+    }
+  });
+  document.getElementById("btn-open").addEventListener("click", () => {
+    const e = entries[selectedIdx];
+    if (!e || e.is_dir) return;
+    openInfoModal(e.path);
+  });
+
+  // ===== 삭제 핸들러 =====
+  document.getElementById("btn-delete").addEventListener("click", () => {
+    var e = entries[selectedIdx];
+    if (!e) return;
+    var kindLabel = e.is_dir ? "📁 폴더" : (e.is_qsafe ? "🔐 .qs 파일" : (e.is_archive ? "📦 압축 파일" : "📄 파일"));
+    var txt = kindLabel + ": " + e.name + "\n경로: " + e.path;
+    if (e.is_dir) txt += "\n⚠️ 폴더 내 모든 파일이 함께 삭제됩니다!";
+    document.getElementById("m-delete-target").textContent = txt;
+    openModal("modal-delete");
+  });
+  document.getElementById("btn-delete-cancel").addEventListener("click", () => closeModal("modal-delete"));
+  document.getElementById("btn-delete-go").addEventListener("click", async () => {
+    var e = entries[selectedIdx];
+    if (!e) { closeModal("modal-delete"); return; }
+    var btn = document.getElementById("btn-delete-go");
+    btn.disabled = true; btn.textContent = "삭제 중…";
+    try {
+      var r = await invoke("delete_path", { path: e.path });
+      closeModal("modal-delete");
+      navigateTo(currentPath, false);
+    } catch (err) {
+      document.getElementById("m-delete-target").textContent += "\n\n❌ 실패: " + (err.message || err);
+    } finally {
+      btn.disabled = false; btn.textContent = "🗑️ 영구 삭제";
+    }
+  });
+
+  // ===== 키 관리 =====
+  document.getElementById("btn-key").addEventListener("click", async () => {
+    document.getElementById("m-key-path").value = await invoke("default_identity_path");
+    document.getElementById("m-key-result").style.display = "none";
+    openModal("modal-key");
+  });
+  document.getElementById("btn-key-pick").addEventListener("click", async () => {
+    try {
+      const r = await pickSave({ title: "키 파일 저장 위치", defaultPath: document.getElementById("m-key-path").value, filters: [{ name: "identity", extensions: ["json"] }] });
+      if (r) document.getElementById("m-key-path").value = r;
+    } catch (e) { showErr("선택: " + (e.message || e)); }
+  });
+  document.getElementById("btn-key-gen-go").addEventListener("click", async () => {
+    const path = document.getElementById("m-key-path").value.trim();
+    if (!path) { setResult("m-key-result", "❌ 저장 경로를 입력하세요.", "err"); return; }
+    document.getElementById("btn-key-gen-go").disabled = true;
+    try {
+      let s;
+      try { s = await invoke("identity_generate", { outputPath: path, force: false }); }
+      catch (e) {
+        const m = String(e.message || e);
+        if (m.indexOf("이미") !== -1 || m.indexOf("덮어쓰기") !== -1) {
+          if (!confirm("같은 이름의 파일이 있어요. 덮어쓸까요?")) { document.getElementById("btn-key-gen-go").disabled = false; return; }
+          s = await invoke("identity_generate", { outputPath: path, force: true });
+        } else throw e;
+      }
+      let t = "✓ 키쌍이 만들어졌어요!\n\n지문: " + s.fingerprint +
+        "\nX25519 공개키: " + s.x25519_pk_len + " bytes" +
+        "\nML-KEM-768 공개키: " + s.mlkem768_pk_len + " bytes" +
+        "\n비밀키 위치: " + s.path;
+      if (s.public_path) t += "\n공개키 위치: " + s.public_path + "\n\n→ 친구에게 공개키(.pub.json)만 주세요!";
+      setResult("m-key-result", t, "ok");
+      navigateTo(currentPath, false);
+    } catch (e) { setResult("m-key-result", "❌ " + (e.message || e), "err"); }
+    finally { document.getElementById("btn-key-gen-go").disabled = false; }
+  });
+  document.getElementById("btn-key-show-go").addEventListener("click", async () => {
+    const path = document.getElementById("m-key-path").value.trim();
+    if (!path) return;
+    try {
+      const s = await invoke("identity_show", { path });
+      setResult("m-key-result",
+        "✓ 키 파일 정보\n\n지문: " + s.fingerprint +
+        "\nX25519 공개키: " + s.x25519_pk_len + " bytes" +
+        "\nML-KEM-768 공개키: " + s.mlkem768_pk_len + " bytes" +
+        "\n경로: " + s.path, "ok");
+    } catch (e) { setResult("m-key-result", "❌ " + (e.message || e), "err"); }
+  });
+  document.getElementById("btn-key-close").addEventListener("click", () => closeModal("modal-key"));
+
+  // ===== 니모닉 =====
+  document.getElementById("btn-mnemonic").addEventListener("click", () => {
+    document.getElementById("m-mn-result").innerHTML = "";
+    openModal("modal-mnemonic");
+  });
+  document.getElementById("btn-mn-go").addEventListener("click", async () => {
+    const cnt = parseInt(document.getElementById("m-mn-count").value, 10);
+    document.getElementById("btn-mn-go").disabled = true;
+    try {
+      const r = await invoke("mnemonic_generate", { wordCount: cnt });
+      var html = '<div style="color:#fa3; margin-bottom:10px; font-size:12px;">⚠️ 종이에 적고 안전한 곳에 보관하세요</div>';
+      html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">';
+      for (var i = 0; i < r.words.length; i++) {
+        html += '<div style="background:#1a2a3a; padding:6px 10px; border-radius:4px; color:#cef; font-family:monospace; font-size:12px;">' +
+          '<span style="color:#69c;">' + String(i+1).padStart(2, "0") + '.</span> ' + r.words[i] + '</div>';
+      }
+      html += '</div>';
+      document.getElementById("m-mn-result").innerHTML = html;
+    } catch (e) { showErr("니모닉: " + (e.message || e)); }
+    finally { document.getElementById("btn-mn-go").disabled = false; }
+  });
+  document.getElementById("btn-mn-close").addEventListener("click", () => closeModal("modal-mnemonic"));
+
+  // ===== 정보 =====
+  document.getElementById("btn-about").addEventListener("click", async () => {
+    try {
+      const a = await invoke("about");
+      const t = "qsafe v" + a.version + "\n\n" +
+        "암호 방식: " + a.cipher_suite + "\n\n" +
+        "지원 기능:\n" + a.features.map(function(f) { return "  • " + f; }).join("\n");
+      document.getElementById("m-about-content").textContent = t;
+      openModal("modal-about");
+    } catch (e) { showErr("about: " + (e.message || e)); }
+  });
+  document.getElementById("btn-about-close").addEventListener("click", () => closeModal("modal-about"));
+
+  // ===== 모달 배경 클릭으로 닫기 =====
+  document.querySelectorAll(".modal-bg").forEach(bg => {
+    bg.addEventListener("click", e => {
+      if (e.target === bg) bg.classList.remove("show");
+    });
+  });
+
+  // ===== ESC로 모달 닫기 =====
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".modal-bg.show").forEach(m => m.classList.remove("show"));
+    }
+  });
+
+  // ===== 초기 로드 — 단계별 진단 =====
+  function setStatus(msg) {
+    document.getElementById("status-msg").textContent = msg;
+    // 화면 중앙에도 큰 글씨로 표시 (사용자 눈에 잘 띄게)
+    const body = document.getElementById("filelist-body");
+    if (body) body.innerHTML = '<div class="filelist-empty" style="color:#fa3; font-size:14px;">⏳ ' + msg + '</div>';
+    console.log("[init]", msg);
+  }
+  async function init() {
+    setStatus("1/5 invoke 검사…");
+    if (!invoke) { showErr("단계 1 실패: invoke API 없음"); return; }
+    setStatus("2/5 about 호출…");
+    try {
+      const info = await invoke("about");
+      document.getElementById("version").textContent = "v" + info.version;
+    } catch (e) { showErr("단계 2 (about) 실패: " + (e.message || e)); return; }
+    setStatus("3/5 사이드바 구성…");
+    try { await buildSidebar(); }
+    catch (e) { showErr("단계 3 (buildSidebar) 실패: " + (e.message || e)); return; }
+    setStatus("4/5 시작 폴더 가져오기…");
+    let start;
+    try { start = await invoke("current_dir"); }
+    catch (e) { showErr("단계 4 (current_dir) 실패: " + (e.message || e)); return; }
+    setStatus("5/5 폴더 열기: " + start);
+    try { await navigateTo(start); setStatus("준비 완료"); }
+    catch (e) {
+      showErr("단계 5 (navigateTo " + start + ") 실패: " + (e.message || e));
+      // 실패 시 홈으로 fallback
+      try {
+        const h = await invoke("home_dir");
+        setStatus("홈으로 fallback: " + h);
+        await navigateTo(h);
+      } catch (e2) { showErr("홈 fallback도 실패: " + (e2.message || e2)); }
+    }
+  }
+  // 즉시 시각적 표시 - JS가 로드되었음을 증명
+  try {
+    const body = document.getElementById("filelist-body");
+    if (body) body.innerHTML = '<div class="filelist-empty" style="color:#fa3; font-size:14px;">⏳ JS 로드 OK, init 시작…</div>';
+  } catch(e) {}
+  // init 호출
+  try { init(); } catch(e) { showErr("init 동기 에러: " + (e.message || e)); }
+
+  // ===== 부트 배너 제거 (init 성공 시) =====
+  setTimeout(function() {
+    var b = document.getElementById("boot-banner");
+    if (b && b.textContent.indexOf("준비 완료") !== -1) {
+      b.style.display = "none";
+    }
+  }, 1000);
+</script>
 </body>
 </html>
