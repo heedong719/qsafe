@@ -1710,6 +1710,250 @@ pub fn md5_of_file(path: String) -> Result<String, String> {
     compute_md5_file(&std::path::PathBuf::from(&path))
 }
 
+// ════════════════════════════════════════════════════════════
+// ISO 가상 마운트 — macOS hdiutil / Linux udisksctl / Windows Mount-DiskImage
+//
+// `iso_mount(path)`는 ISO 파일을 가상 디스크처럼 OS에 부착하고
+// 마운트 포인트(macOS/Linux는 디렉토리, Windows는 드라이브 letter)와
+// detach에 쓸 handle을 돌려준다. `iso_unmount(handle)`로 해제.
+//
+// 보안 / 권한 노트:
+// - macOS는 hdiutil이 사용자 권한으로 작동 — 권한 escalation 없음.
+// - Linux는 udisksctl이 polkit로 무권한 사용자도 마운트 가능 (rootless).
+//   wodim/mount 대안은 root 필요 → udisksctl 우선.
+// - Windows는 Mount-DiskImage가 사용자 컨텍스트에서 작동.
+// - macOS Gatekeeper가 Quarantine된 ISO를 차단할 수 있음.
+// ════════════════════════════════════════════════════════════
+
+#[derive(Serialize, Debug)]
+pub struct IsoMountResult {
+    pub mount_point: String, // macOS: /Volumes/Foo, Linux: /run/media/user/Foo, Windows: D:\
+    pub handle: String,      // unmount 호출 시 식별자 (OS별로 다름)
+    pub label: String,       // 볼륨 라벨 (없으면 basename)
+}
+
+#[tauri::command]
+pub fn iso_mount(path: String) -> Result<IsoMountResult, String> {
+    let p = std::path::PathBuf::from(&path);
+    if !p.exists() {
+        return Err(format!("ISO 파일을 찾을 수 없습니다: {}", path));
+    }
+    // 확장자 검사는 약식. ISO 9660 magic 검사는 비싸서 default OFF.
+    let lower = path.to_lowercase();
+    if !(lower.ends_with(".iso") || lower.ends_with(".img") || lower.ends_with(".dmg")) {
+        return Err(format!(
+            "지원하지 않는 확장자입니다 (.iso/.img/.dmg만): {}",
+            path
+        ));
+    }
+    iso_mount_impl(&p)
+}
+
+#[tauri::command]
+pub fn iso_unmount(handle: String) -> Result<(), String> {
+    iso_unmount_impl(&handle)
+}
+
+#[cfg(target_os = "macos")]
+fn iso_mount_impl(p: &std::path::Path) -> Result<IsoMountResult, String> {
+    use std::process::Command;
+    let out = Command::new("hdiutil")
+        .args(["attach", "-nobrowse"])
+        .arg(p)
+        .output()
+        .map_err(|e| format!("hdiutil 실행 실패: {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "hdiutil attach 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    // hdiutil 출력 형식 (탭/공백 분리):
+    //   /dev/disk5\t\t<filesystem>\t\t/Volumes/MyDisk
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let mut mount_point = String::new();
+    let mut handle = String::new();
+    for line in stdout.lines() {
+        let parts: Vec<&str> = line.split('\t').filter(|s| !s.is_empty()).collect();
+        if let Some(last) = parts.last() {
+            if last.starts_with("/Volumes/") {
+                mount_point = last.trim().to_string();
+                if let Some(first) = parts.first() {
+                    handle = first.trim().to_string();
+                }
+            }
+        }
+    }
+    if mount_point.is_empty() {
+        return Err(format!("hdiutil 출력 파싱 실패:\n{}", stdout));
+    }
+    let label = std::path::Path::new(&mount_point)
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("ISO")
+        .to_string();
+    Ok(IsoMountResult {
+        mount_point,
+        handle,
+        label,
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn iso_unmount_impl(handle: &str) -> Result<(), String> {
+    use std::process::Command;
+    let out = Command::new("hdiutil")
+        .args(["detach", handle])
+        .output()
+        .map_err(|e| format!("hdiutil detach 실패: {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "hdiutil detach 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn iso_mount_impl(p: &std::path::Path) -> Result<IsoMountResult, String> {
+    use std::process::Command;
+    // 1) loop-setup (read-only)
+    let out = Command::new("udisksctl")
+        .args(["loop-setup", "-r", "-f"])
+        .arg(p)
+        .output()
+        .map_err(|e| format!("udisksctl 실행 실패 (설치 안 됨?): {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "udisksctl loop-setup 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    // 출력: "Mapped file <iso> as /dev/loop0."
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let loop_dev = stdout
+        .split_whitespace()
+        .find(|s| s.starts_with("/dev/loop"))
+        .ok_or_else(|| format!("loop 디바이스 파싱 실패:\n{}", stdout))?
+        .trim_end_matches('.')
+        .to_string();
+    // 2) mount
+    let out2 = Command::new("udisksctl")
+        .args(["mount", "-b", &loop_dev])
+        .output()
+        .map_err(|e| format!("udisksctl mount 실패: {}", e))?;
+    if !out2.status.success() {
+        // best-effort: loop-delete
+        let _ = Command::new("udisksctl")
+            .args(["loop-delete", "-b", &loop_dev])
+            .output();
+        return Err(format!(
+            "udisksctl mount 실패: {}",
+            String::from_utf8_lossy(&out2.stderr).trim()
+        ));
+    }
+    let mout = String::from_utf8_lossy(&out2.stdout);
+    // 출력: "Mounted /dev/loop0 at /run/media/user/MyDisk"
+    let mount_point = mout
+        .split(" at ")
+        .nth(1)
+        .map(|s| s.trim().trim_end_matches('.').to_string())
+        .ok_or_else(|| format!("mount 출력 파싱 실패:\n{}", mout))?;
+    let label = std::path::Path::new(&mount_point)
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("ISO")
+        .to_string();
+    Ok(IsoMountResult {
+        mount_point,
+        handle: loop_dev,
+        label,
+    })
+}
+
+#[cfg(target_os = "linux")]
+fn iso_unmount_impl(handle: &str) -> Result<(), String> {
+    use std::process::Command;
+    let _ = Command::new("udisksctl")
+        .args(["unmount", "-b", handle])
+        .output();
+    let out = Command::new("udisksctl")
+        .args(["loop-delete", "-b", handle])
+        .output()
+        .map_err(|e| format!("udisksctl loop-delete 실패: {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "udisksctl loop-delete 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn iso_mount_impl(p: &std::path::Path) -> Result<IsoMountResult, String> {
+    use std::process::Command;
+    // PowerShell -NoProfile -Command "..."
+    // Mount-DiskImage 후 Get-DiskImage | Get-Volume 으로 드라이브 letter 얻음.
+    let script = format!(
+        "$img = Mount-DiskImage -ImagePath '{}' -PassThru; \
+         $vol = Get-DiskImage -ImagePath '{}' | Get-Volume; \
+         Write-Output ($vol.DriveLetter + ':\\')",
+        p.display().to_string().replace('\'', "''"),
+        p.display().to_string().replace('\'', "''")
+    );
+    let out = Command::new("powershell")
+        .args(["-NoProfile", "-Command", &script])
+        .output()
+        .map_err(|e| format!("powershell 실행 실패: {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "Mount-DiskImage 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    let mount_point = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    if mount_point.is_empty() {
+        return Err("드라이브 letter를 얻지 못했습니다".to_string());
+    }
+    Ok(IsoMountResult {
+        mount_point: mount_point.clone(),
+        handle: p.display().to_string(), // unmount 시 ImagePath 필요
+        label: mount_point,
+    })
+}
+
+#[cfg(target_os = "windows")]
+fn iso_unmount_impl(handle: &str) -> Result<(), String> {
+    use std::process::Command;
+    let script = format!(
+        "Dismount-DiskImage -ImagePath '{}'",
+        handle.replace('\'', "''")
+    );
+    let out = Command::new("powershell")
+        .args(["-NoProfile", "-Command", &script])
+        .output()
+        .map_err(|e| format!("powershell 실행 실패: {}", e))?;
+    if !out.status.success() {
+        return Err(format!(
+            "Dismount-DiskImage 실패: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+fn iso_mount_impl(_p: &std::path::Path) -> Result<IsoMountResult, String> {
+    Err("이 플랫폼은 ISO 마운트를 지원하지 않습니다".to_string())
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+fn iso_unmount_impl(_handle: &str) -> Result<(), String> {
+    Err("이 플랫폼은 ISO 마운트를 지원하지 않습니다".to_string())
+}
+
 fn basename_of(path: &str) -> String {
     let p = std::path::PathBuf::from(path);
     p.file_name()

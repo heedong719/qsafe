@@ -31,6 +31,8 @@ fn main() {
             commands::pack_path_ext,
             commands::unpack_qsafe_ext,
             commands::md5_of_file,
+            commands::iso_mount,
+            commands::iso_unmount,
         ])
         .run(tauri::generate_context!())
         .expect("error while running qsafe GUI");
