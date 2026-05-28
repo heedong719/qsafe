@@ -2383,9 +2383,8 @@ fn run_iso_write(
             //        "1234567890 bytes transferred in 12.345 secs"
             if let Some(idx) = line.find(" bytes") {
                 let num: Option<u64> = line[..idx]
-                    .trim()
                     .split_whitespace()
-                    .last()
+                    .next_back()
                     .and_then(|s| s.parse().ok());
                 if let Some(b) = num {
                     let pct = if total_bytes > 0 {
