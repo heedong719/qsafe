@@ -37,6 +37,17 @@
   "result.success": "✅ Fertig",
   "result.fail": "❌ Fehlgeschlagen",
 
+  "modal.about.title": "Über qsafe",
+  "modal.about.tagline": "Quantensichere Kompression und Verschlüsselung",
+  "modal.about.version": "Version",
+  "modal.about.cipher": "Verschlüsselung",
+  "modal.about.features": "Funktionen",
+  "modal.about.built_with": "Gebaut mit",
+  "modal.about.license": "Lizenz",
+  "modal.about.copyright": "© 2026 heedong719 · MIT oder Apache-2.0",
+  "modal.about.repo": "GitHub",
+  "modal.about.close": "Schließen",
+
   "error.title": "Fehler",
   "error.wrong_password": "Falsches Passwort"
 }

@@ -6,16 +6,48 @@
 
 ## [Unreleased]
 
-### 추가
-- OS 통합: Windows 탐색기 / macOS Finder / Linux 파일 매니저 (계획)
-- 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
-- GUI M2~M8: pack/unpack 명령, 진행 바, drag&drop, 다중 수신자 UI (qsafe-gui scaffold는 v0.1.5에 활성화됨)
-- SFX codesign / notarization (macOS Gatekeeper / Windows SmartScreen 통과용)
-- 별도 Tauri release workflow (icon.ico/.icns 자산 포함, OS-native bundle)
-- Windows 정식 PowerShell 설치 스크립트 (install.ps1)
+### Commercial Polish Cycle (R1~R5, post-v0.1.6)
 
-### qsafe-gui 후속 마일스톤 (사용자 합의)
-- 압축 파일 더블 클릭 시 팝업에 **압축 풀기 버튼** 추가
+**R1 (503ea14) — modal-info '압축 풀기' 버튼**
+- 압축 파일 더블 클릭 → 정보 모달이 열리면 "📂 압축 풀기" 버튼 활성. `.qs` → modal-unpack prefill, 외부 아카이브 → 같은 디렉토리에 즉시 extract.
+
+**R2 (38f1075) — 상용 UX 3종 일괄**
+- Drag & Drop: Tauri `tauri://drag-drop` listener — `.qs`/외부 아카이브 → modal-info, `.iso`/`.img`/`.dmg` → modal-iso, 일반 파일 → modal-pack prefill.
+- 키보드 단축키: F5/Cmd-R/Ctrl-R 새로고침, Backspace 상위 폴더, Cmd-Comma 언어, Cmd-N 압축. ESC는 기존.
+- 컬럼 정렬: 이름/크기/종류/수정 클릭 → ASC/DESC 토글, 폴더 상단 고정.
+
+**R3 (35188e5) — About 재디자인**
+- 큰 🔐 글리프 + tagline + 버전 강조 + license/build-with/GitHub 링크 + 저작권. `modal.about.*` 10개 i18n 키 추가.
+
+**R4 (a9e2b71) — OS 자동 등록 (Windows / macOS / Linux)**
+- `tauri.conf.json` `bundle.fileAssociations` — `.qs` (MIME `application/x-qsafe`, Editor) + `.iso`/`.img`/`.dmg` (Viewer). Tauri bundler가 macOS Info.plist UTI + Windows MSI/NSIS 자동 생성.
+- `crates/qsafe-gui/install/qsafe.desktop` — 8-언어 GenericName/Comment, MimeType 8개 (.qs + 7개 외부 아카이브 + ISO), Desktop Actions ("Compress with qsafe" / "Unpack with qsafe").
+- `crates/qsafe-gui/install/qsafe-mime.xml` — shared-mime-info 패키지, `*.qs` glob + magic-byte 룰 (`QSAFE001` at offset 0, priority 80).
+- `install-linux.sh` — `--user` (sudo 불필요) / 전역 / `--prefix=PATH` / `--uninstall`. 바이너리 + .desktop + MIME + 아이콘 설치 + 3개 cache update 자동.
+- `install-macos.sh` — `cargo tauri build` 산출물 `qsafe.app` 자동 탐색 → `~/Applications/` → `lsregister -f` → quarantine 제거.
+- `install-windows.ps1` — Registry ProgID `qsafe.qsfile`, DefaultIcon, shell\open\command, `*\shell\qsafe-compress` + `Directory\shell\qsafe-compress`, `qsafe.qsfile\shell\unpack`. `-User` HKCU (admin 불필요) / 기본 HKLM / `-Uninstall`.
+
+**R5 (45f51cc) — startup argv 라우팅 (R4와 GUI 연결)**
+- `StartupArgs` 구조체 + `parse()` — `--action=<verb>` (pack/unpack/info) + 첫 positional path (canonicalize).
+- `main.rs` 부팅 시 `std::env::args().skip(1)` 파싱 → Tauri `.manage()`. 새 `startup_args()` command JS 노출.
+- `ui/index.html` init() 끝: 파일 매니저로 디렉토리 탐색 OK 후 → 액션별 자동 모달 오픈 (pack/unpack/info/iso, 기본 modal-pack prefill).
+- 단위 테스트 6건 추가 (empty / path만 / action만 / `=` 형식 / first positional / unknown flag). 워크스페이스 테스트 133 → **139**.
+
+**문서 동기화 (이번 사이클)**
+- `README.md` 빠른 시작 직전에 "OS 자동 등록" 섹션 (3-OS 설치 명령 + 상세 가이드 링크).
+- `crates/qsafe-gui/install/README.md` — OS별 설치/검증 명령/통합 매트릭스/다음 단계 큐.
+
+### 후속 마일스톤 (대기)
+- 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
+- SFX codesign / notarization (macOS Gatekeeper / Windows SmartScreen)
+- 정식 Tauri release workflow (icon.ico/.icns + MSI/NSIS/DMG bundle)
+- macOS Quick Look plugin (`.qlgenerator`)
+- Windows Shell ThumbnailProvider
+- Linux `.thumbnailer` (`/usr/share/thumbnailers/qsafe.thumbnailer`)
+- 자동 업데이트 (Sparkle / WinSparkle)
+
+### qsafe-gui 후속 마일스톤 (사용자 합의 — R1 완료)
+- ✅ ~~압축 파일 더블 클릭 시 팝업에 **압축 풀기 버튼** 추가~~ (R1)
 - 팝업 안의 파일 더블 클릭 → 임시 디렉토리에 **단일 파일 추출 + 연결 프로그램 실행**
 - 모달 닫기 시 **임시 추출 파일 자동 cleanup**
 - 압축/풀기 **진행 % 팝업** (qsafe-cli `--progress` 플래그 + GUI stderr 파싱)

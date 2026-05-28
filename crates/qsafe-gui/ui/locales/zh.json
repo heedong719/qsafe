@@ -39,6 +39,17 @@
   "result.success": "✅ 完成",
   "result.fail": "❌ 失败",
 
+  "modal.about.title": "关于 qsafe",
+  "modal.about.tagline": "量子安全压缩与加密",
+  "modal.about.version": "版本",
+  "modal.about.cipher": "加密方式",
+  "modal.about.features": "功能",
+  "modal.about.built_with": "构建",
+  "modal.about.license": "许可证",
+  "modal.about.copyright": "© 2026 heedong719 · MIT 或 Apache-2.0",
+  "modal.about.repo": "GitHub",
+  "modal.about.close": "关闭",
+
   "error.title": "错误",
   "error.wrong_password": "密码错误"
 }

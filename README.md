@@ -117,6 +117,25 @@ cargo build --release
 ./target/release/qsafe --help
 ```
 
+### OS 자동 등록 (탐색기 / Finder / 파일 매니저 통합)
+
+설치 후 `.qs` / `.iso` 파일을 OS 파일 매니저에서 더블 클릭하면 자동으로 qsafe-gui가 열리고, 우클릭 메뉴에 "Compress with qsafe" / "Unpack with qsafe" 항목이 등록됩니다.
+
+```bash
+# Linux (XDG 표준)
+sh crates/qsafe-gui/install/install-linux.sh --user   # 사용자만 (~/.local, sudo 불필요)
+sudo sh crates/qsafe-gui/install/install-linux.sh     # 전역 (/usr/local + /usr/share)
+
+# macOS — cargo tauri build 로 qsafe.app 생성 후
+sh crates/qsafe-gui/install/install-macos.sh
+
+# Windows (PowerShell)
+.\crates\qsafe-gui\install\install-windows.ps1 -User  # HKCU, admin 불필요
+.\crates\qsafe-gui\install\install-windows.ps1        # HKLM, admin 필요
+```
+
+상세 내용 및 검증 명령은 `crates/qsafe-gui/install/README.md` 참고.
+
 ### 첫 파일 보호
 
 ```bash

@@ -39,6 +39,17 @@
   "result.success": "✅ 完了",
   "result.fail": "❌ 失敗",
 
+  "modal.about.title": "qsafe について",
+  "modal.about.tagline": "量子安全圧縮・暗号化",
+  "modal.about.version": "バージョン",
+  "modal.about.cipher": "暗号方式",
+  "modal.about.features": "機能",
+  "modal.about.built_with": "ビルド",
+  "modal.about.license": "ライセンス",
+  "modal.about.copyright": "© 2026 heedong719 · MIT または Apache-2.0",
+  "modal.about.repo": "GitHub",
+  "modal.about.close": "閉じる",
+
   "error.title": "エラー",
   "error.wrong_password": "パスワードが違います"
 }
