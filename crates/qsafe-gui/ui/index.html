@@ -425,6 +425,52 @@
   </div>
 </div>
 
+<div class="modal-bg" id="modal-iso">
+  <div class="modal">
+    <h2 data-i18n="modal.iso.title">💿 ISO 파일</h2>
+    <div class="result ok" id="m-iso-path" style="display:block;"></div>
+    <div class="row" style="margin-top:12px;">
+      <button id="btn-iso-mount" data-i18n="modal.iso.action.mount">📀 가상 마운트 (CD 삽입처럼)</button>
+      <button id="btn-iso-write-usb" data-i18n="modal.iso.action.write_usb">💾 USB 부팅 디스크 만들기</button>
+    </div>
+    <div class="result ok" id="m-iso-status" style="display:none;"></div>
+    <div class="actions">
+      <button class="cancel" id="btn-iso-unmount" data-i18n="modal.iso.action.unmount" style="display:none;">⏏ 마운트 해제</button>
+      <button class="cancel" id="btn-iso-close" data-i18n="modal.iso.action.close">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-usb">
+  <div class="modal" style="max-width:600px;">
+    <h2 data-i18n="modal.usb.title">💾 USB 부팅 디스크 만들기</h2>
+    <div class="row">
+      <label data-i18n="modal.usb.iso">ISO 파일</label>
+      <code id="m-usb-iso" style="color:#6cf; flex:1; word-break:break-all;"></code>
+    </div>
+    <div class="row">
+      <label data-i18n="modal.usb.select_disk">대상 디스크 (USB)</label>
+      <button class="cancel" id="btn-usb-refresh" data-i18n="modal.usb.refresh">🔄 새로고침</button>
+    </div>
+    <div id="usb-disk-list" style="max-height:200px; overflow-y:auto; border:1px solid #333; padding:6px; border-radius:4px; margin:8px 0;"></div>
+    <div class="result err" id="m-usb-warning" style="display:none;">
+      <div style="font-weight:600; color:#f88;" data-i18n="modal.usb.warning_title">⚠️ 위험: 디스크의 모든 데이터가 삭제됩니다</div>
+      <div style="margin-top:6px; color:#fcc;" data-i18n="modal.usb.warning_body">이 작업은 되돌릴 수 없습니다.</div>
+      <label style="display:flex; gap:6px; align-items:center; margin-top:8px; cursor:pointer; color:#fcc;">
+        <input type="checkbox" id="usb-confirm-checkbox" /> <span data-i18n="modal.usb.confirm_label">이해했고 데이터 손실에 동의합니다</span>
+      </label>
+    </div>
+    <div class="progress" id="m-usb-prog" style="display:none;">
+      <div class="bar" id="m-usb-prog-bar" style="width:0%; animation:none; transition:width 0.3s;"></div>
+    </div>
+    <div class="result ok" id="m-usb-progress-text" style="display:none; font-family:monospace; font-size:11px;"></div>
+    <div class="actions">
+      <button class="cancel" id="btn-usb-cancel" data-i18n="modal.usb.cancel">취소</button>
+      <button id="btn-usb-start" data-i18n="modal.usb.start" disabled>▶ 쓰기 시작</button>
+    </div>
+  </div>
+</div>
+
 <div id="error-banner">
   <span class="clear" id="err-clear">✕</span>
   <span id="err-text"></span>
@@ -585,6 +631,8 @@
       openInfoModal(e.path);
     } else if (e.is_archive) {
       openInfoModal(e.path);
+    } else if (/\.(iso|img|dmg)$/i.test(e.name)) {
+      openIsoModal(e.path);
     } else {
       // 연결된 프로그램으로 열기 (Windows: start, Mac: open, Linux: xdg-open)
       invoke("open_with_associated", { path: e.path }).catch(function(err) {
@@ -1013,6 +1061,191 @@
       document.querySelectorAll(".modal-bg.show").forEach(m => m.classList.remove("show"));
     }
   });
+
+  // ===== ISO 모달 wiring (마운트 / USB 쓰기 선택) =====
+  // ISO 파일 더블 클릭 → 액션 선택 모달 (가상 마운트 / USB 부팅 만들기 / 닫기)
+  // 활성 마운트 추적해서 같은 다이얼로그에서 unmount도 가능.
+  var isoCurrent = { path: null, handle: null, mount_point: null };
+
+  function openIsoModal(path) {
+    isoCurrent.path = path;
+    document.getElementById("m-iso-path").textContent = path;
+    document.getElementById("m-iso-status").style.display = "none";
+    document.getElementById("btn-iso-unmount").style.display = isoCurrent.handle ? "" : "none";
+    openModal("modal-iso");
+  }
+  document.getElementById("btn-iso-close").addEventListener("click", () => closeModal("modal-iso"));
+
+  document.getElementById("btn-iso-mount").addEventListener("click", async () => {
+    if (!isoCurrent.path) return;
+    document.getElementById("btn-iso-mount").disabled = true;
+    try {
+      const r = await invoke("iso_mount", { path: isoCurrent.path });
+      isoCurrent.handle = r.handle;
+      isoCurrent.mount_point = r.mount_point;
+      const msg = window.qsafeI18n.t("modal.iso.mounted", { mount_point: r.mount_point });
+      const st = document.getElementById("m-iso-status");
+      st.textContent = msg;
+      st.style.display = "block";
+      document.getElementById("btn-iso-unmount").style.display = "";
+      // 마운트 포인트를 OS 탐색기로 열기
+      try { await invoke("open_with_associated", { path: r.mount_point }); } catch(_) {}
+    } catch (e) {
+      showErr("ISO 마운트 실패: " + (e.message || e));
+    } finally {
+      document.getElementById("btn-iso-mount").disabled = false;
+    }
+  });
+
+  document.getElementById("btn-iso-unmount").addEventListener("click", async () => {
+    if (!isoCurrent.handle) return;
+    try {
+      await invoke("iso_unmount", { handle: isoCurrent.handle });
+      const msg = window.qsafeI18n.t("modal.iso.unmounted");
+      const st = document.getElementById("m-iso-status");
+      st.textContent = msg;
+      st.style.display = "block";
+      isoCurrent.handle = null;
+      isoCurrent.mount_point = null;
+      document.getElementById("btn-iso-unmount").style.display = "none";
+    } catch (e) {
+      showErr("ISO 마운트 해제 실패: " + (e.message || e));
+    }
+  });
+
+  document.getElementById("btn-iso-write-usb").addEventListener("click", async () => {
+    if (!isoCurrent.path) return;
+    closeModal("modal-iso");
+    openUsbWriteModal(isoCurrent.path);
+  });
+
+  // ===== USB 부팅 디스크 모달 wiring =====
+  // (1) 디스크 목록 새로고침 → (2) 디스크 선택 → (3) 동의 체크박스 → (4) 쓰기 시작
+  // (5) iso-write-progress 이벤트 listener로 진행 % 갱신 → (6) done/error 처리.
+  var usbState = { iso: null, selectedDisk: null, writing: false };
+
+  async function openUsbWriteModal(iso) {
+    usbState.iso = iso;
+    usbState.selectedDisk = null;
+    usbState.writing = false;
+    document.getElementById("m-usb-iso").textContent = iso;
+    document.getElementById("m-usb-warning").style.display = "none";
+    document.getElementById("m-usb-prog").style.display = "none";
+    document.getElementById("m-usb-progress-text").style.display = "none";
+    document.getElementById("usb-confirm-checkbox").checked = false;
+    document.getElementById("btn-usb-start").disabled = true;
+    document.getElementById("btn-usb-cancel").disabled = false;
+    openModal("modal-usb");
+    await refreshUsbDisks();
+  }
+
+  async function refreshUsbDisks() {
+    const listEl = document.getElementById("usb-disk-list");
+    listEl.innerHTML = '<div style="padding:10px; color:#888;" data-i18n="modal.info.summary.loading">로딩 중…</div>';
+    try {
+      const disks = await invoke("list_writable_disks");
+      if (!disks || disks.length === 0) {
+        listEl.innerHTML = '<div style="padding:10px; color:#888;" data-i18n="modal.usb.no_disks">' +
+          (window.qsafeI18n.t("modal.usb.no_disks")) + '</div>';
+        return;
+      }
+      listEl.innerHTML = "";
+      for (const d of disks) {
+        const item = document.createElement("div");
+        item.style.cssText = "padding:8px 10px; border-bottom:1px solid #2a2a2a; cursor:pointer; display:flex; gap:10px; align-items:center;";
+        item.innerHTML =
+          '<input type="radio" name="usb-disk" />' +
+          '<div style="flex:1;">' +
+            '<div style="color:#cef;">' + escapeHtml(d.label) + '</div>' +
+            '<div style="color:#888; font-size:11px; font-family:monospace;">' +
+              d.id + ' · ' + fmtBytes(d.size_bytes) +
+              (d.removable ? ' · removable' : '') +
+            '</div>' +
+          '</div>';
+        const radio = item.querySelector("input");
+        item.addEventListener("click", () => {
+          radio.checked = true;
+          usbState.selectedDisk = d;
+          document.getElementById("m-usb-warning").style.display = "block";
+          updateUsbStartButton();
+        });
+        listEl.appendChild(item);
+      }
+    } catch (e) {
+      listEl.innerHTML = '<div style="padding:10px; color:#f88;">디스크 목록 실패: ' + (e.message || e) + '</div>';
+    }
+  }
+
+  function updateUsbStartButton() {
+    const ok = usbState.selectedDisk && document.getElementById("usb-confirm-checkbox").checked && !usbState.writing;
+    document.getElementById("btn-usb-start").disabled = !ok;
+  }
+
+  document.getElementById("usb-confirm-checkbox").addEventListener("change", updateUsbStartButton);
+  document.getElementById("btn-usb-refresh").addEventListener("click", refreshUsbDisks);
+  document.getElementById("btn-usb-cancel").addEventListener("click", () => {
+    if (usbState.writing) {
+      // 진행 중에는 cancel 불가 (안전 — dd 중간 중단 = 디스크 손상)
+      showErr("쓰기 진행 중에는 취소할 수 없습니다");
+      return;
+    }
+    closeModal("modal-usb");
+  });
+
+  document.getElementById("btn-usb-start").addEventListener("click", async () => {
+    if (!usbState.selectedDisk || usbState.writing) return;
+    usbState.writing = true;
+    document.getElementById("btn-usb-start").disabled = true;
+    document.getElementById("btn-usb-cancel").disabled = true;
+    document.getElementById("m-usb-prog").style.display = "block";
+    document.getElementById("m-usb-progress-text").style.display = "block";
+    document.getElementById("m-usb-progress-text").textContent = window.qsafeI18n.t("modal.usb.stage.preparing");
+    const startTime = Date.now();
+    const totalBytes = usbState.selectedDisk.size_bytes;
+    const confirmToken = usbState.selectedDisk.id + ":" + usbState.selectedDisk.size_bytes;
+    try {
+      await invoke("write_iso_to_disk", {
+        isoPath: usbState.iso,
+        diskId: usbState.selectedDisk.id,
+        confirmToken: confirmToken,
+      });
+      // 즉시 반환 — 진행은 iso-write-progress 이벤트로
+    } catch (e) {
+      showErr("쓰기 시작 실패: " + (e.message || e));
+      usbState.writing = false;
+      document.getElementById("btn-usb-cancel").disabled = false;
+    }
+  });
+
+  // Tauri event listener — iso-write-progress
+  // Tauri v2: window.__TAURI__.event.listen
+  (async function setupIsoProgressListener() {
+    try {
+      if (!window.__TAURI__ || !window.__TAURI__.event) return;
+      await window.__TAURI__.event.listen("iso-write-progress", (ev) => {
+        const p = ev.payload;
+        const pct = Math.max(0, Math.min(100, p.percent || 0));
+        document.getElementById("m-usb-prog-bar").style.width = pct.toFixed(1) + "%";
+        const elapsedMs = p.bytes_written > 0 ? (Date.now() - (usbState._startTime || Date.now())) : 0;
+        const elapsedStr = Math.floor(elapsedMs / 1000) + "s";
+        const stageKey = "modal.usb.stage." + p.stage;
+        const stageStr = window.qsafeI18n.t(stageKey);
+        document.getElementById("m-usb-progress-text").textContent =
+          pct.toFixed(1) + "% — " + stageStr + " — " + p.message;
+        if (p.stage === "done") {
+          usbState.writing = false;
+          document.getElementById("btn-usb-cancel").disabled = false;
+          document.getElementById("btn-usb-cancel").textContent = window.qsafeI18n.t("modal.usb.close");
+        } else if (p.stage === "error") {
+          usbState.writing = false;
+          document.getElementById("btn-usb-cancel").disabled = false;
+          showErr(p.message || "쓰기 실패");
+        }
+      });
+    } catch (e) {
+      console.warn("iso-write-progress listener 설정 실패:", e);
+    }
+  })();
 
   // ===== 초기 로드 — 단계별 진단 =====
   function setStatus(msg) {
