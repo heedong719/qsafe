@@ -1101,12 +1101,138 @@
     });
   });
 
-  // ===== ESC로 모달 닫기 =====
+  // ===== 키보드 단축키 (상용급 키보드 네비) =====
+  // ESC : 모달 닫기
+  // F5 : 새로고침
+  // Cmd/Ctrl+R : 새로고침
+  // Cmd/Ctrl+Q : 종료 (Tauri close)
+  // Backspace : 상위 폴더 (input 포커스 시 제외)
+  // Cmd/Ctrl+, : 설정 모달 (현재 언어만)
+  // Cmd/Ctrl+N : 새 압축 (선택 파일 있을 때)
   document.addEventListener("keydown", e => {
+    const mod = e.metaKey || e.ctrlKey;
+    // 입력 포커스 중에는 단축키 일부 무시
+    const inInput = e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA";
+
     if (e.key === "Escape") {
       document.querySelectorAll(".modal-bg.show").forEach(m => m.classList.remove("show"));
+      return;
+    }
+    if (e.key === "F5" || (mod && (e.key === "r" || e.key === "R"))) {
+      e.preventDefault();
+      const refresh = document.getElementById("btn-refresh");
+      if (refresh) refresh.click();
+      return;
+    }
+    if (!inInput && e.key === "Backspace") {
+      e.preventDefault();
+      const up = document.getElementById("btn-up");
+      if (up && !up.disabled) up.click();
+      return;
+    }
+    if (mod && e.key === ",") {
+      e.preventDefault();
+      const lang = document.getElementById("btn-lang");
+      if (lang) lang.click();
+      return;
+    }
+    if (mod && (e.key === "n" || e.key === "N")) {
+      e.preventDefault();
+      const pack = document.getElementById("btn-pack");
+      if (pack && !pack.disabled) pack.click();
+      return;
     }
   });
+
+  // ===== 드래그 앤 드롭 (상용급 입력 패턴) =====
+  // 외부에서 파일을 윈도우로 드래그 → 자동으로 압축 모달 prefill.
+  // Tauri 2는 OS-level drop이 'tauri://drag-drop'/'drop' 이벤트로 옴.
+  // capabilities/default.json의 core:default 권한이 file drop을 허용.
+  (async function setupDragDrop() {
+    try {
+      if (!window.__TAURI__ || !window.__TAURI__.event) return;
+      const handler = (ev) => {
+        const paths = (ev.payload && ev.payload.paths) || ev.payload || [];
+        if (!Array.isArray(paths) || paths.length === 0) return;
+        const first = paths[0];
+        // .qs/.qsx/.zip/.rar/.7z 등은 정보 모달, 그 외는 압축 모달 prefill
+        const lower = String(first).toLowerCase();
+        if (lower.endsWith(".qs") || lower.endsWith(".qsx") ||
+            lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".7z") ||
+            lower.endsWith(".tar") || lower.endsWith(".gz") || lower.endsWith(".xz") ||
+            lower.endsWith(".bz2")) {
+          openInfoModal(first);
+        } else if (/\.(iso|img|dmg)$/i.test(first)) {
+          openIsoModal(first);
+        } else {
+          // 일반 파일/폴더 → 압축 모달 prefill (btn-pack의 기존 로직 재사용)
+          // entries에 해당 path가 없을 수도 있으니 직접 prefill
+          try {
+            document.getElementById("pack-input").value = first;
+            document.getElementById("pack-output").value = first + ".qs";
+            document.querySelector('input[name="m-pack-mode"][value="qsafe-open"]').checked = true;
+            document.getElementById("m-pack-pw-row").style.display = "none";
+            document.getElementById("m-pack-pk-row").style.display = "none";
+            document.getElementById("m-pack-pw").value = "";
+            document.getElementById("m-pack-pk").value = "";
+            document.getElementById("m-pack-result").style.display = "none";
+            document.getElementById("m-pack-prog").style.display = "none";
+            openModal("modal-pack");
+          } catch (e) {
+            showErr("드롭 처리 실패: " + (e.message || e));
+          }
+        }
+      };
+      // Tauri 2.x: tauri://drag-drop, 'drop' 둘 다 시도
+      try { await window.__TAURI__.event.listen("tauri://drag-drop", handler); } catch (_) {}
+      try { await window.__TAURI__.event.listen("drop", handler); } catch (_) {}
+    } catch (e) {
+      console.warn("drag-drop listener 설정 실패:", e);
+    }
+  })();
+
+  // ===== 컬럼 정렬 (상용 탐색기 표준) =====
+  // 이름/크기/종류/수정일 헤더 클릭 → 정렬 토글. 폴더는 항상 상단.
+  var sortState = { key: "name", asc: true };
+  function sortEntries() {
+    const k = sortState.key, asc = sortState.asc ? 1 : -1;
+    entries.sort((a, b) => {
+      // 폴더 우선
+      if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1;
+      let va, vb;
+      switch (k) {
+        case "size": va = a.size || 0; vb = b.size || 0; break;
+        case "kind": va = (a.is_qsafe ? "0" : a.is_archive ? "1" : "2") + a.name; vb = (b.is_qsafe ? "0" : b.is_archive ? "1" : "2") + b.name; break;
+        case "modified": va = a.modified_unix || 0; vb = b.modified_unix || 0; break;
+        case "name":
+        default: va = a.name.toLowerCase(); vb = b.name.toLowerCase(); break;
+      }
+      if (va < vb) return -1 * asc;
+      if (va > vb) return 1 * asc;
+      return 0;
+    });
+  }
+  // header element에 클릭 핸들러 (filelist-header 안의 div들)
+  (function setupSort() {
+    const header = document.querySelector(".filelist-header");
+    if (!header) return;
+    const cols = header.querySelectorAll("div");
+    const keys = ["name", "size", "kind", "modified"];
+    cols.forEach((col, i) => {
+      col.style.cursor = "pointer";
+      col.title = "정렬";
+      col.addEventListener("click", () => {
+        const k = keys[i];
+        if (sortState.key === k) sortState.asc = !sortState.asc;
+        else { sortState.key = k; sortState.asc = true; }
+        sortEntries();
+        // 즉시 re-render
+        if (typeof renderEntries === "function") {
+          try { renderEntries(); } catch (_) {}
+        }
+      });
+    });
+  })();
 
   // ===== ISO 모달 wiring (마운트 / USB 쓰기 선택) =====
   // ISO 파일 더블 클릭 → 액션 선택 모달 (가상 마운트 / USB 부팅 만들기 / 닫기)
