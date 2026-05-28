@@ -29,6 +29,22 @@
     "targets": "all",
     "icon": [
       "icons/icon.png"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["qs"],
+        "name": "qsafe Archive",
+        "description": "Quantum-safe encrypted archive",
+        "role": "Editor",
+        "mimeType": "application/x-qsafe"
+      },
+      {
+        "ext": ["iso", "img", "dmg"],
+        "name": "Disc Image",
+        "description": "Disc / ISO image",
+        "role": "Viewer",
+        "mimeType": "application/x-iso9660-image"
+      }
     ]
   }
 }

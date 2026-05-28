@@ -1,0 +1,33 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=qsafe
+GenericName=Quantum-safe Compression
+GenericName[ko]=양자 안전 압축
+GenericName[ja]=量子安全圧縮
+GenericName[zh]=量子安全压缩
+GenericName[es]=Compresión cuántica segura
+GenericName[fr]=Compression post-quantique
+GenericName[de]=Quantensichere Kompression
+GenericName[it]=Compressione quantum-safe
+Comment=Compress, encrypt and share files with post-quantum security
+Comment[ko]=양자 안전 압축·암호화·공유
+Exec=qsafe-gui %F
+Icon=qsafe
+Terminal=false
+Categories=Utility;Archiving;Compression;Security;FileTools;
+MimeType=application/x-qsafe;application/x-iso9660-image;application/zip;application/x-rar;application/x-7z-compressed;application/x-tar;application/gzip;application/x-xz;application/x-bzip2;
+Keywords=archive;compress;encrypt;quantum;qsafe;iso;
+StartupNotify=true
+StartupWMClass=qsafe
+Actions=open-pack;open-unpack;
+
+[Desktop Action open-pack]
+Name=Compress with qsafe
+Name[ko]=qsafe로 압축
+Exec=qsafe-gui --action=pack %F
+
+[Desktop Action open-unpack]
+Name=Unpack with qsafe
+Name[ko]=qsafe로 풀기
+Exec=qsafe-gui --action=unpack %F

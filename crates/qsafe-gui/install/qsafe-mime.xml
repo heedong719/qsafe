@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+
+  <mime-type type="application/x-qsafe">
+    <comment>qsafe encrypted archive</comment>
+    <comment xml:lang="ko">qsafe 암호화 아카이브</comment>
+    <comment xml:lang="ja">qsafe 暗号化アーカイブ</comment>
+    <comment xml:lang="zh">qsafe 加密压缩包</comment>
+    <comment xml:lang="es">Archivo cifrado qsafe</comment>
+    <comment xml:lang="fr">Archive chiffrée qsafe</comment>
+    <comment xml:lang="de">qsafe-verschlüsseltes Archiv</comment>
+    <comment xml:lang="it">Archivio cifrato qsafe</comment>
+    <icon name="qsafe"/>
+    <generic-icon name="package-x-generic"/>
+    <glob pattern="*.qs"/>
+    <!-- qsafe v0.1+ magic: ASCII bytes 'QSAFE001' at file offset 0 -->
+    <magic priority="80">
+      <match type="string" value="QSAFE001" offset="0"/>
+    </magic>
+  </mime-type>
+
+</mime-info>
