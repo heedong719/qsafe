@@ -10,6 +10,48 @@
 
 ---
 
+## [0.1.9] — 2026-05-30 (Polish Cycle III — Security Hardening + UX Discovery, R22~R26)
+
+v0.1.7 / v0.1.8 이 사용자 요청 큐 (Q1~Q5) + 풀스택 i18n + 정식 native installer 까지 마무리한 뒤, 이번 사이클은 두 트랙으로 나뉜다: (1) v0.1.7+0.1.8 에서 추가된 새 코드 경로 (R7 RAR 추출, R10 spawn, R16 ureq, write_iso_to_disk) 에 대한 방어적 가드 hardening + (2) 사용자 발견성 (discoverability) 개선 — 검색 / cheatsheet / kind 라벨.
+
+### 보안 hardening — R22 (13617d9) 메모리 unbounded growth 가드
+- `check_for_update` (R16) 응답 크기 캡: 256 KB. `Accept-Encoding: identity` 로 압축 해제 후 크기에 적용. `resp.into_json()` → 직접 take(N).read_to_end + serde_json::from_slice 패턴.
+- `spawn_with_progress` (R10) stderr DoS 가드: 라인당 8 KB (UTF-8 char boundary 보존 truncate) + 누적 256 KB (이후 silent drop).
+- 위협 모델: 망가진 자식 / GitHub API 변경 / 압폭 응답 모두 GUI 프로세스 메모리 안전.
+
+### 보안 hardening — R23 (a5172e4) RAR archive bomb 가드
+- `qsafe_formats::rar::extract_rar_entry` (R7) 에 `max_size: Option<u64>` 추가. Pre-check (header.unpacked_size > limit → 거부) + Post-check (fs::metadata().len() > limit → remove_file + 거부). 헤더 거짓 보고 방어.
+- qsafe-gui::extract_archive_entry_to_temp 에서 `Some(2 GiB)` 적용.
+
+### 보안 hardening — R26 (c523b06) write_iso_to_disk TOCTOU 가드
+- `run_iso_write` background thread 진입 시 `list_writable_disks_impl()` 재조회 + 3-조건 재검증 (`d.id == disk_id`, `confirm_token_for(d.id, d.size_bytes) == expected_token`, `!d.is_system`).
+- 분리 후 같은 슬롯에 다른 USB 삽입 / 시스템 디스크로 상태 변경 모두 차단.
+
+### UX 추가 — R24 (6066b07) 파일 검색/필터
+- addressbar 우측에 별도 검색 input + 'X / Y' 카운터.
+- `filterQuery` + `matchesFilter(e)` — case-insensitive substring. `entries[]` 보존, render 시 skip — `data-idx` 안정.
+- 3 상태: empty folder / no match / normal. 모든 메시지 i18n.
+- Cmd/Ctrl + F: focus + select. Esc inside filter: clear + blur.
+- 3 신규 i18n 키 × 8 locale.
+
+### UX 추가 — R25 (847a8d3) R24 follow-up
+- F1 cheatsheet 에 Cmd-F 행 추가 → 단축키 발견성 완성.
+- renderFileList 의 4가지 kind 라벨 (`폴더` / `🔐 qsafe` / `📦 archive` / `파일`) → `kind.{folder,qsafe,archive,file}` i18n.
+- 미마킹 placeholder 2건 (`친구.pub.json`, `내키.json`) → `data-i18n-placeholder` 마킹 + 8 locale native.
+- 7 신규 키 × 8 locale.
+
+### v0.1.8 → v0.1.9 i18n 키 누적
+- v0.1.8 까지: 약 230 키 / locale
+- v0.1.9 추가: 3 (filter) + 7 (R25 cheatsheet + kind + placeholder) = **10 키 / locale × 8 = 80 신규 native 번역**
+
+### 후속 마일스톤 (대기)
+- macOS .qlgenerator Quick Look plugin
+- Windows Shell ThumbnailProvider (COM DLL)
+- codesign / notarization
+- 외부 감사 (v1.0 전)
+
+---
+
 ## [0.1.8] — 2026-05-29 (Polish Cycle II, R15~R20)
 
 v0.1.7 가 R1~R14 (사용자 합의 큐 + 풀스택 i18n + OS 통합 + Tauri bundler) 를 묶었다면, v0.1.8 은 그 후속의 6 라운드 — Release 준비 + 자동 업데이트 + 사용자 가시 UX 패턴을 추가.
