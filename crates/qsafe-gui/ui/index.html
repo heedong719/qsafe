@@ -267,56 +267,56 @@
 <!-- 압축 다이얼로그 -->
 <div class="modal-bg" id="modal-pack">
   <div class="modal">
-    <h2>📦 파일 압축</h2>
-    <div class="row"><label>원본 파일</label><input type="text" id="pack-input" readonly /></div>
-    <div class="row"><label>저장 위치</label><input type="text" id="pack-output" /><button class="cancel" id="btn-pack-pick">📁 변경…</button></div>
+    <h2 data-i18n="modal.pack.heading">📦 파일 압축</h2>
+    <div class="row"><label data-i18n="modal.pack.input">원본 파일</label><input type="text" id="pack-input" readonly /></div>
+    <div class="row"><label data-i18n="modal.pack.output">저장 위치</label><input type="text" id="pack-output" /><button class="cancel" id="btn-pack-pick" data-i18n="modal.pack.browse">📁 변경…</button></div>
     <div class="row radio-group">
-      <label><input type="radio" name="m-pack-mode" value="qsafe-open" checked /> 🌐 qsafe (암호 없음, 기본)</label>
-      <label><input type="radio" name="m-pack-mode" value="password" /> 🔐 패스워드</label>
-      <label><input type="radio" name="m-pack-mode" value="pubkey" /> 🔑 친구의 공개키</label>
-      <label><input type="radio" name="m-pack-mode" value="both" /> 패스워드+공개키</label>
-      <label><input type="radio" name="m-pack-mode" value="zip" /> 📁 표준 ZIP</label>
+      <label><input type="radio" name="m-pack-mode" value="qsafe-open" checked /> <span data-i18n="modal.pack.mode.open">🌐 qsafe (암호 없음, 기본)</span></label>
+      <label><input type="radio" name="m-pack-mode" value="password" /> <span data-i18n="modal.pack.mode.password">🔐 패스워드</span></label>
+      <label><input type="radio" name="m-pack-mode" value="pubkey" /> <span data-i18n="modal.pack.mode.pubkey">🔑 친구의 공개키</span></label>
+      <label><input type="radio" name="m-pack-mode" value="both" /> <span data-i18n="modal.pack.mode.both">패스워드+공개키</span></label>
+      <label><input type="radio" name="m-pack-mode" value="zip" /> <span data-i18n="modal.pack.mode.zip">📁 표준 ZIP</span></label>
     </div>
     <div class="row" id="m-pack-pw-row">
-      <label>패스워드</label>
-      <input type="password" id="m-pack-pw" placeholder="8자 이상 추천" />
+      <label data-i18n="modal.pack.password">패스워드</label>
+      <input type="password" id="m-pack-pw" data-i18n-placeholder="modal.pack.password_hint" placeholder="8자 이상 추천" />
     </div>
     <div class="row" id="m-pack-pk-row" style="display:none;">
-      <label>공개키 파일</label>
+      <label data-i18n="modal.pack.pubkey_file">공개키 파일</label>
       <input type="text" id="m-pack-pk" placeholder="친구.pub.json" />
       <button class="cancel" id="btn-pack-pk-pick">📁</button>
     </div>
     <div class="row">
-      <label>압축 알고리즘</label>
+      <label data-i18n="modal.pack.compression">압축 알고리즘</label>
       <select id="pack-compression" style="background:#111; color:#e8e8e8; border:1px solid #444; border-radius:5px; padding:7px 10px; font-size:12px;">
-        <option value="auto" selected>auto (이득 있을 때만 zstd)</option>
-        <option value="zstd">zstd (강력한 압축, 권장)</option>
-        <option value="none">none (압축 안 함, 빠름)</option>
+        <option value="auto" selected data-i18n="modal.pack.compression.auto">auto (이득 있을 때만 zstd)</option>
+        <option value="zstd" data-i18n="modal.pack.compression.zstd">zstd (강력한 압축, 권장)</option>
+        <option value="none" data-i18n="modal.pack.compression.none">none (압축 안 함, 빠름)</option>
       </select>
     </div>
     <div class="row">
-      <label>보안 강도</label>
+      <label data-i18n="modal.pack.profile">보안 강도</label>
       <select id="pack-profile" style="background:#111; color:#e8e8e8; border:1px solid #444; border-radius:5px; padding:7px 10px; font-size:12px;">
-        <option value="standard" selected>standard — Argon2id 64MiB/3/4 (약 1초)</option>
-        <option value="strong">strong — Argon2id 256MiB/4/4 (약 3초, 부루트포스 저항성↑)</option>
+        <option value="standard" selected data-i18n="modal.pack.profile.standard">standard — Argon2id 64MiB/3/4 (약 1초)</option>
+        <option value="strong" data-i18n="modal.pack.profile.strong">strong — Argon2id 256MiB/4/4 (약 3초, 부루트포스 저항성↑)</option>
       </select>
     </div>
     <div class="row">
-      <label>고급 옵션</label>
+      <label data-i18n="modal.pack.advanced">고급 옵션</label>
       <div style="display:flex; flex-direction:column; gap:6px;">
-        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-sfx" /> 📦 자기 압축해제(SFX) 실행파일로 만들기 (받는 사람이 더블클릭으로 풀기)</label>
-        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-md5" /> 🔐 원본 MD5 계산 + .md5 사이드카 생성 (변조 검증용)</label>
-        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-add-label" /> 타임스탬프 라벨 헤더에 추가</label>
+        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-sfx" /> <span data-i18n="modal.pack.opt.sfx">📦 자기 압축해제(SFX) 실행파일로 만들기 (받는 사람이 더블클릭으로 풀기)</span></label>
+        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-md5" /> <span data-i18n="modal.pack.opt.md5">🔐 원본 MD5 계산 + .md5 사이드카 생성 (변조 검증용)</span></label>
+        <label style="color:#ddd; font-size:12px; cursor:pointer;"><input type="checkbox" id="pack-add-label" /> <span data-i18n="modal.pack.opt.label">타임스탬프 라벨 헤더에 추가</span></label>
       </div>
     </div>
     <div class="row" id="pack-sfx-warn" style="display:none;">
-      <span style="color:#fa3; font-size:11px;">⚠️ SFX는 패스워드 모드만 지원 (암호 없음 모드에서는 자동으로 기본 패스워드 사용)</span>
+      <span style="color:#fa3; font-size:11px;" data-i18n="modal.pack.sfx_warn">⚠️ SFX는 패스워드 모드만 지원 (암호 없음 모드에서는 자동으로 기본 패스워드 사용)</span>
     </div>
     <div class="progress" id="m-pack-prog" style="display:none;"><div class="bar"></div><div class="pct" id="m-pack-pct">0%</div></div>
     <div class="result" id="m-pack-result" style="display:none;"></div>
     <div class="actions">
-      <button class="cancel" id="btn-pack-cancel">취소</button>
-      <button id="btn-pack-go">🚀 시작</button>
+      <button class="cancel" id="btn-pack-cancel" data-i18n="modal.pack.cancel">취소</button>
+      <button id="btn-pack-go" data-i18n="modal.pack.go">🚀 시작</button>
     </div>
   </div>
 </div>
@@ -324,28 +324,28 @@
 <!-- 풀기 다이얼로그 -->
 <div class="modal-bg" id="modal-unpack">
   <div class="modal">
-    <h2>📂 파일 풀기</h2>
-    <div class="row"><label>원본 .qs</label><input type="text" id="unpack-input" readonly /></div>
-    <div class="row"><label>저장 위치</label><input type="text" id="unpack-output" /><button class="cancel" id="btn-unpack-pick">📁 변경…</button></div>
+    <h2 data-i18n="modal.unpack.heading">📂 파일 풀기</h2>
+    <div class="row"><label data-i18n="modal.unpack.input">원본 .qs</label><input type="text" id="unpack-input" readonly /></div>
+    <div class="row"><label data-i18n="modal.unpack.output">저장 위치</label><input type="text" id="unpack-output" /><button class="cancel" id="btn-unpack-pick" data-i18n="modal.unpack.browse">📁 변경…</button></div>
     <div class="row radio-group">
-      <label><input type="radio" name="m-unpack-mode" value="open" checked /> 🌐 암호 없음 (qsafe-open)</label>
-      <label><input type="radio" name="m-unpack-mode" value="password" /> 🔐 패스워드</label>
-      <label><input type="radio" name="m-unpack-mode" value="identity" /> 🔑 내 비밀키</label>
+      <label><input type="radio" name="m-unpack-mode" value="open" checked /> <span data-i18n="modal.unpack.mode.open">🌐 암호 없음 (qsafe-open)</span></label>
+      <label><input type="radio" name="m-unpack-mode" value="password" /> <span data-i18n="modal.unpack.mode.password">🔐 패스워드</span></label>
+      <label><input type="radio" name="m-unpack-mode" value="identity" /> <span data-i18n="modal.unpack.mode.identity">🔑 내 비밀키</span></label>
     </div>
     <div class="row" id="m-unpack-pw-row">
-      <label>패스워드</label>
+      <label data-i18n="modal.unpack.password">패스워드</label>
       <input type="password" id="m-unpack-pw" />
     </div>
     <div class="row" id="m-unpack-id-row" style="display:none;">
-      <label>비밀키 파일</label>
+      <label data-i18n="modal.unpack.secret_file">비밀키 파일</label>
       <input type="text" id="m-unpack-id" placeholder="내키.json" />
       <button class="cancel" id="btn-unpack-id-pick">📁</button>
     </div>
     <div class="progress" id="m-unpack-prog" style="display:none;"><div class="bar"></div><div class="pct" id="m-unpack-pct">0%</div></div>
     <div class="result" id="m-unpack-result" style="display:none;"></div>
     <div class="actions">
-      <button class="cancel" id="btn-unpack-cancel">취소</button>
-      <button id="btn-unpack-go">🔓 풀기</button>
+      <button class="cancel" id="btn-unpack-cancel" data-i18n="modal.unpack.cancel">취소</button>
+      <button id="btn-unpack-go" data-i18n="modal.unpack.go">🔓 풀기</button>
     </div>
   </div>
 </div>
