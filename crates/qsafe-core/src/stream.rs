@@ -34,15 +34,28 @@ use crate::error::{CoreError, Result};
 use crate::format::{ChunkInfo, FileHeader, MAGIC};
 use std::io::{Read, Write};
 
-/// 스트리밍 pack with BLAKE3 hashing (단일 패스).
-/// reader → hasher 갱신 → AEAD chunk → writer.
+/// 스트리밍 pack with BLAKE3 hashing (단일 패스). progress 콜백 없음 — 호환성.
 #[allow(clippy::type_complexity)]
 pub fn stream_encrypt_with_hash<R: Read, W: Write>(
+    reader: R,
+    writer: W,
+    file_key: &FileKey,
+    base_nonce: &[u8; STREAM_BASE_NONCE_LEN],
+    hasher: &mut blake3::Hasher,
+) -> Result<(u32, u32, u64)> {
+    stream_encrypt_with_hash_progress(reader, writer, file_key, base_nonce, hasher, |_| {})
+}
+
+/// `stream_encrypt_with_hash`와 동일하지만 chunk 처리 후 `progress(total_bytes_processed)` 호출.
+/// qsafe-cli `--progress` flag 와 GUI 진행률 바 연결용.
+#[allow(clippy::type_complexity)]
+pub fn stream_encrypt_with_hash_progress<R: Read, W: Write, F: FnMut(u64)>(
     mut reader: R,
     mut writer: W,
     file_key: &FileKey,
     base_nonce: &[u8; STREAM_BASE_NONCE_LEN],
     hasher: &mut blake3::Hasher,
+    mut progress: F,
 ) -> Result<(u32, u32, u64)> {
     let mut chunk_idx: u32 = 0;
     let mut last_chunk_size: u32 = 0;
@@ -77,6 +90,8 @@ pub fn stream_encrypt_with_hash<R: Read, W: Write>(
         last_chunk_size = filled as u32;
         chunk_idx += 1;
 
+        progress(total_bytes);
+
         if filled < STREAM_CHUNK_SIZE {
             break;
         }
@@ -96,16 +111,38 @@ pub fn stream_encrypt_with_hash<R: Read, W: Write>(
     Ok((chunk_idx, last_chunk_size, total_bytes))
 }
 
-/// 스트리밍 unpack with BLAKE3 검증.
+/// 스트리밍 unpack with BLAKE3 검증. progress 콜백 없음 — 호환성.
 pub fn stream_decrypt_with_hash<R: Read, W: Write>(
+    reader: R,
+    writer: W,
+    file_key: &FileKey,
+    base_nonce: &[u8; STREAM_BASE_NONCE_LEN],
+    expected_chunks: u32,
+    hasher: &mut blake3::Hasher,
+) -> Result<()> {
+    stream_decrypt_with_hash_progress(
+        reader,
+        writer,
+        file_key,
+        base_nonce,
+        expected_chunks,
+        hasher,
+        |_, _| {},
+    )
+}
+
+/// `stream_decrypt_with_hash`와 동일하지만 chunk 처리 후 `progress(idx, total_bytes_decrypted)` 호출.
+pub fn stream_decrypt_with_hash_progress<R: Read, W: Write, F: FnMut(u32, u64)>(
     mut reader: R,
     mut writer: W,
     file_key: &FileKey,
     base_nonce: &[u8; STREAM_BASE_NONCE_LEN],
     expected_chunks: u32,
     hasher: &mut blake3::Hasher,
+    mut progress: F,
 ) -> Result<()> {
     let mut len_buf = [0u8; 4];
+    let mut total_bytes: u64 = 0;
 
     for chunk_idx in 0..expected_chunks {
         reader.read_exact(&mut len_buf).map_err(|e| {
@@ -127,8 +164,11 @@ pub fn stream_decrypt_with_hash<R: Read, W: Write>(
         reader.read_exact(&mut ct).map_err(CoreError::Io)?;
 
         let pt = decrypt_chunk(file_key, base_nonce, chunk_idx, &ct)?;
+        total_bytes += pt.len() as u64;
         hasher.update(&pt);
         writer.write_all(&pt).map_err(CoreError::Io)?;
+
+        progress(chunk_idx, total_bytes);
     }
 
     Ok(())

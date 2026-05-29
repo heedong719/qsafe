@@ -95,6 +95,10 @@ enum Cmd {
         /// 원본 파일을 zero-fill 후 삭제 (SSD에서는 잔존 가능 — 보장 X)
         #[arg(long)]
         shred: bool,
+        /// 진행률을 stderr 에 라인 단위로 출력 (`PROGRESS\tbytes\ttotal\tpercent`).
+        /// 부모 프로세스(qsafe-gui 등)가 stderr 를 line-by-line 읽어 진행률 바 표시.
+        #[arg(long)]
+        progress: bool,
     },
     /// .qs 파일을 복호화 + 압축 해제
     Unpack {
@@ -118,6 +122,9 @@ enum Cmd {
         /// 출력 파일이 이미 있어도 덮어씀
         #[arg(long)]
         force: bool,
+        /// 진행률을 stderr 에 라인 단위로 출력 (`PROGRESS\tchunk_idx\ttotal_chunks\tpercent`).
+        #[arg(long)]
+        progress: bool,
     },
     /// .qs 파일 정보 조회 (복호화 없이 헤더만)
     Info {
@@ -414,6 +421,7 @@ fn run(cmd: Cmd) -> Result<()> {
             label,
             force,
             shred,
+            progress,
         } => cmd_pack(PackOptions {
             input,
             output,
@@ -429,6 +437,7 @@ fn run(cmd: Cmd) -> Result<()> {
             label,
             force,
             shred,
+            progress,
         }),
         Cmd::Unpack {
             input,
@@ -438,7 +447,10 @@ fn run(cmd: Cmd) -> Result<()> {
             fido2_pin,
             identity,
             force,
-        } => cmd_unpack(input, output, password, fido2, fido2_pin, identity, force),
+            progress,
+        } => cmd_unpack(
+            input, output, password, fido2, fido2_pin, identity, force, progress,
+        ),
         Cmd::Info { input } => cmd_info(input),
         Cmd::Fido2 { cmd } => cmd_fido2(cmd),
         Cmd::Mnemonic { cmd } => cmd_mnemonic(cmd),
@@ -645,6 +657,7 @@ fn cmd_migrate(
         label: header.label,
         force: true,
         shred: false,
+        progress: false,
     });
 
     let _ = secure_delete(&tmp_in);
@@ -1469,6 +1482,7 @@ struct PackOptions {
     label: Option<String>,
     force: bool,
     shred: bool,
+    progress: bool,
 }
 
 fn cmd_pack(opts: PackOptions) -> Result<()> {
@@ -1487,6 +1501,7 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
         label,
         force,
         shred,
+        progress,
     } = opts;
 
     if no_password && fido2.is_empty() && pubkey.is_empty() {
@@ -1538,7 +1553,13 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
             fido2_pin,
             label,
             shred,
+            progress,
         );
+    }
+
+    // 비-streaming 모드 — 시작/종료 시 단순 progress 라인만 출력 (작은 파일은 거의 즉시 끝남)
+    if progress {
+        eprintln!("PROGRESS\t0\t{}\t0", input_meta.len());
     }
 
     // 1. 입력 읽기 (TODO: 큰 파일은 스트리밍)
@@ -1684,6 +1705,9 @@ fn cmd_pack(opts: PackOptions) -> Result<()> {
     } else {
         100.0 * out_size as f64 / original_size as f64
     };
+    if progress {
+        eprintln!("PROGRESS\t{}\t{}\t100", original_size, original_size);
+    }
     println!("✓ packed {} → {}", input.display(), output.display());
     println!(
         "  {} bytes → {} bytes ({:.1}% of original)",
@@ -1717,6 +1741,7 @@ fn cmd_unpack_streaming(
     _use_fido2: bool,
     _fido2_pin: Option<String>,
     force: bool,
+    progress: bool,
 ) -> Result<()> {
     use std::io::BufReader;
 
@@ -1769,15 +1794,40 @@ fn cmd_unpack_streaming(
     let mut hasher = qsafe_core::envelope::stream_integrity_hasher(&file_key);
 
     write_atomic(&output, |out| {
-        stream_decrypt_with_hash(
-            &mut reader,
-            &mut *out,
-            &file_key,
-            &base_nonce,
-            chunks.num_chunks,
-            &mut hasher,
-        )
-        .map_err(anyhow::Error::from)
+        if progress {
+            let total = chunks.num_chunks;
+            let mut last_pct: u32 = u32::MAX;
+            qsafe_core::stream::stream_decrypt_with_hash_progress(
+                &mut reader,
+                &mut *out,
+                &file_key,
+                &base_nonce,
+                chunks.num_chunks,
+                &mut hasher,
+                |idx, _total_bytes| {
+                    let pct = if total == 0 {
+                        100
+                    } else {
+                        std::cmp::min(100, (idx + 1) * 100 / total)
+                    };
+                    if pct != last_pct {
+                        eprintln!("PROGRESS\t{}\t{}\t{}", idx + 1, total, pct);
+                        last_pct = pct;
+                    }
+                },
+            )
+            .map_err(anyhow::Error::from)
+        } else {
+            stream_decrypt_with_hash(
+                &mut reader,
+                &mut *out,
+                &file_key,
+                &base_nonce,
+                chunks.num_chunks,
+                &mut hasher,
+            )
+            .map_err(anyhow::Error::from)
+        }
     })?;
 
     // 무결성 검증: trailing hash 32 bytes
@@ -1811,6 +1861,7 @@ fn cmd_pack_streaming(
     fido2_pin: Option<String>,
     label: Option<String>,
     shred: bool,
+    progress: bool,
 ) -> Result<()> {
     use std::io::BufReader;
 
@@ -1874,9 +1925,34 @@ fn cmd_pack_streaming(
         let mut reader = BufReader::with_capacity(64 * 1024, input_file);
 
         let mut hasher = qsafe_core::envelope::stream_integrity_hasher(&file_key);
-        let (n_chunks, last_size, total) =
+        let (n_chunks, last_size, total) = if progress {
+            // 진행률 노출: chunk 마다 stderr 라인 출력
+            let total_input = input_size;
+            let mut last_pct: u64 = u64::MAX;
+            qsafe_core::stream::stream_encrypt_with_hash_progress(
+                &mut reader,
+                &mut *out,
+                &file_key,
+                &base_nonce,
+                &mut hasher,
+                |processed: u64| {
+                    let pct = if total_input == 0 {
+                        100
+                    } else {
+                        std::cmp::min(100, processed * 100 / total_input)
+                    };
+                    // 1% 단위로만 출력 — stderr 폭주 방지
+                    if pct != last_pct {
+                        eprintln!("PROGRESS\t{}\t{}\t{}", processed, total_input, pct);
+                        last_pct = pct;
+                    }
+                },
+            )
+            .map_err(|e| anyhow!("stream encrypt: {}", e))?
+        } else {
             stream_encrypt_with_hash(&mut reader, &mut *out, &file_key, &base_nonce, &mut hasher)
-                .map_err(|e| anyhow!("stream encrypt: {}", e))?;
+                .map_err(|e| anyhow!("stream encrypt: {}", e))?
+        };
 
         if n_chunks != num_chunks {
             bail!("청크 수 불일치 ({} vs 계산 {})", n_chunks, num_chunks);
@@ -1924,6 +2000,7 @@ fn cmd_unpack(
     fido2_pin: Option<String>,
     identity: Option<PathBuf>,
     force: bool,
+    progress: bool,
 ) -> Result<()> {
     let input_meta =
         fs::metadata(&input).with_context(|| format!("cannot stat {}", input.display()))?;
@@ -1939,9 +2016,15 @@ fn cmd_unpack(
         if let Ok(h) = read_stream_header(&mut probe_reader) {
             if h.chunks.is_some() {
                 drop(probe_reader);
-                return cmd_unpack_streaming(input, output, password, use_fido2, fido2_pin, force);
+                return cmd_unpack_streaming(
+                    input, output, password, use_fido2, fido2_pin, force, progress,
+                );
             }
         }
+    }
+
+    if progress {
+        eprintln!("PROGRESS\t0\t1\t0");
     }
 
     // 1. 파일 읽기 + 헤더 파싱 (batch 모드)
@@ -1994,6 +2077,9 @@ fn cmd_unpack(
         std::io::Write::write_all(w, &plaintext).map_err(anyhow::Error::from)
     })?;
 
+    if progress {
+        eprintln!("PROGRESS\t1\t1\t100");
+    }
     println!(
         "✓ unpacked {} → {} ({} bytes)",
         input.display(),
