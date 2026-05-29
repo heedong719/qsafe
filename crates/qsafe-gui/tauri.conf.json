@@ -25,11 +25,16 @@
     "withGlobalTauri": true
   },
   "bundle": {
-    "active": false,
+    "active": true,
     "targets": "all",
     "icon": [
-      "icons/icon.png"
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
     ],
+    "category": "Utility",
+    "shortDescription": "Quantum-safe compression and encryption",
+    "longDescription": "qsafe is a quantum-safe file compression and encryption tool. It uses Argon2id key derivation, XChaCha20-Poly1305 authenticated encryption, BLAKE3 keyed integrity, and X25519 + ML-KEM-768 hybrid public-key encryption.",
     "fileAssociations": [
       {
         "ext": ["qs"],
