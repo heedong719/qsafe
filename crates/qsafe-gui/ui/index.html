@@ -162,12 +162,22 @@
     .modal button.cancel { background: #404040; }
     .modal button.cancel:hover { background: #555; }
     .modal .progress {
-      height: 4px; background: #222; border-radius: 2px; overflow: hidden;
-      margin: 12px 0;
+      height: 18px; background: #222; border-radius: 9px; overflow: hidden;
+      margin: 12px 0; position: relative;
     }
     .modal .progress .bar {
       height: 100%; background: linear-gradient(90deg, #2c5dff, #5b8dff);
       width: 30%; animation: indet 1.2s ease-in-out infinite;
+    }
+    .modal .progress.determinate .bar {
+      animation: none;
+      transition: width 0.15s linear;
+    }
+    .modal .progress .pct {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #fff; font-family: Consolas,monospace;
+      text-shadow: 0 0 4px #000;
     }
     @keyframes indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
     .modal .result {
@@ -302,7 +312,7 @@
     <div class="row" id="pack-sfx-warn" style="display:none;">
       <span style="color:#fa3; font-size:11px;">⚠️ SFX는 패스워드 모드만 지원 (암호 없음 모드에서는 자동으로 기본 패스워드 사용)</span>
     </div>
-    <div class="progress" id="m-pack-prog" style="display:none;"><div class="bar"></div></div>
+    <div class="progress" id="m-pack-prog" style="display:none;"><div class="bar"></div><div class="pct" id="m-pack-pct">0%</div></div>
     <div class="result" id="m-pack-result" style="display:none;"></div>
     <div class="actions">
       <button class="cancel" id="btn-pack-cancel">취소</button>
@@ -331,7 +341,7 @@
       <input type="text" id="m-unpack-id" placeholder="내키.json" />
       <button class="cancel" id="btn-unpack-id-pick">📁</button>
     </div>
-    <div class="progress" id="m-unpack-prog" style="display:none;"><div class="bar"></div></div>
+    <div class="progress" id="m-unpack-prog" style="display:none;"><div class="bar"></div><div class="pct" id="m-unpack-pct">0%</div></div>
     <div class="result" id="m-unpack-result" style="display:none;"></div>
     <div class="actions">
       <button class="cancel" id="btn-unpack-cancel">취소</button>
@@ -905,6 +915,7 @@
     document.getElementById("btn-pack-go").disabled = true;
     document.getElementById("m-pack-prog").style.display = "block";
     document.getElementById("m-pack-result").style.display = "none";
+    resetProgress("pack");
     try {
       const e_sel = entries[selectedIdx];
       const realInput = e_sel ? e_sel.path : document.getElementById("pack-input").value;
@@ -1004,6 +1015,7 @@
     document.getElementById("btn-unpack-go").disabled = true;
     document.getElementById("m-unpack-prog").style.display = "block";
     document.getElementById("m-unpack-result").style.display = "none";
+    resetProgress("unpack");
     try {
       var unpackStartTs = Date.now();
       const r = await invoke("unpack_qsafe_ext", { input, output, password, identity, force: true, openMode, computeMd5: true });
@@ -1249,6 +1261,39 @@
       try { await window.__TAURI__.event.listen("drop", handler); } catch (_) {}
     } catch (e) {
       console.warn("drag-drop listener 설정 실패:", e);
+    }
+  })();
+
+  // ===== pack/unpack 진행률 listener (Q4) =====
+  // qsafe-cli stderr 의 PROGRESS 라인이 Rust backend 에서 Tauri event 로 forward 됨.
+  // payload: { current, total, percent } (백엔드의 PackUnpackProgress 와 동일 shape)
+  function applyProgress(modal, payload) {
+    if (!payload || typeof payload.percent !== "number") return;
+    const wrap = document.getElementById("m-" + modal + "-prog");
+    const bar = wrap && wrap.querySelector(".bar");
+    const pct = document.getElementById("m-" + modal + "-pct");
+    if (!wrap || !bar || !pct) return;
+    wrap.classList.add("determinate");
+    wrap.style.display = "block";
+    bar.style.width = payload.percent + "%";
+    pct.textContent = payload.percent + "%";
+  }
+  function resetProgress(modal) {
+    const wrap = document.getElementById("m-" + modal + "-prog");
+    const bar = wrap && wrap.querySelector(".bar");
+    const pct = document.getElementById("m-" + modal + "-pct");
+    if (!wrap) return;
+    wrap.classList.remove("determinate");
+    if (bar) bar.style.width = "30%";
+    if (pct) pct.textContent = "";
+  }
+  (async function setupProgressListeners() {
+    if (!window.__TAURI__ || !window.__TAURI__.event) return;
+    try {
+      await window.__TAURI__.event.listen("pack-progress", (e) => applyProgress("pack", e.payload));
+      await window.__TAURI__.event.listen("unpack-progress", (e) => applyProgress("unpack", e.payload));
+    } catch (e) {
+      console.warn("progress listener 설정 실패:", e);
     }
   })();
 

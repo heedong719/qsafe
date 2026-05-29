@@ -679,6 +679,73 @@ pub fn list_directory(path: String) -> Result<DirListing, String> {
 // qsafe CLI shell-out — pack_one / unpack_qsafe / qsafe_info
 // ════════════════════════════════════════════════════════════
 
+/// 자식 qsafe 프로세스의 stderr 를 라인 단위로 파싱해 `PROGRESS\tcurrent\ttotal\tpercent`
+/// 라인을 Tauri event 로 emit. 그 외 라인은 collected_stderr 에 누적 (실패 시 사용자 표시용).
+///
+/// 반환: (success, collected_stderr)
+#[derive(Clone, Serialize)]
+pub struct PackUnpackProgress {
+    pub current: u64,
+    pub total: u64,
+    pub percent: u32,
+}
+
+fn spawn_with_progress(
+    cmd: &mut std::process::Command,
+    app: Option<&tauri::AppHandle>,
+    event_name: &'static str,
+) -> Result<(bool, String), String> {
+    use std::io::{BufRead, BufReader};
+    use std::process::Stdio;
+
+    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("qsafe 실행 실패 (spawn): {}", e))?;
+
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "child stderr capture 실패".to_string())?;
+
+    let mut collected = String::new();
+    let reader = BufReader::new(stderr);
+    for line in reader.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => continue,
+        };
+        if let Some(rest) = line.strip_prefix("PROGRESS\t") {
+            let parts: Vec<&str> = rest.split('\t').collect();
+            if parts.len() == 3 {
+                let current = parts[0].parse::<u64>().unwrap_or(0);
+                let total = parts[1].parse::<u64>().unwrap_or(0);
+                let percent = parts[2].parse::<u32>().unwrap_or(0).min(100);
+                if let Some(h) = app {
+                    let _ = h.emit(
+                        event_name,
+                        PackUnpackProgress {
+                            current,
+                            total,
+                            percent,
+                        },
+                    );
+                }
+                continue;
+            }
+        }
+        // PROGRESS 가 아닌 라인은 모두 보관 — 실패 시 사용자 메시지
+        collected.push_str(&line);
+        collected.push('\n');
+    }
+
+    let status = child
+        .wait()
+        .map_err(|e| format!("child wait 실패: {}", e))?;
+    Ok((status.success(), collected))
+}
+
 fn locate_qsafe_bin() -> Result<PathBuf, String> {
     let exe_path = std::env::current_exe().map_err(|e| format!("current_exe: {}", e))?;
     if let Some(dir) = exe_path.parent() {
@@ -778,6 +845,28 @@ pub struct UnpackResult {
 
 #[tauri::command]
 pub fn unpack_qsafe(
+    app: tauri::AppHandle,
+    input: String,
+    output: Option<String>,
+    password: Option<String>,
+    identity: Option<String>,
+    force: bool,
+    open_mode: Option<bool>,
+) -> Result<UnpackResult, String> {
+    unpack_qsafe_impl(
+        Some(&app),
+        input,
+        output,
+        password,
+        identity,
+        force,
+        open_mode,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn unpack_qsafe_impl(
+    app: Option<&tauri::AppHandle>,
     input: String,
     output: Option<String>,
     password: Option<String>,
@@ -805,7 +894,11 @@ pub fn unpack_qsafe(
         }
     });
     let mut cmd = std::process::Command::new(&qsafe);
-    cmd.arg("unpack").arg(&in_path).arg("-o").arg(&out_path);
+    cmd.arg("unpack")
+        .arg(&in_path)
+        .arg("-o")
+        .arg(&out_path)
+        .arg("--progress");
     if force {
         cmd.arg("--force");
     }
@@ -815,14 +908,9 @@ pub fn unpack_qsafe(
     if let Some(id) = identity.as_ref() {
         cmd.arg("--identity").arg(id);
     }
-    let out = cmd
-        .output()
-        .map_err(|e| format!("qsafe 실행 실패: {}", e))?;
-    if !out.status.success() {
-        return Err(format!(
-            "풀기 실패: {}",
-            String::from_utf8_lossy(&out.stderr).trim()
-        ));
+    let (success, stderr_collected) = spawn_with_progress(&mut cmd, app, "unpack-progress")?;
+    if !success {
+        return Err(format!("풀기 실패: {}", stderr_collected.trim()));
     }
     let bytes_written = std::fs::metadata(&out_path).map(|m| m.len()).unwrap_or(0);
 
@@ -1416,7 +1504,8 @@ mod open_mode_tests {
         assert_eq!(r.source_kind, "file");
 
         // open_mode=true → 패스워드 없이 풀기
-        let u = unpack_qsafe(
+        let u = unpack_qsafe_impl(
+            None,
             packed.to_string_lossy().into_owned(),
             Some(restored.to_string_lossy().into_owned()),
             None,
@@ -1460,7 +1549,8 @@ mod open_mode_tests {
         )
         .unwrap();
         // 다른 패스워드로 풀기 시도 → 실패
-        let r = unpack_qsafe(
+        let r = unpack_qsafe_impl(
+            None,
             packed.to_string_lossy().into_owned(),
             Some(tmp("out").to_string_lossy().into_owned()),
             Some("wrong-password".into()),
@@ -1500,7 +1590,8 @@ mod open_mode_tests {
             None,
         )
         .unwrap();
-        unpack_qsafe(
+        unpack_qsafe_impl(
+            None,
             packed.to_string_lossy().into_owned(),
             Some(restored.to_string_lossy().into_owned()),
             Some("myuser-pw".into()),
@@ -1734,7 +1825,8 @@ mod delete_and_untar_tests {
         .unwrap();
 
         let tar_out = base.join("restored.tar");
-        let r = unpack_qsafe(
+        let r = unpack_qsafe_impl(
+            None,
             qs.to_string_lossy().into_owned(),
             Some(tar_out.to_string_lossy().into_owned()),
             None,
@@ -1786,7 +1878,8 @@ mod delete_and_untar_tests {
         )
         .unwrap();
         let out = base.join("out.txt");
-        let r = unpack_qsafe(
+        let r = unpack_qsafe_impl(
+            None,
             qs.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
             None,
@@ -2733,6 +2826,40 @@ pub struct PackPathExtResult {
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn pack_path_ext(
+    app: tauri::AppHandle,
+    input: String,
+    output: Option<String>,
+    password: Option<String>,
+    pubkeys: Vec<String>,
+    no_password: bool,
+    force: bool,
+    open_mode: Option<bool>,
+    compression: Option<String>,
+    profile: Option<String>,
+    sfx: Option<bool>,
+    label: Option<String>,
+    include_md5: Option<bool>,
+) -> Result<PackPathExtResult, String> {
+    pack_path_ext_impl(
+        Some(&app),
+        input,
+        output,
+        password,
+        pubkeys,
+        no_password,
+        force,
+        open_mode,
+        compression,
+        profile,
+        sfx,
+        label,
+        include_md5,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn pack_path_ext_impl(
+    app: Option<&tauri::AppHandle>,
     input: String,
     output: Option<String>,
     password: Option<String>,
@@ -2848,21 +2975,16 @@ pub fn pack_path_ext(
     if let Some(l) = &final_label {
         cmd.arg("--label").arg(l);
     }
+    // R10: 진행률 전달 — qsafe-cli stderr에 PROGRESS 라인 → Tauri event "pack-progress"
+    cmd.arg("--progress");
 
-    let out = cmd.output().map_err(|e| {
-        if let Some(t) = &tmp_tar {
-            let _ = std::fs::remove_file(t);
-        }
-        format!("qsafe 실행 실패: {}", e)
-    })?;
+    let status_and_stderr = spawn_with_progress(&mut cmd, app, "pack-progress");
     if let Some(t) = &tmp_tar {
         let _ = std::fs::remove_file(t);
     }
-    if !out.status.success() {
-        return Err(format!(
-            "압축 실패: {}",
-            String::from_utf8_lossy(&out.stderr).trim()
-        ));
+    let (success, stderr_collected) = status_and_stderr?;
+    if !success {
+        return Err(format!("압축 실패: {}", stderr_collected.trim()));
     }
     let packed_size = std::fs::metadata(&out_path).map(|m| m.len()).unwrap_or(0);
 
@@ -2914,8 +3036,10 @@ pub struct UnpackExtResult {
     pub original_md5_value: Option<String>,
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn unpack_qsafe_ext(
+    app: tauri::AppHandle,
     input: String,
     output: Option<String>,
     password: Option<String>,
@@ -2924,7 +3048,38 @@ pub fn unpack_qsafe_ext(
     open_mode: Option<bool>,
     compute_md5: Option<bool>,
 ) -> Result<UnpackExtResult, String> {
-    let base = unpack_qsafe(input.clone(), output, password, identity, force, open_mode)?;
+    unpack_qsafe_ext_impl(
+        Some(&app),
+        input,
+        output,
+        password,
+        identity,
+        force,
+        open_mode,
+        compute_md5,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn unpack_qsafe_ext_impl(
+    app: Option<&tauri::AppHandle>,
+    input: String,
+    output: Option<String>,
+    password: Option<String>,
+    identity: Option<String>,
+    force: bool,
+    open_mode: Option<bool>,
+    compute_md5: Option<bool>,
+) -> Result<UnpackExtResult, String> {
+    let base = unpack_qsafe_impl(
+        app,
+        input.clone(),
+        output,
+        password,
+        identity,
+        force,
+        open_mode,
+    )?;
     let want_md5 = compute_md5.unwrap_or(true);
 
     let original_md5 = {
@@ -3017,7 +3172,8 @@ mod ext_tests {
         let inp = dir.join("a.txt");
         std::fs::write(&inp, b"data for md5").unwrap();
         let out = dir.join("a.qs");
-        let r = pack_path_ext(
+        let r = pack_path_ext_impl(
+            None,
             inp.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
             None,
@@ -3057,7 +3213,8 @@ mod ext_tests {
         let inp = dir.join("b.txt");
         std::fs::write(&inp, b"x").unwrap();
         let out = dir.join("b.qs");
-        let r = pack_path_ext(
+        let r = pack_path_ext_impl(
+            None,
             inp.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
             None,
@@ -3093,7 +3250,8 @@ mod ext_tests {
         let inp = dir.join("s.txt");
         std::fs::write(&inp, b"strong test").unwrap();
         let out = dir.join("s.qs");
-        let r = pack_path_ext(
+        let r = pack_path_ext_impl(
+            None,
             inp.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
             Some("pw".into()),
@@ -3130,7 +3288,8 @@ mod ext_tests {
         let inp = dir.join("orig.txt");
         std::fs::write(&inp, b"verify md5").unwrap();
         let qs = dir.join("orig.qs");
-        let pack_r = pack_path_ext(
+        let pack_r = pack_path_ext_impl(
+            None,
             inp.to_string_lossy().into_owned(),
             Some(qs.to_string_lossy().into_owned()),
             None,
@@ -3148,7 +3307,8 @@ mod ext_tests {
         assert!(pack_r.md5.is_some());
 
         let out = dir.join("restored.txt");
-        let un = unpack_qsafe_ext(
+        let un = unpack_qsafe_ext_impl(
+            None,
             qs.to_string_lossy().into_owned(),
             Some(out.to_string_lossy().into_owned()),
             None,
