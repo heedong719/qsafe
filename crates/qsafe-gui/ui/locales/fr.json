@@ -122,5 +122,16 @@
   "modal.about.update_available": "🆕 Nouvelle version disponible : v{current} → v{latest}",
   "modal.about.open_release": "Ouvrir la page de version",
   "modal.about.check_failed": "Échec de vérification des mises à jour",
-  "status.update_badge": "🆕 v{latest} disponible"
+  "status.update_badge": "🆕 v{latest} disponible",
+  "modal.shortcuts.title": "⌨️ Raccourcis clavier",
+  "modal.shortcuts.help": "Aide des raccourcis (cette fenêtre)",
+  "modal.shortcuts.refresh": "Actualiser",
+  "modal.shortcuts.up": "Dossier parent (ignoré dans les champs texte)",
+  "modal.shortcuts.open": "Ouvrir l'élément sélectionné",
+  "modal.shortcuts.delete": "Supprimer définitivement la sélection",
+  "modal.shortcuts.close": "Fermer la fenêtre modale / menu",
+  "modal.shortcuts.pack": "Compresser la sélection",
+  "modal.shortcuts.lang": "Choisir la langue",
+  "modal.shortcuts.dnd": "💡 Le glisser-déposer de dossiers/fichiers ouvre automatiquement la fenêtre de compression (.qs / .iso routés).",
+  "modal.shortcuts.close_btn": "Fermer"
 }

@@ -122,5 +122,16 @@
   "modal.about.update_available": "🆕 Nuova versione disponibile: v{current} → v{latest}",
   "modal.about.open_release": "Apri pagina della release",
   "modal.about.check_failed": "Controllo aggiornamenti fallito",
-  "status.update_badge": "🆕 v{latest} disponibile"
+  "status.update_badge": "🆕 v{latest} disponibile",
+  "modal.shortcuts.title": "⌨️ Scorciatoie da tastiera",
+  "modal.shortcuts.help": "Aiuto scorciatoie (questa finestra)",
+  "modal.shortcuts.refresh": "Aggiorna",
+  "modal.shortcuts.up": "Vai alla cartella superiore (ignorato nei campi di testo)",
+  "modal.shortcuts.open": "Apri cartella/file selezionato",
+  "modal.shortcuts.delete": "Elimina selezione in modo permanente",
+  "modal.shortcuts.close": "Chiudi modale / menu",
+  "modal.shortcuts.pack": "Comprimi la selezione",
+  "modal.shortcuts.lang": "Seleziona lingua",
+  "modal.shortcuts.dnd": "💡 Trascinare cartelle/file nella finestra apre automaticamente il modale di compressione (.qs / .iso instradati).",
+  "modal.shortcuts.close_btn": "Chiudi"
 }

@@ -204,5 +204,16 @@
   "modal.about.update_available": "🆕 New version available: v{current} → v{latest}",
   "modal.about.open_release": "Open release page",
   "modal.about.check_failed": "Update check failed",
-  "status.update_badge": "🆕 v{latest} available"
+  "status.update_badge": "🆕 v{latest} available",
+  "modal.shortcuts.title": "⌨️ Keyboard shortcuts",
+  "modal.shortcuts.help": "Shortcut help (this window)",
+  "modal.shortcuts.refresh": "Refresh",
+  "modal.shortcuts.up": "Go to parent folder (ignored in text inputs)",
+  "modal.shortcuts.open": "Open selected folder/file",
+  "modal.shortcuts.delete": "Delete selected item permanently",
+  "modal.shortcuts.close": "Close modal / menu",
+  "modal.shortcuts.pack": "Pack the current selection",
+  "modal.shortcuts.lang": "Choose language",
+  "modal.shortcuts.dnd": "💡 Drag-drop folders/files onto the window to auto-open the pack modal (.qs / .iso are auto-routed).",
+  "modal.shortcuts.close_btn": "Close"
 }

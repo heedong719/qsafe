@@ -122,5 +122,16 @@
   "modal.about.update_available": "🆕 Nueva versión disponible: v{current} → v{latest}",
   "modal.about.open_release": "Abrir página de lanzamiento",
   "modal.about.check_failed": "Error al buscar actualizaciones",
-  "status.update_badge": "🆕 v{latest} disponible"
+  "status.update_badge": "🆕 v{latest} disponible",
+  "modal.shortcuts.title": "⌨️ Atajos de teclado",
+  "modal.shortcuts.help": "Ayuda de atajos (esta ventana)",
+  "modal.shortcuts.refresh": "Actualizar",
+  "modal.shortcuts.up": "Ir a carpeta padre (ignorado en campos de texto)",
+  "modal.shortcuts.open": "Abrir carpeta/archivo seleccionado",
+  "modal.shortcuts.delete": "Eliminar elemento seleccionado permanentemente",
+  "modal.shortcuts.close": "Cerrar modal / menú",
+  "modal.shortcuts.pack": "Comprimir selección actual",
+  "modal.shortcuts.lang": "Seleccionar idioma",
+  "modal.shortcuts.dnd": "💡 Arrastrar y soltar carpetas/archivos abre automáticamente el modal de compresión (.qs / .iso se enrutan).",
+  "modal.shortcuts.close_btn": "Cerrar"
 }

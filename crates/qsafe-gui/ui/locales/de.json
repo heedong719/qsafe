@@ -122,5 +122,16 @@
   "modal.about.update_available": "🆕 Neue Version verfügbar: v{current} → v{latest}",
   "modal.about.open_release": "Release-Seite öffnen",
   "modal.about.check_failed": "Update-Prüfung fehlgeschlagen",
-  "status.update_badge": "🆕 v{latest} verfügbar"
+  "status.update_badge": "🆕 v{latest} verfügbar",
+  "modal.shortcuts.title": "⌨️ Tastaturkürzel",
+  "modal.shortcuts.help": "Kürzel-Hilfe (dieses Fenster)",
+  "modal.shortcuts.refresh": "Aktualisieren",
+  "modal.shortcuts.up": "Übergeordneter Ordner (in Texteingaben ignoriert)",
+  "modal.shortcuts.open": "Auswahl öffnen",
+  "modal.shortcuts.delete": "Auswahl dauerhaft löschen",
+  "modal.shortcuts.close": "Dialog / Menü schließen",
+  "modal.shortcuts.pack": "Auswahl komprimieren",
+  "modal.shortcuts.lang": "Sprache wählen",
+  "modal.shortcuts.dnd": "💡 Drag-and-Drop öffnet den Komprimieren-Dialog (.qs / .iso werden automatisch geroutet).",
+  "modal.shortcuts.close_btn": "Schließen"
 }

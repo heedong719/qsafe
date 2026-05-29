@@ -190,6 +190,12 @@
     .modal .result.ok { border-left: 3px solid #4caf50; color: #cfc; }
     .modal .result.err { border-left: 3px solid #f55; color: #fcc; }
     .modal .help { color: #888; font-size: 11px; margin: 4px 0 0; }
+    .modal kbd {
+      background: #1a1a1a; border: 1px solid #444; border-bottom-width: 2px;
+      border-radius: 3px; padding: 1px 6px; font-family: Consolas, monospace;
+      font-size: 11px; color: #cef; min-width: 22px; display: inline-block;
+      text-align: center;
+    }
     .modal .radio-group label {
       display: inline-flex; align-items: center; gap: 4px;
       margin-right: 14px; cursor: pointer; color: #ddd;
@@ -453,6 +459,28 @@
     <div id="lang-list" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; margin:12px 0;"></div>
     <div class="actions">
       <button class="cancel" id="btn-lang-cancel" data-i18n="modal.lang.cancel">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 키보드 단축키 cheatsheet (F1 / ?) -->
+<div class="modal-bg" id="modal-shortcuts">
+  <div class="modal" style="max-width:560px;">
+    <h2 data-i18n="modal.shortcuts.title">⌨️ 키보드 단축키</h2>
+    <div style="display:grid; grid-template-columns:max-content 1fr; gap:8px 14px; font-size:12px; margin-top:12px;">
+      <kbd>F1</kbd> <span data-i18n="modal.shortcuts.help">단축키 도움말 (이 창)</span>
+      <kbd>F5</kbd> <span data-i18n="modal.shortcuts.refresh">새로고침</span>
+      <kbd>Backspace</kbd> <span data-i18n="modal.shortcuts.up">상위 폴더로 이동 (입력 칸 안에서는 무효)</span>
+      <kbd>Enter</kbd> <span data-i18n="modal.shortcuts.open">선택된 폴더/파일 열기</span>
+      <kbd>Delete</kbd> <span data-i18n="modal.shortcuts.delete">선택된 항목 영구 삭제</span>
+      <kbd>Esc</kbd> <span data-i18n="modal.shortcuts.close">모달 / 메뉴 닫기</span>
+      <kbd>Cmd / Ctrl + N</kbd> <span data-i18n="modal.shortcuts.pack">선택 항목 압축</span>
+      <kbd>Cmd / Ctrl + R</kbd> <span data-i18n="modal.shortcuts.refresh">새로고침 (대안)</span>
+      <kbd>Cmd / Ctrl + ,</kbd> <span data-i18n="modal.shortcuts.lang">언어 선택</span>
+    </div>
+    <p class="help" style="margin-top:14px;" data-i18n="modal.shortcuts.dnd">💡 폴더 / 파일을 창에 드래그-드롭하면 압축 모달이 자동으로 열립니다 (.qs / .iso 는 자동 라우팅).</p>
+    <div class="actions">
+      <button id="btn-shortcuts-close" data-i18n="modal.shortcuts.close_btn">닫기</button>
     </div>
   </div>
 </div>
@@ -1222,6 +1250,12 @@
       document.querySelectorAll(".modal-bg.show").forEach(m => m.classList.remove("show"));
       return;
     }
+    // R18: F1 또는 '?' (shift+/) → 단축키 도움말. 입력 안에서도 동작.
+    if (e.key === "F1" || (!inInput && e.key === "?")) {
+      e.preventDefault();
+      openModal("modal-shortcuts");
+      return;
+    }
     if (e.key === "F5" || (mod && (e.key === "r" || e.key === "R"))) {
       e.preventDefault();
       const refresh = document.getElementById("btn-refresh");
@@ -1714,6 +1748,7 @@
     }
   });
   document.getElementById("btn-lang-cancel").addEventListener("click", () => closeModal("modal-lang"));
+  document.getElementById("btn-shortcuts-close").addEventListener("click", () => closeModal("modal-shortcuts"));
 
   // ===== locale 변경 시 동적 텍스트 (status bar 등) 다시 채우기 =====
   // data-i18n 마킹된 정적 요소는 applyDom()이 자동으로 처리. 동적 텍스트는 별도.

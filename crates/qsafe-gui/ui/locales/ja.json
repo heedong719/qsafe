@@ -124,5 +124,16 @@
   "modal.about.update_available": "🆕 新バージョン利用可能: v{current} → v{latest}",
   "modal.about.open_release": "リリースページを開く",
   "modal.about.check_failed": "アップデート確認失敗",
-  "status.update_badge": "🆕 v{latest} 利用可能"
+  "status.update_badge": "🆕 v{latest} 利用可能",
+  "modal.shortcuts.title": "⌨️ キーボードショートカット",
+  "modal.shortcuts.help": "ショートカットヘルプ (このウィンドウ)",
+  "modal.shortcuts.refresh": "更新",
+  "modal.shortcuts.up": "親フォルダへ (テキスト入力内では無効)",
+  "modal.shortcuts.open": "選択フォルダ/ファイルを開く",
+  "modal.shortcuts.delete": "選択項目を完全削除",
+  "modal.shortcuts.close": "モーダル / メニューを閉じる",
+  "modal.shortcuts.pack": "選択項目を圧縮",
+  "modal.shortcuts.lang": "言語選択",
+  "modal.shortcuts.dnd": "💡 フォルダ / ファイルをウィンドウへドラッグ&ドロップすると圧縮モーダルが自動で開きます (.qs / .iso は自動振り分け)。",
+  "modal.shortcuts.close_btn": "閉じる"
 }
