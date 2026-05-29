@@ -29,8 +29,8 @@
   "filelist.empty": "(This folder is empty)",
   "filelist.error": "Cannot read folder",
   "kind.dir": "Folder",
-  "kind.qsafe": "qsafe archive",
-  "kind.archive": "Archive (extractable with qsafe)",
+  "kind.qsafe": "🔐 qsafe (.qs)",
+  "kind.archive": "📦 Archive (unpack with qsafe)",
   "kind.file": "File",
   "status.items": "{count} items",
   "status.selection": "Selected: {name} ({size})",
@@ -235,5 +235,9 @@
   "toolbar.about_tip": "About",
   "filter.placeholder": "Search current folder…",
   "status.empty_folder": "(empty folder)",
-  "status.no_match": "No match for '{query}'"
+  "status.no_match": "No match for '{query}'",
+  "kind.folder": "Folder",
+  "modal.shortcuts.find": "Search current folder",
+  "modal.pack.pubkey_placeholder": "friend.pub.json",
+  "modal.unpack.identity_placeholder": "my-key.json"
 }

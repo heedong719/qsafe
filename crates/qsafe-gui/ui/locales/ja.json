@@ -155,5 +155,12 @@
   "toolbar.about_tip": "情報",
   "filter.placeholder": "このフォルダを検索…",
   "status.empty_folder": "(空のフォルダ)",
-  "status.no_match": "'{query}' に一致なし"
+  "status.no_match": "'{query}' に一致なし",
+  "kind.folder": "フォルダ",
+  "kind.qsafe": "🔐 qsafe (.qs)",
+  "kind.archive": "📦 アーカイブ (qsafe で解凍可)",
+  "kind.file": "ファイル",
+  "modal.shortcuts.find": "このフォルダを検索",
+  "modal.pack.pubkey_placeholder": "friend.pub.json",
+  "modal.unpack.identity_placeholder": "my-key.json"
 }

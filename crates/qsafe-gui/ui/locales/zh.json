@@ -155,5 +155,12 @@
   "toolbar.about_tip": "关于",
   "filter.placeholder": "搜索当前文件夹…",
   "status.empty_folder": "(空文件夹)",
-  "status.no_match": "无匹配 '{query}'"
+  "status.no_match": "无匹配 '{query}'",
+  "kind.folder": "文件夹",
+  "kind.qsafe": "🔐 qsafe (.qs)",
+  "kind.archive": "📦 压缩文件 (可用 qsafe 解压)",
+  "kind.file": "文件",
+  "modal.shortcuts.find": "搜索当前文件夹",
+  "modal.pack.pubkey_placeholder": "friend.pub.json",
+  "modal.unpack.identity_placeholder": "my-key.json"
 }

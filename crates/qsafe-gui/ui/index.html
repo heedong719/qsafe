@@ -309,7 +309,7 @@
     </div>
     <div class="row" id="m-pack-pk-row" style="display:none;">
       <label data-i18n="modal.pack.pubkey_file">공개키 파일</label>
-      <input type="text" id="m-pack-pk" placeholder="친구.pub.json" />
+      <input type="text" id="m-pack-pk" data-i18n-placeholder="modal.pack.pubkey_placeholder" placeholder="친구.pub.json" />
       <button class="cancel" id="btn-pack-pk-pick">📁</button>
     </div>
     <div class="row">
@@ -364,7 +364,7 @@
     </div>
     <div class="row" id="m-unpack-id-row" style="display:none;">
       <label data-i18n="modal.unpack.secret_file">비밀키 파일</label>
-      <input type="text" id="m-unpack-id" placeholder="내키.json" />
+      <input type="text" id="m-unpack-id" data-i18n-placeholder="modal.unpack.identity_placeholder" placeholder="내키.json" />
       <button class="cancel" id="btn-unpack-id-pick">📁</button>
     </div>
     <div class="progress" id="m-unpack-prog" style="display:none;"><div class="bar"></div><div class="pct" id="m-unpack-pct">0%</div></div>
@@ -496,6 +496,7 @@
       <kbd>Cmd / Ctrl + N</kbd> <span data-i18n="modal.shortcuts.pack">선택 항목 압축</span>
       <kbd>Cmd / Ctrl + R</kbd> <span data-i18n="modal.shortcuts.refresh">새로고침 (대안)</span>
       <kbd>Cmd / Ctrl + ,</kbd> <span data-i18n="modal.shortcuts.lang">언어 선택</span>
+      <kbd>Cmd / Ctrl + F</kbd> <span data-i18n="modal.shortcuts.find">현재 폴더 검색</span>
     </div>
     <p class="help" style="margin-top:14px;" data-i18n="modal.shortcuts.dnd">💡 폴더 / 파일을 창에 드래그-드롭하면 압축 모달이 자동으로 열립니다 (.qs / .iso 는 자동 라우팅).</p>
     <div class="actions">
@@ -705,7 +706,10 @@
       if (e.is_dir) { ico = "📁"; icoClass = "dir"; }
       else if (e.is_qsafe) { ico = "🔐"; icoClass = "qsafe"; }
       else if (e.is_archive) { ico = "📦"; icoClass = "archive"; }
-      var kind = e.is_dir ? "폴더" : (e.is_qsafe ? "🔐 qsafe (.qs)" : (e.is_archive ? "📦 압축파일 (qsafe로 풀기 가능)" : "파일"));
+      var kind = e.is_dir ? qsafeI18n.t("kind.folder")
+        : e.is_qsafe ? qsafeI18n.t("kind.qsafe")
+        : e.is_archive ? qsafeI18n.t("kind.archive")
+        : qsafeI18n.t("kind.file");
       rows.push(
         '<div class="filelist-row" data-idx="' + i + '">' +
           '<div class="name"><span class="ico ' + icoClass + '">' + ico + '</span>' + escapeHtml(e.name) + '</div>' +

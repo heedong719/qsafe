@@ -153,5 +153,12 @@
   "toolbar.about_tip": "À propos",
   "filter.placeholder": "Rechercher dans ce dossier…",
   "status.empty_folder": "(dossier vide)",
-  "status.no_match": "Aucune correspondance pour « {query} »"
+  "status.no_match": "Aucune correspondance pour « {query} »",
+  "kind.folder": "Dossier",
+  "kind.qsafe": "🔐 qsafe (.qs)",
+  "kind.archive": "📦 Archive (décompresser avec qsafe)",
+  "kind.file": "Fichier",
+  "modal.shortcuts.find": "Rechercher dans le dossier",
+  "modal.pack.pubkey_placeholder": "ami.pub.json",
+  "modal.unpack.identity_placeholder": "ma-cle.json"
 }

@@ -153,5 +153,12 @@
   "toolbar.about_tip": "Info",
   "filter.placeholder": "Cerca nella cartella corrente…",
   "status.empty_folder": "(cartella vuota)",
-  "status.no_match": "Nessuna corrispondenza per '{query}'"
+  "status.no_match": "Nessuna corrispondenza per '{query}'",
+  "kind.folder": "Cartella",
+  "kind.qsafe": "🔐 qsafe (.qs)",
+  "kind.archive": "📦 Archivio (decomprimere con qsafe)",
+  "kind.file": "File",
+  "modal.shortcuts.find": "Cerca nella cartella",
+  "modal.pack.pubkey_placeholder": "amico.pub.json",
+  "modal.unpack.identity_placeholder": "mia-chiave.json"
 }

@@ -153,5 +153,12 @@
   "toolbar.about_tip": "Info",
   "filter.placeholder": "Aktuellen Ordner durchsuchen…",
   "status.empty_folder": "(leerer Ordner)",
-  "status.no_match": "Keine Treffer für '{query}'"
+  "status.no_match": "Keine Treffer für '{query}'",
+  "kind.folder": "Ordner",
+  "kind.qsafe": "🔐 qsafe (.qs)",
+  "kind.archive": "📦 Archiv (mit qsafe entpacken)",
+  "kind.file": "Datei",
+  "modal.shortcuts.find": "Aktuellen Ordner durchsuchen",
+  "modal.pack.pubkey_placeholder": "freund.pub.json",
+  "modal.unpack.identity_placeholder": "mein-schluessel.json"
 }

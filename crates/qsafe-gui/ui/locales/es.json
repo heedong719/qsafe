@@ -153,5 +153,12 @@
   "toolbar.about_tip": "Acerca de",
   "filter.placeholder": "Buscar en carpeta actual…",
   "status.empty_folder": "(carpeta vacía)",
-  "status.no_match": "Sin coincidencias para '{query}'"
+  "status.no_match": "Sin coincidencias para '{query}'",
+  "kind.folder": "Carpeta",
+  "kind.qsafe": "🔐 qsafe (.qs)",
+  "kind.archive": "📦 Archivo (descomprimir con qsafe)",
+  "kind.file": "Archivo",
+  "modal.shortcuts.find": "Buscar carpeta actual",
+  "modal.pack.pubkey_placeholder": "amigo.pub.json",
+  "modal.unpack.identity_placeholder": "mi-clave.json"
 }

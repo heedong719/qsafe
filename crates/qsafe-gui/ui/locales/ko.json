@@ -29,8 +29,8 @@
   "filelist.empty": "(이 폴더는 비어 있습니다)",
   "filelist.error": "폴더를 읽을 수 없습니다",
   "kind.dir": "폴더",
-  "kind.qsafe": "qsafe 압축 파일",
-  "kind.archive": "압축 파일 (qsafe로 풀기 가능)",
+  "kind.qsafe": "🔐 qsafe (.qs)",
+  "kind.archive": "📦 압축파일 (qsafe로 풀기 가능)",
   "kind.file": "파일",
   "status.items": "{count} 항목",
   "status.selection": "선택: {name} ({size})",
@@ -235,5 +235,9 @@
   "toolbar.about_tip": "정보",
   "filter.placeholder": "현재 폴더 검색…",
   "status.empty_folder": "(빈 폴더)",
-  "status.no_match": "'{query}' 일치 없음"
+  "status.no_match": "'{query}' 일치 없음",
+  "kind.folder": "폴더",
+  "modal.shortcuts.find": "현재 폴더 검색",
+  "modal.pack.pubkey_placeholder": "친구.pub.json",
+  "modal.unpack.identity_placeholder": "내키.json"
 }
