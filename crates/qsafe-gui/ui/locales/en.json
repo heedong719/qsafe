@@ -203,5 +203,6 @@
   "modal.about.up_to_date": "✅ You are up to date (v{version})",
   "modal.about.update_available": "🆕 New version available: v{current} → v{latest}",
   "modal.about.open_release": "Open release page",
-  "modal.about.check_failed": "Update check failed"
+  "modal.about.check_failed": "Update check failed",
+  "status.update_badge": "🆕 v{latest} available"
 }

@@ -121,5 +121,6 @@
   "modal.about.up_to_date": "✅ Vous êtes à jour (v{version})",
   "modal.about.update_available": "🆕 Nouvelle version disponible : v{current} → v{latest}",
   "modal.about.open_release": "Ouvrir la page de version",
-  "modal.about.check_failed": "Échec de vérification des mises à jour"
+  "modal.about.check_failed": "Échec de vérification des mises à jour",
+  "status.update_badge": "🆕 v{latest} disponible"
 }

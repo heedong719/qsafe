@@ -260,6 +260,7 @@
     <span id="status-count">0 항목</span>
     <span class="selection" id="status-selection"></span>
     <span style="flex:1;"></span>
+    <span id="status-update" style="display:none; color:#6cf; cursor:pointer; text-decoration:underline;"></span>
     <span id="status-msg" style="color:#fa3; font-weight:600;"></span>
   </div>
 </div>
@@ -1326,6 +1327,58 @@
       console.warn("progress listener 설정 실패:", e);
     }
   })();
+
+  // R17: 앱 시작 후 background 에서 한 번 GitHub 폴링. 24시간 throttle (localStorage).
+  // 새 버전이 있으면 statusbar 우측에 클릭 가능 배지 표시. 실패는 silent.
+  (async function silentUpdateCheck() {
+    try {
+      const LAST_KEY = "qsafe-update-last-check";
+      const NOTIFY_KEY = "qsafe-update-notify";
+      const now = Date.now();
+      // 사용자가 "다시 표시 안 함" 체크 시
+      if (localStorage.getItem(NOTIFY_KEY) === "off") return;
+      const last = parseInt(localStorage.getItem(LAST_KEY) || "0", 10);
+      if (now - last < 24 * 3600 * 1000) {
+        // 24h 안에 이미 체크함 — 캐시된 결과 사용
+        const cached = localStorage.getItem("qsafe-update-cached");
+        if (cached) {
+          try {
+            const u = JSON.parse(cached);
+            if (!u.up_to_date) showUpdateBadge(u);
+          } catch (_) {}
+        }
+        return;
+      }
+      // 부팅 시 즉시 호출 X — 메인 UI 안정화 대기 (2초)
+      await new Promise(r => setTimeout(r, 2000));
+      const u = await invoke("check_for_update");
+      localStorage.setItem(LAST_KEY, String(now));
+      localStorage.setItem("qsafe-update-cached", JSON.stringify(u));
+      if (!u.up_to_date) showUpdateBadge(u);
+    } catch (e) {
+      // 네트워크 실패 등은 silent — 사용자가 명시적으로 About 버튼 누르면 그때 에러 표시
+      console.debug("silent update check failed:", e);
+    }
+  })();
+
+  function showUpdateBadge(u) {
+    const el = document.getElementById("status-update");
+    if (!el) return;
+    el.textContent = qsafeI18n.t("status.update_badge", { latest: u.latest });
+    el.style.display = "inline";
+    el.title = qsafeI18n.t("modal.about.update_available", { current: u.current, latest: u.latest });
+    el.onclick = () => {
+      // About 모달 자동 오픈 + 결과 미리 채움
+      const out = document.getElementById("m-about-update");
+      out.className = "result err";
+      out.style.display = "block";
+      out.innerHTML =
+        qsafeI18n.t("modal.about.update_available", { current: u.current, latest: u.latest }) +
+        ' <a href="' + u.release_url + '" target="_blank" style="color:#6cf;">' +
+        qsafeI18n.t("modal.about.open_release") + ' →</a>';
+      document.getElementById("btn-about").click();
+    };
+  }
 
   // ===== 컬럼 정렬 (상용 탐색기 표준) =====
   // 이름/크기/종류/수정일 헤더 클릭 → 정렬 토글. 폴더는 항상 상단.

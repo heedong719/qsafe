@@ -203,5 +203,6 @@
   "modal.about.up_to_date": "✅ 최신 버전입니다 (v{version})",
   "modal.about.update_available": "🆕 새 버전 사용 가능: v{current} → v{latest}",
   "modal.about.open_release": "릴리스 페이지 열기",
-  "modal.about.check_failed": "업데이트 확인 실패"
+  "modal.about.check_failed": "업데이트 확인 실패",
+  "status.update_badge": "🆕 v{latest} 사용 가능"
 }

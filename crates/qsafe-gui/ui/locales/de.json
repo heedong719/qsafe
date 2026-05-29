@@ -121,5 +121,6 @@
   "modal.about.up_to_date": "✅ Du bist auf dem neuesten Stand (v{version})",
   "modal.about.update_available": "🆕 Neue Version verfügbar: v{current} → v{latest}",
   "modal.about.open_release": "Release-Seite öffnen",
-  "modal.about.check_failed": "Update-Prüfung fehlgeschlagen"
+  "modal.about.check_failed": "Update-Prüfung fehlgeschlagen",
+  "status.update_badge": "🆕 v{latest} verfügbar"
 }

@@ -123,5 +123,6 @@
   "modal.about.up_to_date": "✅ 已是最新版本 (v{version})",
   "modal.about.update_available": "🆕 有新版本: v{current} → v{latest}",
   "modal.about.open_release": "打开发布页",
-  "modal.about.check_failed": "检查更新失败"
+  "modal.about.check_failed": "检查更新失败",
+  "status.update_badge": "🆕 v{latest} 可用"
 }

@@ -123,5 +123,6 @@
   "modal.about.up_to_date": "✅ 最新バージョンです (v{version})",
   "modal.about.update_available": "🆕 新バージョン利用可能: v{current} → v{latest}",
   "modal.about.open_release": "リリースページを開く",
-  "modal.about.check_failed": "アップデート確認失敗"
+  "modal.about.check_failed": "アップデート確認失敗",
+  "status.update_badge": "🆕 v{latest} 利用可能"
 }
