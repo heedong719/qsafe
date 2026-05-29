@@ -10,6 +10,62 @@
 
 ---
 
+## [0.1.8] — 2026-05-29 (Polish Cycle II, R15~R20)
+
+v0.1.7 가 R1~R14 (사용자 합의 큐 + 풀스택 i18n + OS 통합 + Tauri bundler) 를 묶었다면, v0.1.8 은 그 후속의 6 라운드 — Release 준비 + 자동 업데이트 + 사용자 가시 UX 패턴을 추가.
+
+### 추가 — R15 (7a4bad6) v0.1.7 release window cut
+- `Cargo.toml workspace.package.version`: 0.1.6 → 0.1.7. 10개 멤버 crate 가 `workspace=true` 로 상속.
+- `tauri.conf.json version`: 0.1.6 → 0.1.7. GUI 인스톨러가 정확한 마케팅 버전 캐리.
+- `CHANGELOG.md` 재구조화 — `[Unreleased]` 의 R1~R5 블록과 R6~R14 블록을 단일 `[0.1.7]` 헤더로 병합. 빈 `[Unreleased]` 가 위에 자리.
+
+### 추가 — R16 (3b7c886) About 모달 "업데이트 확인" 버튼
+- 새 의존성 `ureq 2` default-features off + tls + json (no tokio, rustls 백엔드, ~12 transitive deps).
+- `commands::version_at_least(current, latest)` — `v` prefix 무시 + 숫자 부분만 비교 + 자리수 부족 시 0 패딩 (예: `0.1.7-rc1` vs `0.1.7` 처리).
+- `commands::check_for_update()` Tauri command — GitHub Releases API GET (User-Agent 필수, 8초 timeout, 인증 없음), tag_name + html_url 추출 → `UpdateCheck { current, latest, up_to_date, release_url }` 반환.
+- About 모달에 🔄 버튼 + 3 상태 결과 ("checking…" / "up to date" / "new vX.Y.Z available [Open release page →]").
+- i18n: 6 new `modal.about.{check_update,checking,up_to_date,update_available,open_release,check_failed}` 키 8개 locale native.
+- 단위 테스트 8 케이스 (`version_at_least_basic`). 워크스페이스 tests 144 → 145.
+
+### 추가 — R17 (9ce23a0) 부팅 시 silent 백그라운드 update check
+- 앱 시작 2 초 후 background IIFE 가 `check_for_update` 한 번 호출.
+- `localStorage qsafe-update-last-check` 24 h throttle — 캐시된 결과 재사용.
+- up_to_date=false → statusbar 우측에 클릭 가능 배지 (🆕 v X.Y.Z available) 표시 → About 모달 자동 오픈.
+- 네트워크 실패 silent (console.debug). `localStorage qsafe-update-notify='off'` opt-out 훅.
+- i18n: 1 new `status.update_badge` 키 with `{latest}` 보간 8개 locale.
+
+### 추가 — R18 (0dff060) F1 / `?` 키보드 단축키 cheatsheet 모달
+- 새 modal-shortcuts 다이얼로그 — `<kbd>` 칠랫 스타일 + grid layout, 9개 entry (F1 / F5 / Backspace / Enter / Delete / Esc / Cmd-N / Cmd-R / Cmd-,) + drag-drop footer.
+- 트리거: F1 (모든 컨텍스트) + `?` (텍스트 입력 외부에서만, 입력 충돌 방지).
+- i18n: 11 new `modal.shortcuts.*` 키 8개 locale.
+
+### 추가 — R19 (58856ab) 파일 우클릭 컨텍스트 메뉴
+- 새 #ctx-menu 단일 element + .ctx-menu CSS (position:fixed, z-index 100, drop shadow, .ctx-item .ctx-sep).
+- filelist-row contextmenu 핸들러 — selectRow → showContextMenu(x, y, entry). entry 종류별 (디렉토리 / 일반 / .qs / 외부 아카이브) 자동 항목 필터.
+- 5 액션 (Open / Info / Pack / Unpack / Delete) — 각각 기존 wiring (activateRow / openInfoModal / modal-pack/unpack prefill / btn-delete) 재사용.
+- Dismiss: 외부 click / contextmenu + window 끝 clip (innerWidth/Height 기준).
+- i18n: 5 new `ctx.*` 키 8개 locale.
+
+### 추가 — R20 (d6482e2 + b52bf8c) modal-info 헤더 i18n + 잔여 정리
+- modal-info의 `.qs` 헤더 정보 8 행 (포맷 / 파일 크기 / 원본 크기 / 암호 방식 / 압축 / 수신자 / 라벨 / 생성) → `row(key, value).padEnd(14)` 헬퍼 통해 native 정렬.
+- "외부 아카이브: …개 항목" → R13의 `result.external_archive` 보간 키 재연결 (call site 중복으로 한국어 재발생한 것 정정).
+- "RAR-only" 안내 → `info.list_unsupported` 새 키 8개 locale.
+- About 버튼 tooltip `title="정보"` → `data-i18n-title="toolbar.about_tip"`.
+- 신규 키: `info.{format,file_size,orig_size,cipher,compression,recipients,label,created,none,unknown_format,list_unsupported}` + `toolbar.about_tip` = 12 키 × 8 locale.
+- **사용자 가시 텍스트 중 미국제 한국어: 0 건** (사이클 결과 — font-family `맑은 고딕` 폰트명 + addr placeholder 만 잔여 — 둘 다 자동 치환되거나 의도된 상수).
+
+### v0.1.7 → v0.1.8 누적 i18n 키 합계
+- v0.1.7: 약 195 키 / locale (R6~R13 i18n 사이클)
+- v0.1.8 추가: about(6) + status(1) + shortcuts(11) + ctx(5) + info(11) + toolbar(1) = **35 키 / locale × 8 = 280 신규 native 번역**
+
+### 후속 마일스톤 (대기)
+- macOS .qlgenerator Quick Look plugin (Objective-C bundle)
+- Windows Shell ThumbnailProvider (COM DLL)
+- codesign / notarization (Apple Developer ID / Windows EV cert)
+- 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
+
+---
+
 ## [0.1.7] — 2026-05-29 (Commercial Polish Cycle, R1~R14)
 
 ### Commercial Polish Cycle (R1~R5, post-v0.1.6)
