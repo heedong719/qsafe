@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+(다음 사이클 — 아직 없음)
+
+---
+
+## [0.1.7] — 2026-05-29 (Commercial Polish Cycle, R1~R14)
+
 ### Commercial Polish Cycle (R1~R5, post-v0.1.6)
 
 **R1 (503ea14) — modal-info '압축 풀기' 버튼**
@@ -104,6 +110,54 @@
 ### 추가 분석 사이클 (commit 미반영 main updates)
 - qsafe-gui clippy 위반 6건 fix (`vec_init_then_push`, `needless_borrow`, `too_many_arguments` allow, `redundant_closure` 2건, `manual_char_comparison`).
 - `cargo fmt` 적용.
+
+### v0.1.6 → v0.1.7 추가 (R6~R14)
+
+### 추가 — R6 (d0dada2) 문서 동기화 + 8-locale i18n about
+- `README.md` 빠른 시작 직전에 OS 자동 등록 섹션. 3-OS 설치 명령 + `crates/qsafe-gui/install/README.md` 링크.
+- `modal.about.*` 10 키를 6개 locale (ja/zh/es/fr/de/it) 에 native 추가. 이전엔 en fallback.
+
+### 추가 — R7 (1471e7c) Q2 + Q3 단일 추출 + 자동 cleanup
+- `qsafe-formats::rar::extract_rar_entry(rar, entry_name, base, password) -> PathBuf` 신규 — 전체 archive walk 후 일치하는 entry만 extract_to.
+- `qsafe-gui::commands::extract_archive_entry_to_temp` Tauri command — `$TMP/qsafe-info-<pid>-<nanos>/` (Unix 0700) 에 단일 entry 추출.
+- `qsafe-gui::commands::cleanup_temp_dir` Tauri command — canonicalize starts_with temp_dir + file_name starts_with `qsafe-info-` 이중 guard.
+- UI: m-info-list rows에 dblclick 핸들러 — clickable 행은 임시 추출 + open_with_associated 실행. closeModal('modal-info') 가 infoTempDirs 큐 drain.
+- 단위 테스트 3건 추가 (cleanup_temp_dir reject /tmp / reject / / accept qsafe-info-*). 워크스페이스 tests 139 → 142.
+
+### 추가 — R8 (27a9f4e) Linux 썸네일 통합
+- `qsafe thumbnail INPUT OUTPUT --size N` 새 CLI 서브커맨드 — magic byte 검사 후 임베디드 256x256 lock PNG 출력 (qsafe-gui/icons/icon.png include_bytes!).
+- `install/qsafe.thumbnailer` XDG hook (TryExec=qsafe / Exec=qsafe thumbnail %i %o --size %s / MimeType=application/x-qsafe).
+- `install-linux.sh` 가 `$DATA_DIR/thumbnailers/` 에 자동 설치 + uninstall.
+- 단위 테스트 2건 (thumbnail_rejects_non_qsafe, thumbnail_writes_png_for_valid_qsafe). 워크스페이스 tests 142 → 144.
+
+### 추가 — R9 (3ff942a) + R10 (fc841b7) Q4 풀스택 진행률
+- **R9**: `qsafe-core::stream` 에 `stream_encrypt_with_hash_progress(..., FnMut(u64))` + `stream_decrypt_with_hash_progress(..., FnMut(u32, u64))`. 기존 함수는 wrapper 로 유지. `qsafe-cli pack/unpack` 에 `--progress` flag — chunk 후 callback 이 stderr에 `PROGRESS\tcur\ttot\tpct` 출력 (% 변동 시에만 dedupe).
+- **R10**: `qsafe-gui::commands::spawn_with_progress(cmd, app: Option<&AppHandle>, event_name)` 헬퍼. child stderr → BufReader::lines() → PROGRESS 라인 파싱 → `PackUnpackProgress { current, total, percent }` Tauri event emit. pack_path_ext / unpack_qsafe / unpack_qsafe_ext 를 `*_impl(Option<&AppHandle>, ...)` 패턴으로 분리 (기존 테스트가 AppHandle 없이 호출 가능). UI: 18px `.progress.determinate .bar` width = pct, `.pct` 라벨 = "{pct}%", `applyProgress` / `resetProgress` 헬퍼.
+
+### 추가 — R11 (1977f4a) modal-pack / modal-unpack 완전 i18n
+- HTML 의 ~50개 정적 label/button/radio/select/checkbox 에 `data-i18n` 마킹.
+- 49개 새 키 (`modal.pack.heading` / `.browse` / `.password_hint` / `.pubkey_file` / `.advanced` / `.sfx_warn` / `.go` / `.mode.{open,password,pubkey,both,zip}` / `.compression.{auto,zstd,none}` / `.profile.{standard,strong}` / `.opt.{sfx,md5,label}` / `.unpack.heading` / `.browse` / `.mode.{open,password,identity}` / `.secret_file` / `.go`) 8개 locale 모두 native.
+
+### 추가 — R12 (8d68073) modal-key + modal-mnemonic 완전 i18n
+- 14개 새 키 8개 locale 모두 native (modal.key.* + modal.mnemonic.*).
+
+### 추가 — R13 (43ffb41) 동적 JS 문자열 i18n + tErr 헬퍼
+- `i18n.js` 에 `qsafeI18n.tErr(key, e, vars)` 헬퍼 추가 — 다국어 prefix + e.message 결합.
+- 26개 `showErr` / `setResult` / `setStatus` 호출을 `tErr` / `t` 로 변환.
+- 22개 새 키 (error.{loading,open_folder,open_file,up_failed,pick_failed,extract_single,extract_external,drop_failed,mnemonic,lang_load,write_in_progress,write_start,write_failed,init_invoke,init_about,init_sidebar,init_currdir,init_navigate,init_home_fallback} + status.{ready,fallback_home} + result.external_archive with {format}/{count} 보간) 8개 locale 모두 native.
+
+### 빌드 / 릴리스 — R14 (7b37b42) Tauri bundler 활성화
+- `tauri.conf.json` `bundle.active: false → true`, icons 배열에 .png + .ico + **.icns** (iconutil 로 11개 size 임베드), category=Utility, shortDescription/longDescription 추가.
+- `.github/workflows/release.yml` 에 새 `build-gui` matrix job 추가 (macOS arm64/x86_64 + Windows + Linux). 각 runner 에서 `cargo install tauri-cli` + `cargo tauri build --target <triple>` → `.dmg / .msi / .nsis / .deb / .AppImage` 자동 생성.
+- Linux runner 에 libwebkit2gtk-4.1-dev + libayatana-appindicator3-dev + librsvg2-dev + libudev-dev 사전 설치.
+- `release` job 의 needs 가 `[build, build-gui]` 로 확장 — 두 matrix 모두 통과해야 release 발사. `files:` glob 에 `.dmg/.msi/.exe/.deb/.AppImage` 추가.
+
+### 후속 마일스톤 (대기)
+- 외부 감사 (Trail of Bits / NCC Group) — v1.0 전
+- SFX codesign / notarization (Apple Developer ID / Windows EV cert)
+- macOS .qlgenerator Quick Look plugin
+- Windows Shell ThumbnailProvider (COM DLL)
+- 자동 업데이트 (Sparkle / WinSparkle)
 
 ---
 
