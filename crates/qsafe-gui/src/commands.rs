@@ -2723,8 +2723,9 @@ pub fn write_iso_to_disk(
     let app_clone = app.clone();
     let iso_clone = iso_path.clone();
     let disk_clone = disk.id.clone();
+    let token_clone = expected.clone(); // R26: TOCTOU 재검증용 — thread 안에서 동일 token 으로 재조회
     std::thread::spawn(move || {
-        let _ = run_iso_write(app_clone, iso_clone, disk_clone, total_bytes);
+        let _ = run_iso_write(app_clone, iso_clone, disk_clone, total_bytes, token_clone);
     });
 
     // 즉시 반환 — 진행은 event로
@@ -2741,9 +2742,55 @@ fn run_iso_write(
     iso_path: String,
     disk_id: String,
     total_bytes: u64,
+    expected_token: String,
 ) -> Result<(), String> {
     use std::io::{BufRead, BufReader};
     use std::process::{Command, Stdio};
+
+    // R26: TOCTOU 최종 가드 — write_iso_to_disk 의 가드와 background thread 시작 사이에
+    // 디스크가 분리/교체된 경우 (예: 사용자가 USB를 뺐다 다른 디스크를 꽂음, 같은 /dev/diskN
+    // 슬롯 재사용) 를 검출. 같은 id + 같은 confirm_token (= id+size) + 여전히 is_system=false
+    // 셋 다 통과해야 진행.
+    match list_writable_disks_impl() {
+        Ok(disks) => {
+            let still_safe = disks.iter().any(|d| {
+                d.id == disk_id
+                    && confirm_token_for(&d.id, d.size_bytes) == expected_token
+                    && !d.is_system
+            });
+            if !still_safe {
+                let msg = format!(
+                    "디스크 {} 가 더 이상 안전하지 않습니다 (분리 / 교체 / 시스템 디스크로 표시됨). 쓰기 중단.",
+                    disk_id
+                );
+                emit_progress(
+                    &app,
+                    IsoWriteProgress {
+                        bytes_written: 0,
+                        total_bytes,
+                        percent: 0.0,
+                        stage: "error".into(),
+                        message: msg.clone(),
+                    },
+                );
+                return Err(msg);
+            }
+        }
+        Err(e) => {
+            let msg = format!("디스크 재검증 실패: {}", e);
+            emit_progress(
+                &app,
+                IsoWriteProgress {
+                    bytes_written: 0,
+                    total_bytes,
+                    percent: 0.0,
+                    stage: "error".into(),
+                    message: msg.clone(),
+                },
+            );
+            return Err(msg);
+        }
+    }
 
     emit_progress(
         &app,
