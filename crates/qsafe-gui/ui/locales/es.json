@@ -138,5 +138,15 @@
   "ctx.info": "Información",
   "ctx.pack": "Comprimir con qsafe",
   "ctx.unpack": "Descomprimir",
-  "ctx.delete": "Eliminar"
+  "ctx.delete": "Eliminar",
+  "info.format": "Formato",
+  "info.file_size": "Tamaño de archivo",
+  "info.orig_size": "Tamaño original",
+  "info.cipher": "Cifrado",
+  "info.compression": "Compresión",
+  "info.recipients": "Destinatarios",
+  "info.label": "Etiqueta",
+  "info.created": "Creado",
+  "info.none": "ninguno",
+  "info.unknown_format": "❌ Formato desconocido"
 }

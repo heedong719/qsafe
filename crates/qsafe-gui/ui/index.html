@@ -880,15 +880,19 @@
     openModal("modal-info");
     try {
       const info = await invoke("qsafe_info", { path });
+      // R20: 헤더 정보 라벨 모두 i18n. 일관된 폭을 위해 padEnd(14)로 정렬 (CJK 글리프 폭 차이는 사소하게 허용)
+      function row(labelKey, value) {
+        return qsafeI18n.t(labelKey).padEnd(14, " ") + ": " + value;
+      }
       var t = "📄 " + basename(path) + "\n\n" +
-        "포맷       : " + info.format + "\n" +
-        "파일 크기  : " + fmtBytes(info.size) + "\n" +
-        "원본 크기  : " + fmtBytes(info.original_size) + "\n" +
-        "암호 방식  : " + (info.cipher_suite || "?") + "\n" +
-        "압축       : " + (info.compression || "none") + "\n" +
-        "수신자     : " + (info.recipients.length ? info.recipients.join(", ") : "none");
-      if (info.label) t += "\n라벨       : " + info.label;
-      if (info.created_at_unix) t += "\n생성       : " + fmtTime(info.created_at_unix);
+        row("info.format",     info.format) + "\n" +
+        row("info.file_size",  fmtBytes(info.size)) + "\n" +
+        row("info.orig_size",  fmtBytes(info.original_size)) + "\n" +
+        row("info.cipher",     info.cipher_suite || "?") + "\n" +
+        row("info.compression", info.compression || qsafeI18n.t("info.none")) + "\n" +
+        row("info.recipients", info.recipients.length ? info.recipients.join(", ") : qsafeI18n.t("info.none"));
+      if (info.label) t += "\n" + row("info.label", info.label);
+      if (info.created_at_unix) t += "\n" + row("info.created", fmtTime(info.created_at_unix));
       setResult("m-info-summary", t, "ok");
       infoCurrent.kind = "qsafe";
       document.getElementById("btn-info-unpack").disabled = false;
@@ -942,7 +946,7 @@
         });
       }
     } catch (e2) {
-      setResult("m-info-summary", "❌ 알 수 없는 포맷: " + (e2.message || e2), "err");
+      setResult("m-info-summary", qsafeI18n.tErr("info.unknown_format", e2), "err");
     }
   }
   // cleanup은 closeModal에서 통합 처리 (ESC + 배경 클릭 + 버튼 모두 커버)

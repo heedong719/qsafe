@@ -140,5 +140,15 @@
   "ctx.info": "情報",
   "ctx.pack": "qsafe で圧縮",
   "ctx.unpack": "解凍",
-  "ctx.delete": "削除"
+  "ctx.delete": "削除",
+  "info.format": "フォーマット",
+  "info.file_size": "ファイルサイズ",
+  "info.orig_size": "元のサイズ",
+  "info.cipher": "暗号方式",
+  "info.compression": "圧縮",
+  "info.recipients": "受信者",
+  "info.label": "ラベル",
+  "info.created": "作成日時",
+  "info.none": "なし",
+  "info.unknown_format": "❌ 不明なフォーマット"
 }

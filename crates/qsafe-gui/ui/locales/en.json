@@ -220,5 +220,15 @@
   "ctx.info": "Info",
   "ctx.pack": "Compress with qsafe",
   "ctx.unpack": "Unpack",
-  "ctx.delete": "Delete"
+  "ctx.delete": "Delete",
+  "info.format": "Format",
+  "info.file_size": "File size",
+  "info.orig_size": "Original size",
+  "info.cipher": "Cipher",
+  "info.compression": "Compression",
+  "info.recipients": "Recipients",
+  "info.label": "Label",
+  "info.created": "Created",
+  "info.none": "none",
+  "info.unknown_format": "❌ Unknown format"
 }

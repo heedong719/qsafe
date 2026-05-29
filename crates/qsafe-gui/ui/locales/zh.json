@@ -140,5 +140,15 @@
   "ctx.info": "信息",
   "ctx.pack": "用 qsafe 压缩",
   "ctx.unpack": "解压",
-  "ctx.delete": "删除"
+  "ctx.delete": "删除",
+  "info.format": "格式",
+  "info.file_size": "文件大小",
+  "info.orig_size": "原始大小",
+  "info.cipher": "加密方式",
+  "info.compression": "压缩",
+  "info.recipients": "接收者",
+  "info.label": "标签",
+  "info.created": "创建时间",
+  "info.none": "无",
+  "info.unknown_format": "❌ 未知格式"
 }

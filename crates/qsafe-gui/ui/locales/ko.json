@@ -220,5 +220,15 @@
   "ctx.info": "정보",
   "ctx.pack": "qsafe 로 압축",
   "ctx.unpack": "풀기",
-  "ctx.delete": "삭제"
+  "ctx.delete": "삭제",
+  "info.format": "포맷",
+  "info.file_size": "파일 크기",
+  "info.orig_size": "원본 크기",
+  "info.cipher": "암호 방식",
+  "info.compression": "압축",
+  "info.recipients": "수신자",
+  "info.label": "라벨",
+  "info.created": "생성",
+  "info.none": "없음",
+  "info.unknown_format": "❌ 알 수 없는 포맷"
 }
