@@ -74,6 +74,22 @@
   "result.success": "✅ 完成",
   "result.fail": "❌ 失败",
 
+  "modal.key.heading": "🔑 数字身份 (密钥对) 管理",
+  "modal.key.help": "用于和朋友安全交换文件的 X25519+ML-KEM-768 混合密钥对 (量子安全)。",
+  "modal.key.path": "保存路径",
+  "modal.key.generate": "🔑 创建新密钥对",
+  "modal.key.show": "查看已有密钥",
+  "modal.key.close": "关闭",
+
+  "modal.mnemonic.heading": "📝 BIP39 纸质备份单词",
+  "modal.mnemonic.help": "请将单词记录在纸上，以便密钥文件损坏时仍可恢复。",
+  "modal.mnemonic.count": "单词数量",
+  "modal.mnemonic.count.24": "24 个单词 (推荐)",
+  "modal.mnemonic.count.18": "18 个单词",
+  "modal.mnemonic.count.12": "12 个单词",
+  "modal.mnemonic.generate": "生成",
+  "modal.mnemonic.close": "关闭",
+
   "modal.about.title": "关于 qsafe",
   "modal.about.tagline": "量子安全压缩与加密",
   "modal.about.version": "版本",

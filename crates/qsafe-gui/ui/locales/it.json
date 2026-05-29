@@ -72,6 +72,22 @@
   "result.success": "✅ Fatto",
   "result.fail": "❌ Errore",
 
+  "modal.key.heading": "🔑 Identità digitale (coppia di chiavi)",
+  "modal.key.help": "Coppia di chiavi ibrida X25519+ML-KEM-768 per scambiare file in modo sicuro (quantum-safe).",
+  "modal.key.path": "Percorso di salvataggio",
+  "modal.key.generate": "🔑 Crea nuova coppia",
+  "modal.key.show": "Mostra chiave esistente",
+  "modal.key.close": "Chiudi",
+
+  "modal.mnemonic.heading": "📝 Parole di backup BIP39",
+  "modal.mnemonic.help": "Scrivete le parole su carta per poter recuperare anche se il file della chiave si perde.",
+  "modal.mnemonic.count": "Numero di parole",
+  "modal.mnemonic.count.24": "24 parole (consigliato)",
+  "modal.mnemonic.count.18": "18 parole",
+  "modal.mnemonic.count.12": "12 parole",
+  "modal.mnemonic.generate": "Genera",
+  "modal.mnemonic.close": "Chiudi",
+
   "modal.about.title": "Informazioni su qsafe",
   "modal.about.tagline": "Compressione e cifratura quantum-safe",
   "modal.about.version": "Versione",

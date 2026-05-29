@@ -74,6 +74,22 @@
   "result.success": "✅ 完了",
   "result.fail": "❌ 失敗",
 
+  "modal.key.heading": "🔑 デジタルアイデンティティ (鍵ペア) 管理",
+  "modal.key.help": "友達と安全にファイルをやり取りするための X25519+ML-KEM-768 ハイブリッド鍵ペア (量子安全)。",
+  "modal.key.path": "保存先",
+  "modal.key.generate": "🔑 新しい鍵ペア作成",
+  "modal.key.show": "既存の鍵を確認",
+  "modal.key.close": "閉じる",
+
+  "modal.mnemonic.heading": "📝 BIP39 紙バックアップ単語",
+  "modal.mnemonic.help": "鍵ファイルが壊れても復元できるよう、単語を紙に書き留めてください。",
+  "modal.mnemonic.count": "単語数",
+  "modal.mnemonic.count.24": "24 単語 (推奨)",
+  "modal.mnemonic.count.18": "18 単語",
+  "modal.mnemonic.count.12": "12 単語",
+  "modal.mnemonic.generate": "生成",
+  "modal.mnemonic.close": "閉じる",
+
   "modal.about.title": "qsafe について",
   "modal.about.tagline": "量子安全圧縮・暗号化",
   "modal.about.version": "バージョン",

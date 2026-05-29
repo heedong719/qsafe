@@ -115,6 +115,22 @@
   "modal.lang.apply": "Apply",
   "modal.lang.cancel": "Cancel",
 
+  "modal.key.heading": "🔑 Digital identity (keypair) management",
+  "modal.key.help": "X25519+ML-KEM-768 hybrid keypair for exchanging files securely with friends (quantum-safe).",
+  "modal.key.path": "Save path",
+  "modal.key.generate": "🔑 Create new keypair",
+  "modal.key.show": "Show existing key",
+  "modal.key.close": "Close",
+
+  "modal.mnemonic.heading": "📝 BIP39 paper backup words",
+  "modal.mnemonic.help": "Write the words on paper so you can recover even if the key file is lost.",
+  "modal.mnemonic.count": "Word count",
+  "modal.mnemonic.count.24": "24 words (recommended)",
+  "modal.mnemonic.count.18": "18 words",
+  "modal.mnemonic.count.12": "12 words",
+  "modal.mnemonic.generate": "Generate",
+  "modal.mnemonic.close": "Close",
+
   "modal.about.title": "About qsafe",
   "modal.about.tagline": "Quantum-safe compression & encryption",
   "modal.about.version": "Version",

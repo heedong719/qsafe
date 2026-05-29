@@ -72,6 +72,22 @@
   "result.success": "✅ Listo",
   "result.fail": "❌ Error",
 
+  "modal.key.heading": "🔑 Identidad digital (par de claves)",
+  "modal.key.help": "Par de claves híbrido X25519+ML-KEM-768 para intercambiar archivos con amigos de forma segura (cuántico-seguro).",
+  "modal.key.path": "Ruta de guardado",
+  "modal.key.generate": "🔑 Crear nuevo par",
+  "modal.key.show": "Ver claves existentes",
+  "modal.key.close": "Cerrar",
+
+  "modal.mnemonic.heading": "📝 Palabras de respaldo BIP39",
+  "modal.mnemonic.help": "Escriba las palabras en papel para poder recuperar si el archivo de clave se pierde.",
+  "modal.mnemonic.count": "Cantidad de palabras",
+  "modal.mnemonic.count.24": "24 palabras (recomendado)",
+  "modal.mnemonic.count.18": "18 palabras",
+  "modal.mnemonic.count.12": "12 palabras",
+  "modal.mnemonic.generate": "Generar",
+  "modal.mnemonic.close": "Cerrar",
+
   "modal.about.title": "Acerca de qsafe",
   "modal.about.tagline": "Compresión y cifrado cuántico-seguro",
   "modal.about.version": "Versión",

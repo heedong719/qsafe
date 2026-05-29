@@ -367,16 +367,16 @@
 <!-- 키 관리 다이얼로그 -->
 <div class="modal-bg" id="modal-key">
   <div class="modal">
-    <h2>🔑 디지털 신원 (키쌍) 관리</h2>
-    <p class="help">친구와 안전하게 파일을 주고받기 위한 X25519+ML-KEM-768 하이브리드 키쌍입니다 (양자 안전).</p>
-    <div class="row"><label>저장 경로</label><input type="text" id="m-key-path" /><button class="cancel" id="btn-key-pick">📁</button></div>
+    <h2 data-i18n="modal.key.heading">🔑 디지털 신원 (키쌍) 관리</h2>
+    <p class="help" data-i18n="modal.key.help">친구와 안전하게 파일을 주고받기 위한 X25519+ML-KEM-768 하이브리드 키쌍입니다 (양자 안전).</p>
+    <div class="row"><label data-i18n="modal.key.path">저장 경로</label><input type="text" id="m-key-path" /><button class="cancel" id="btn-key-pick">📁</button></div>
     <div class="row">
-      <button id="btn-key-gen-go">🔑 새 키쌍 만들기</button>
-      <button class="cancel" id="btn-key-show-go">기존 키 확인</button>
+      <button id="btn-key-gen-go" data-i18n="modal.key.generate">🔑 새 키쌍 만들기</button>
+      <button class="cancel" id="btn-key-show-go" data-i18n="modal.key.show">기존 키 확인</button>
     </div>
     <div class="result" id="m-key-result" style="display:none;"></div>
     <div class="actions">
-      <button class="cancel" id="btn-key-close">닫기</button>
+      <button class="cancel" id="btn-key-close" data-i18n="modal.key.close">닫기</button>
     </div>
   </div>
 </div>
@@ -384,20 +384,20 @@
 <!-- 니모닉 다이얼로그 -->
 <div class="modal-bg" id="modal-mnemonic">
   <div class="modal" style="max-width: 640px;">
-    <h2>📝 BIP39 종이 백업 단어</h2>
-    <p class="help">키 파일이 망가져도 복구할 수 있도록 단어를 종이에 적어두세요.</p>
+    <h2 data-i18n="modal.mnemonic.heading">📝 BIP39 종이 백업 단어</h2>
+    <p class="help" data-i18n="modal.mnemonic.help">키 파일이 망가져도 복구할 수 있도록 단어를 종이에 적어두세요.</p>
     <div class="row">
-      <label>단어 개수</label>
+      <label data-i18n="modal.mnemonic.count">단어 개수</label>
       <select id="m-mn-count" style="background:#111; color:#e8e8e8; border:1px solid #444; border-radius:4px; padding:6px 10px;">
-        <option value="24" selected>24단어 (권장)</option>
-        <option value="18">18단어</option>
-        <option value="12">12단어</option>
+        <option value="24" selected data-i18n="modal.mnemonic.count.24">24단어 (권장)</option>
+        <option value="18" data-i18n="modal.mnemonic.count.18">18단어</option>
+        <option value="12" data-i18n="modal.mnemonic.count.12">12단어</option>
       </select>
-      <button id="btn-mn-go">생성</button>
+      <button id="btn-mn-go" data-i18n="modal.mnemonic.generate">생성</button>
     </div>
     <div id="m-mn-result" style="margin-top:12px;"></div>
     <div class="actions">
-      <button class="cancel" id="btn-mn-close">닫기</button>
+      <button class="cancel" id="btn-mn-close" data-i18n="modal.mnemonic.close">닫기</button>
     </div>
   </div>
 </div>

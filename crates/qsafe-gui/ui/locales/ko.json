@@ -115,6 +115,22 @@
   "modal.lang.apply": "적용",
   "modal.lang.cancel": "취소",
 
+  "modal.key.heading": "🔑 디지털 신원 (키쌍) 관리",
+  "modal.key.help": "친구와 안전하게 파일을 주고받기 위한 X25519+ML-KEM-768 하이브리드 키쌍입니다 (양자 안전).",
+  "modal.key.path": "저장 경로",
+  "modal.key.generate": "🔑 새 키쌍 만들기",
+  "modal.key.show": "기존 키 확인",
+  "modal.key.close": "닫기",
+
+  "modal.mnemonic.heading": "📝 BIP39 종이 백업 단어",
+  "modal.mnemonic.help": "키 파일이 망가져도 복구할 수 있도록 단어를 종이에 적어두세요.",
+  "modal.mnemonic.count": "단어 개수",
+  "modal.mnemonic.count.24": "24단어 (권장)",
+  "modal.mnemonic.count.18": "18단어",
+  "modal.mnemonic.count.12": "12단어",
+  "modal.mnemonic.generate": "생성",
+  "modal.mnemonic.close": "닫기",
+
   "modal.about.title": "qsafe 정보",
   "modal.about.tagline": "양자 안전 압축·암호화",
   "modal.about.version": "버전",

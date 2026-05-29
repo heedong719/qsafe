@@ -72,6 +72,22 @@
   "result.success": "✅ Terminé",
   "result.fail": "❌ Échec",
 
+  "modal.key.heading": "🔑 Identité numérique (paire de clés)",
+  "modal.key.help": "Paire de clés hybride X25519+ML-KEM-768 pour échanger des fichiers en toute sécurité (post-quantique).",
+  "modal.key.path": "Emplacement",
+  "modal.key.generate": "🔑 Créer une nouvelle paire",
+  "modal.key.show": "Voir la clé existante",
+  "modal.key.close": "Fermer",
+
+  "modal.mnemonic.heading": "📝 Mots de sauvegarde BIP39",
+  "modal.mnemonic.help": "Notez les mots sur papier pour pouvoir récupérer même si le fichier de clé est perdu.",
+  "modal.mnemonic.count": "Nombre de mots",
+  "modal.mnemonic.count.24": "24 mots (recommandé)",
+  "modal.mnemonic.count.18": "18 mots",
+  "modal.mnemonic.count.12": "12 mots",
+  "modal.mnemonic.generate": "Générer",
+  "modal.mnemonic.close": "Fermer",
+
   "modal.about.title": "À propos de qsafe",
   "modal.about.tagline": "Compression et chiffrement post-quantique",
   "modal.about.version": "Version",

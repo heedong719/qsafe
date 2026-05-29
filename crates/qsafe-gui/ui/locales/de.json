@@ -72,6 +72,22 @@
   "result.success": "✅ Fertig",
   "result.fail": "❌ Fehlgeschlagen",
 
+  "modal.key.heading": "🔑 Digitale Identität (Schlüsselpaar)",
+  "modal.key.help": "X25519+ML-KEM-768-Hybrid-Schlüsselpaar zum sicheren Dateiaustausch (quantensicher).",
+  "modal.key.path": "Speicherort",
+  "modal.key.generate": "🔑 Neues Schlüsselpaar erstellen",
+  "modal.key.show": "Vorhandenen Schlüssel anzeigen",
+  "modal.key.close": "Schließen",
+
+  "modal.mnemonic.heading": "📝 BIP39 Papier-Backup-Wörter",
+  "modal.mnemonic.help": "Notieren Sie die Wörter auf Papier, damit Sie auch bei Verlust der Schlüsseldatei wiederherstellen können.",
+  "modal.mnemonic.count": "Wortanzahl",
+  "modal.mnemonic.count.24": "24 Wörter (empfohlen)",
+  "modal.mnemonic.count.18": "18 Wörter",
+  "modal.mnemonic.count.12": "12 Wörter",
+  "modal.mnemonic.generate": "Generieren",
+  "modal.mnemonic.close": "Schließen",
+
   "modal.about.title": "Über qsafe",
   "modal.about.tagline": "Quantensichere Kompression und Verschlüsselung",
   "modal.about.version": "Version",
