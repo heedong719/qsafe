@@ -1274,12 +1274,17 @@ pub fn extract_archive_entry_to_temp(
     let fmt = detect_format(&bytes_for_detect);
     drop(bytes_for_detect);
 
+    // R23: archive bomb 가드 — info-modal dblclick 은 "미리보기" 용도이므로 2 GiB 로 제한.
+    // 그 이상이면 사용자에게 전체 extract_external_archive 사용 안내.
+    const PREVIEW_MAX_SIZE: u64 = 2 * 1024 * 1024 * 1024;
+
     let extracted_path = match fmt {
         ExternalFormat::Rar => qsafe_formats::rar::extract_rar_entry(
             PathBuf::from(&archive_path).as_path(),
             &entry_name,
             &tmp,
             None,
+            Some(PREVIEW_MAX_SIZE),
         )
         .map_err(|e| format!("RAR 단일 추출 실패: {}", e))?,
         other => {

@@ -131,11 +131,16 @@ pub fn extract_rar(
 /// info 모달의 "더블 클릭으로 단일 파일 미리보기" 흐름에서 사용.
 /// entry_name 은 list_rar()가 반환한 RarEntry.filename 와 동일한 형태로 비교됨.
 /// 일치하는 entry 가 없거나 그것이 디렉토리면 에러.
+///
+/// `max_size` 가 Some 이면 archive bomb 가드:
+///   - 사전: 헤더의 unpacked_size 가 limit 초과면 추출 전 거부.
+///   - 사후: 추출된 파일 크기가 limit 초과면 파일 삭제 후 거부 (헤더 거짓 보고 방어).
 pub fn extract_rar_entry(
     rar_path: impl AsRef<Path>,
     entry_name: &str,
     base_dir: impl AsRef<Path>,
     password: Option<&str>,
+    max_size: Option<u64>,
 ) -> Result<PathBuf> {
     let rar_path = rar_path.as_ref();
     let base_dir = base_dir.as_ref();
@@ -162,6 +167,7 @@ pub fn extract_rar_entry(
     {
         let this_name = header.entry().filename.to_string_lossy().to_string();
         let is_directory = header.entry().is_directory();
+        let unpacked_size = header.entry().unpacked_size;
 
         if this_name == entry_name {
             if is_directory {
@@ -170,6 +176,15 @@ pub fn extract_rar_entry(
                     entry_name
                 )));
             }
+            // R23: archive bomb 가드 — 헤더가 선언한 크기로 사전 거부
+            if let Some(limit) = max_size {
+                if unpacked_size > limit {
+                    return Err(FormatError::Rar(format!(
+                        "entry 크기 ({} bytes) 가 limit ({} bytes) 초과: {}",
+                        unpacked_size, limit, entry_name
+                    )));
+                }
+            }
             let safe_path = sanitize_archive_path(&this_name, &base_canon)?;
             if let Some(parent) = safe_path.parent() {
                 std::fs::create_dir_all(parent).map_err(FormatError::Io)?;
@@ -177,6 +192,18 @@ pub fn extract_rar_entry(
             header
                 .extract_to(&safe_path)
                 .map_err(|e| FormatError::Rar(format!("extract {}: {}", entry_name, e)))?;
+
+            // R23: 사후 검사 — 헤더가 거짓을 보고했을 경우 보호
+            if let Some(limit) = max_size {
+                let actual = std::fs::metadata(&safe_path).map(|m| m.len()).unwrap_or(0);
+                if actual > limit {
+                    let _ = std::fs::remove_file(&safe_path);
+                    return Err(FormatError::Rar(format!(
+                        "추출 후 크기 ({} bytes) 가 limit ({} bytes) 초과 — 파일 삭제됨: {}",
+                        actual, limit, entry_name
+                    )));
+                }
+            }
             return Ok(safe_path);
         } else {
             archive = header
