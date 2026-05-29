@@ -133,5 +133,10 @@
   "modal.shortcuts.pack": "Auswahl komprimieren",
   "modal.shortcuts.lang": "Sprache wählen",
   "modal.shortcuts.dnd": "💡 Drag-and-Drop öffnet den Komprimieren-Dialog (.qs / .iso werden automatisch geroutet).",
-  "modal.shortcuts.close_btn": "Schließen"
+  "modal.shortcuts.close_btn": "Schließen",
+  "ctx.open": "Öffnen",
+  "ctx.info": "Info",
+  "ctx.pack": "Mit qsafe komprimieren",
+  "ctx.unpack": "Entpacken",
+  "ctx.delete": "Löschen"
 }

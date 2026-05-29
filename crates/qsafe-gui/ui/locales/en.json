@@ -215,5 +215,10 @@
   "modal.shortcuts.pack": "Pack the current selection",
   "modal.shortcuts.lang": "Choose language",
   "modal.shortcuts.dnd": "💡 Drag-drop folders/files onto the window to auto-open the pack modal (.qs / .iso are auto-routed).",
-  "modal.shortcuts.close_btn": "Close"
+  "modal.shortcuts.close_btn": "Close",
+  "ctx.open": "Open",
+  "ctx.info": "Info",
+  "ctx.pack": "Compress with qsafe",
+  "ctx.unpack": "Unpack",
+  "ctx.delete": "Delete"
 }

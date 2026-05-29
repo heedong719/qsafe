@@ -215,5 +215,10 @@
   "modal.shortcuts.pack": "선택 항목 압축",
   "modal.shortcuts.lang": "언어 선택",
   "modal.shortcuts.dnd": "💡 폴더 / 파일을 창에 드래그-드롭하면 압축 모달이 자동으로 열립니다 (.qs / .iso 는 자동 라우팅).",
-  "modal.shortcuts.close_btn": "닫기"
+  "modal.shortcuts.close_btn": "닫기",
+  "ctx.open": "열기",
+  "ctx.info": "정보",
+  "ctx.pack": "qsafe 로 압축",
+  "ctx.unpack": "풀기",
+  "ctx.delete": "삭제"
 }

@@ -135,5 +135,10 @@
   "modal.shortcuts.pack": "選択項目を圧縮",
   "modal.shortcuts.lang": "言語選択",
   "modal.shortcuts.dnd": "💡 フォルダ / ファイルをウィンドウへドラッグ&ドロップすると圧縮モーダルが自動で開きます (.qs / .iso は自動振り分け)。",
-  "modal.shortcuts.close_btn": "閉じる"
+  "modal.shortcuts.close_btn": "閉じる",
+  "ctx.open": "開く",
+  "ctx.info": "情報",
+  "ctx.pack": "qsafe で圧縮",
+  "ctx.unpack": "解凍",
+  "ctx.delete": "削除"
 }

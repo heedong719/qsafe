@@ -133,5 +133,10 @@
   "modal.shortcuts.pack": "Comprimir selección actual",
   "modal.shortcuts.lang": "Seleccionar idioma",
   "modal.shortcuts.dnd": "💡 Arrastrar y soltar carpetas/archivos abre automáticamente el modal de compresión (.qs / .iso se enrutan).",
-  "modal.shortcuts.close_btn": "Cerrar"
+  "modal.shortcuts.close_btn": "Cerrar",
+  "ctx.open": "Abrir",
+  "ctx.info": "Información",
+  "ctx.pack": "Comprimir con qsafe",
+  "ctx.unpack": "Descomprimir",
+  "ctx.delete": "Eliminar"
 }

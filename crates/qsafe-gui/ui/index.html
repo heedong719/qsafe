@@ -196,6 +196,22 @@
       font-size: 11px; color: #cef; min-width: 22px; display: inline-block;
       text-align: center;
     }
+    /* R19: 우클릭 컨텍스트 메뉴 */
+    .ctx-menu {
+      position: fixed; z-index: 100;
+      background: #1f1f1f; border: 1px solid #444;
+      border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      min-width: 180px; padding: 4px 0; font-size: 12px;
+      display: none;
+    }
+    .ctx-menu.show { display: block; }
+    .ctx-menu .ctx-item {
+      padding: 7px 14px; cursor: pointer; color: #ddd;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ctx-menu .ctx-item:hover { background: #2c5dff; color: #fff; }
+    .ctx-menu .ctx-item.danger:hover { background: #a33; }
+    .ctx-menu .ctx-sep { height: 1px; background: #333; margin: 4px 6px; }
     .modal .radio-group label {
       display: inline-flex; align-items: center; gap: 4px;
       margin-right: 14px; cursor: pointer; color: #ddd;
@@ -536,6 +552,17 @@
   <span id="err-text"></span>
 </div>
 
+<!-- R19: 우클릭 컨텍스트 메뉴 -->
+<div class="ctx-menu" id="ctx-menu">
+  <div class="ctx-item" data-action="open"><span>▶</span><span data-i18n="ctx.open">열기</span></div>
+  <div class="ctx-item" data-action="info"><span>🔍</span><span data-i18n="ctx.info">정보</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" data-action="pack"><span>📦</span><span data-i18n="ctx.pack">qsafe 로 압축</span></div>
+  <div class="ctx-item" data-action="unpack"><span>📂</span><span data-i18n="ctx.unpack">풀기</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" data-action="delete"><span>🗑️</span><span data-i18n="ctx.delete">삭제</span></div>
+</div>
+
 <script>
   // ===== i18n 초기화 — DOM이 보이기 전에 locale 결정 후 텍스트 채움 =====
   // qsafeI18n은 i18n.js에서 window에 등록됨. fetch 비동기라 init 끝난 후
@@ -679,6 +706,13 @@
     body.querySelectorAll(".filelist-row").forEach(row => {
       row.addEventListener("click", () => selectRow(parseInt(row.dataset.idx, 10)));
       row.addEventListener("dblclick", () => activateRow(parseInt(row.dataset.idx, 10)));
+      // R19: 우클릭 컨텍스트 메뉴
+      row.addEventListener("contextmenu", (ev) => {
+        ev.preventDefault();
+        const idx = parseInt(row.dataset.idx, 10);
+        selectRow(idx);
+        showContextMenu(ev.clientX, ev.clientY, entries[idx]);
+      });
     });
   }
   function escapeHtml(s) {
@@ -694,6 +728,73 @@
     updateToolbarState();
     updateStatus();
   }
+  // R19: 우클릭 컨텍스트 메뉴
+  function showContextMenu(x, y, entry) {
+    if (!entry) return;
+    const menu = document.getElementById("ctx-menu");
+    // entry 종류에 따라 메뉴 항목 표시/숨김
+    const isDir = entry.is_dir;
+    const isQsafe = !isDir && entry.name.toLowerCase().endsWith(".qs");
+    const isArchive = !isDir && /\.(zip|rar|7z|tar|gz|xz|bz2)$/i.test(entry.name);
+    const items = menu.querySelectorAll(".ctx-item");
+    items.forEach(it => {
+      const a = it.dataset.action;
+      if (a === "unpack") it.style.display = (isQsafe || isArchive) ? "" : "none";
+      else if (a === "pack") it.style.display = isDir || !isQsafe ? "" : "none";
+      else if (a === "info") it.style.display = (isQsafe || isArchive) ? "" : "none";
+      else it.style.display = "";
+    });
+    // 화면 끝 클립
+    const vw = window.innerWidth, vh = window.innerHeight;
+    menu.style.left = Math.min(x, vw - 200) + "px";
+    menu.style.top  = Math.min(y, vh - 220) + "px";
+    menu.classList.add("show");
+  }
+  function hideContextMenu() {
+    document.getElementById("ctx-menu").classList.remove("show");
+  }
+  document.addEventListener("click", hideContextMenu);
+  document.addEventListener("contextmenu", (e) => {
+    // filelist-row 외에서 우클릭 → 메뉴 닫기
+    if (!e.target.closest || !e.target.closest(".filelist-row")) hideContextMenu();
+  });
+  document.getElementById("ctx-menu").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const item = e.target.closest(".ctx-item");
+    if (!item) return;
+    const a = item.dataset.action;
+    hideContextMenu();
+    const entry = entries[selectedIdx];
+    if (!entry) return;
+    switch (a) {
+      case "open":   activateRow(selectedIdx); break;
+      case "info":   openInfoModal(entry.path); break;
+      case "pack": {
+        const inp = document.getElementById("p-input"); if (inp) inp.value = entry.path;
+        const out = document.getElementById("p-output");
+        if (out) out.value = entry.path + ".qs";
+        openModal("modal-pack");
+        break;
+      }
+      case "unpack": {
+        if (entry.name.toLowerCase().endsWith(".qs")) {
+          document.getElementById("unpack-input").value = entry.path;
+          document.getElementById("unpack-output").value = entry.path.replace(/\.qs$/i, "");
+          openModal("modal-unpack");
+        } else {
+          // 외부 아카이브: info 모달 경유 — 거기 풀기 버튼이 적절히 동작
+          openInfoModal(entry.path);
+        }
+        break;
+      }
+      case "delete": {
+        const del = document.getElementById("btn-delete");
+        if (del && !del.disabled) del.click();
+        break;
+      }
+    }
+  });
+
   function activateRow(i) {
     const e = entries[i];
     if (!e) return;

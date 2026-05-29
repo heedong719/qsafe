@@ -135,5 +135,10 @@
   "modal.shortcuts.pack": "压缩当前选中项",
   "modal.shortcuts.lang": "选择语言",
   "modal.shortcuts.dnd": "💡 将文件夹 / 文件拖放到窗口可自动打开压缩弹窗 (.qs / .iso 自动分流)。",
-  "modal.shortcuts.close_btn": "关闭"
+  "modal.shortcuts.close_btn": "关闭",
+  "ctx.open": "打开",
+  "ctx.info": "信息",
+  "ctx.pack": "用 qsafe 压缩",
+  "ctx.unpack": "解压",
+  "ctx.delete": "删除"
 }

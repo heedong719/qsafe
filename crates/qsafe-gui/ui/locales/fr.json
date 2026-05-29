@@ -133,5 +133,10 @@
   "modal.shortcuts.pack": "Compresser la sélection",
   "modal.shortcuts.lang": "Choisir la langue",
   "modal.shortcuts.dnd": "💡 Le glisser-déposer de dossiers/fichiers ouvre automatiquement la fenêtre de compression (.qs / .iso routés).",
-  "modal.shortcuts.close_btn": "Fermer"
+  "modal.shortcuts.close_btn": "Fermer",
+  "ctx.open": "Ouvrir",
+  "ctx.info": "Infos",
+  "ctx.pack": "Compresser avec qsafe",
+  "ctx.unpack": "Décompresser",
+  "ctx.delete": "Supprimer"
 }

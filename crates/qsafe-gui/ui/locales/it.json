@@ -133,5 +133,10 @@
   "modal.shortcuts.pack": "Comprimi la selezione",
   "modal.shortcuts.lang": "Seleziona lingua",
   "modal.shortcuts.dnd": "💡 Trascinare cartelle/file nella finestra apre automaticamente il modale di compressione (.qs / .iso instradati).",
-  "modal.shortcuts.close_btn": "Chiudi"
+  "modal.shortcuts.close_btn": "Chiudi",
+  "ctx.open": "Apri",
+  "ctx.info": "Info",
+  "ctx.pack": "Comprimi con qsafe",
+  "ctx.unpack": "Decomprimi",
+  "ctx.delete": "Elimina"
 }
