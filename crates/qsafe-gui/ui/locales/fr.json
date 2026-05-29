@@ -115,5 +115,11 @@
   "error.init_home_fallback": "Repli accueil aussi échoué",
   "status.ready": "Prêt",
   "status.fallback_home": "Repli vers accueil",
-  "result.external_archive": "📦 Archive externe : {format} — {count} entrées"
+  "result.external_archive": "📦 Archive externe : {format} — {count} entrées",
+  "modal.about.check_update": "🔄 Vérifier les mises à jour",
+  "modal.about.checking": "Vérification…",
+  "modal.about.up_to_date": "✅ Vous êtes à jour (v{version})",
+  "modal.about.update_available": "🆕 Nouvelle version disponible : v{current} → v{latest}",
+  "modal.about.open_release": "Ouvrir la page de version",
+  "modal.about.check_failed": "Échec de vérification des mises à jour"
 }

@@ -115,5 +115,11 @@
   "error.init_home_fallback": "Fallback a inicio también fallido",
   "status.ready": "Listo",
   "status.fallback_home": "Fallback a inicio",
-  "result.external_archive": "📦 Archivo externo: {format} — {count} entradas"
+  "result.external_archive": "📦 Archivo externo: {format} — {count} entradas",
+  "modal.about.check_update": "🔄 Buscar actualizaciones",
+  "modal.about.checking": "Comprobando…",
+  "modal.about.up_to_date": "✅ Estás al día (v{version})",
+  "modal.about.update_available": "🆕 Nueva versión disponible: v{current} → v{latest}",
+  "modal.about.open_release": "Abrir página de lanzamiento",
+  "modal.about.check_failed": "Error al buscar actualizaciones"
 }

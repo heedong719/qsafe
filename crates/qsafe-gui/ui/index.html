@@ -424,7 +424,9 @@
       <a href="https://github.com/heedong719/qsafe" target="_blank" style="color:#6cf;">github.com/heedong719/qsafe</a>
     </div>
     <p class="help" style="text-align:center; margin-top:12px;" data-i18n="modal.about.copyright">© 2026 heedong719 · MIT 또는 Apache-2.0</p>
+    <div id="m-about-update" class="result" style="display:none; margin-top:10px;"></div>
     <div class="actions">
+      <button class="cancel" id="btn-about-update" data-i18n="modal.about.check_update">🔄 업데이트 확인</button>
       <button id="btn-about-close" data-i18n="modal.about.close">닫기</button>
     </div>
   </div>
@@ -1166,6 +1168,34 @@
     } catch (e) { showErr("about: " + (e.message || e)); }
   });
   document.getElementById("btn-about-close").addEventListener("click", () => closeModal("modal-about"));
+
+  // R16: About 모달 "업데이트 확인" 버튼 — GitHub Releases API 폴링
+  document.getElementById("btn-about-update").addEventListener("click", async () => {
+    const btn = document.getElementById("btn-about-update");
+    const out = document.getElementById("m-about-update");
+    btn.disabled = true;
+    out.className = "result ok";
+    out.style.display = "block";
+    out.textContent = qsafeI18n.t("modal.about.checking");
+    try {
+      const u = await invoke("check_for_update");
+      if (u.up_to_date) {
+        out.className = "result ok";
+        out.textContent = qsafeI18n.t("modal.about.up_to_date", { version: u.current });
+      } else {
+        out.className = "result err";
+        out.innerHTML =
+          qsafeI18n.t("modal.about.update_available", { current: u.current, latest: u.latest }) +
+          ' <a href="' + u.release_url + '" target="_blank" style="color:#6cf;">' +
+          qsafeI18n.t("modal.about.open_release") + ' →</a>';
+      }
+    } catch (e) {
+      out.className = "result err";
+      out.textContent = qsafeI18n.tErr("modal.about.check_failed", e);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // ===== 모달 배경 클릭으로 닫기 =====
   document.querySelectorAll(".modal-bg").forEach(bg => {

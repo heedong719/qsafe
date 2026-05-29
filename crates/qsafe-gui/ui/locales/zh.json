@@ -117,5 +117,11 @@
   "error.init_home_fallback": "主页回退也失败",
   "status.ready": "就绪",
   "status.fallback_home": "回退到主页",
-  "result.external_archive": "📦 外部归档: {format} — {count} 个"
+  "result.external_archive": "📦 外部归档: {format} — {count} 个",
+  "modal.about.check_update": "🔄 检查更新",
+  "modal.about.checking": "检查中…",
+  "modal.about.up_to_date": "✅ 已是最新版本 (v{version})",
+  "modal.about.update_available": "🆕 有新版本: v{current} → v{latest}",
+  "modal.about.open_release": "打开发布页",
+  "modal.about.check_failed": "检查更新失败"
 }

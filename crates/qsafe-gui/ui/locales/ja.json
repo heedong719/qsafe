@@ -117,5 +117,11 @@
   "error.init_home_fallback": "ホームフォールバックも失敗",
   "status.ready": "準備完了",
   "status.fallback_home": "ホームへフォールバック",
-  "result.external_archive": "📦 外部アーカイブ: {format} — {count} 個"
+  "result.external_archive": "📦 外部アーカイブ: {format} — {count} 個",
+  "modal.about.check_update": "🔄 アップデート確認",
+  "modal.about.checking": "確認中…",
+  "modal.about.up_to_date": "✅ 最新バージョンです (v{version})",
+  "modal.about.update_available": "🆕 新バージョン利用可能: v{current} → v{latest}",
+  "modal.about.open_release": "リリースページを開く",
+  "modal.about.check_failed": "アップデート確認失敗"
 }

@@ -115,5 +115,11 @@
   "error.init_home_fallback": "Fallback home anche fallito",
   "status.ready": "Pronto",
   "status.fallback_home": "Fallback alla home",
-  "result.external_archive": "📦 Archivio esterno: {format} — {count} voci"
+  "result.external_archive": "📦 Archivio esterno: {format} — {count} voci",
+  "modal.about.check_update": "🔄 Controlla aggiornamenti",
+  "modal.about.checking": "Controllo in corso…",
+  "modal.about.up_to_date": "✅ Sei aggiornato (v{version})",
+  "modal.about.update_available": "🆕 Nuova versione disponibile: v{current} → v{latest}",
+  "modal.about.open_release": "Apri pagina della release",
+  "modal.about.check_failed": "Controllo aggiornamenti fallito"
 }

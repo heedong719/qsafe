@@ -115,5 +115,11 @@
   "error.init_home_fallback": "Home-Fallback ebenfalls fehlgeschlagen",
   "status.ready": "Bereit",
   "status.fallback_home": "Fallback zur Startseite",
-  "result.external_archive": "📦 Externes Archiv: {format} — {count} Einträge"
+  "result.external_archive": "📦 Externes Archiv: {format} — {count} Einträge",
+  "modal.about.check_update": "🔄 Nach Updates suchen",
+  "modal.about.checking": "Suche läuft…",
+  "modal.about.up_to_date": "✅ Du bist auf dem neuesten Stand (v{version})",
+  "modal.about.update_available": "🆕 Neue Version verfügbar: v{current} → v{latest}",
+  "modal.about.open_release": "Release-Seite öffnen",
+  "modal.about.check_failed": "Update-Prüfung fehlgeschlagen"
 }

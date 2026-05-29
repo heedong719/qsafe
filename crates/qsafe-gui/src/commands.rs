@@ -74,6 +74,81 @@ pub fn startup_args(state: tauri::State<'_, StartupArgs>) -> StartupArgs {
     state.inner().clone()
 }
 
+/// R16: About 모달의 "업데이트 확인" 버튼이 호출. GitHub Releases API 를 한 번 폴링해서
+/// 최신 tag_name 을 가져온 뒤 현재 빌드 버전과 비교. 네트워크 실패는 일반 에러로 반환.
+#[derive(Serialize, Debug, Clone)]
+pub struct UpdateCheck {
+    pub current: String,
+    pub latest: String,
+    pub up_to_date: bool,
+    pub release_url: String,
+}
+
+/// `vA.B.C` 또는 `A.B.C` 형식의 두 버전을 비교. current >= latest 이면 true (= 최신).
+pub fn version_at_least(current: &str, latest: &str) -> bool {
+    fn parse(v: &str) -> Vec<u64> {
+        v.trim_start_matches('v')
+            .split('.')
+            .take(3)
+            .map(|n| {
+                n.chars()
+                    .take_while(|c| c.is_ascii_digit())
+                    .collect::<String>()
+            })
+            .map(|s| s.parse::<u64>().unwrap_or(0))
+            .collect()
+    }
+    let c = parse(current);
+    let l = parse(latest);
+    for i in 0..3 {
+        let cv = *c.get(i).unwrap_or(&0);
+        let lv = *l.get(i).unwrap_or(&0);
+        match cv.cmp(&lv) {
+            std::cmp::Ordering::Greater => return true,
+            std::cmp::Ordering::Less => return false,
+            std::cmp::Ordering::Equal => continue,
+        }
+    }
+    true
+}
+
+#[tauri::command]
+pub fn check_for_update() -> Result<UpdateCheck, String> {
+    let current = env!("CARGO_PKG_VERSION").to_string();
+
+    // GitHub Releases API — public repo, 인증 불필요.
+    // User-Agent 헤더는 GitHub 정책상 요구됨 (없으면 403).
+    let resp = ureq::get("https://api.github.com/repos/heedong719/qsafe/releases/latest")
+        .set("User-Agent", &format!("qsafe-gui/{}", current))
+        .set("Accept", "application/vnd.github+json")
+        .timeout(std::time::Duration::from_secs(8))
+        .call()
+        .map_err(|e| format!("network: {}", e))?;
+
+    let body: serde_json::Value = resp.into_json().map_err(|e| format!("json parse: {}", e))?;
+
+    let latest = body
+        .get("tag_name")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "missing tag_name in response".to_string())?
+        .to_string();
+
+    let release_url = body
+        .get("html_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("https://github.com/heedong719/qsafe/releases")
+        .to_string();
+
+    let up_to_date = version_at_least(&current, &latest);
+
+    Ok(UpdateCheck {
+        current,
+        latest,
+        up_to_date,
+        release_url,
+    })
+}
+
 #[derive(Serialize, Debug)]
 pub struct AboutInfo {
     pub version: &'static str,
@@ -341,6 +416,24 @@ mod tests {
         ]);
         assert_eq!(a.action, "info");
         assert!(a.path.ends_with("first.qs"));
+    }
+
+    #[test]
+    fn version_at_least_basic() {
+        assert!(version_at_least("0.1.7", "0.1.7"));
+        assert!(version_at_least("0.1.8", "0.1.7"));
+        assert!(!version_at_least("0.1.6", "0.1.7"));
+        // v-prefix 무시
+        assert!(version_at_least("v0.1.7", "v0.1.7"));
+        assert!(!version_at_least("0.1.7", "v0.1.8"));
+        // 메이저 vs 마이너
+        assert!(version_at_least("1.0.0", "0.99.99"));
+        assert!(!version_at_least("0.99.99", "1.0.0"));
+        // 자리수 부족 → 0 패딩
+        assert!(version_at_least("0.1", "0.1.0"));
+        assert!(!version_at_least("0.1", "0.1.1"));
+        // 후행 prerelease 문자열은 숫자 부분만 비교
+        assert!(version_at_least("0.1.7", "0.1.7-rc1"));
     }
 
     #[test]

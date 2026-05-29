@@ -197,5 +197,11 @@
   "error.init_home_fallback": "홈 fallback도 실패",
   "status.ready": "준비 완료",
   "status.fallback_home": "홈으로 fallback",
-  "result.external_archive": "📦 외부 아카이브: {format} — {count}개 항목"
+  "result.external_archive": "📦 외부 아카이브: {format} — {count}개 항목",
+  "modal.about.check_update": "🔄 업데이트 확인",
+  "modal.about.checking": "확인 중…",
+  "modal.about.up_to_date": "✅ 최신 버전입니다 (v{version})",
+  "modal.about.update_available": "🆕 새 버전 사용 가능: v{current} → v{latest}",
+  "modal.about.open_release": "릴리스 페이지 열기",
+  "modal.about.check_failed": "업데이트 확인 실패"
 }

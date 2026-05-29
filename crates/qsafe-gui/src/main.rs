@@ -18,6 +18,7 @@ fn main() {
         .manage(args)
         .invoke_handler(tauri::generate_handler![
             commands::startup_args,
+            commands::check_for_update,
             commands::about,
             commands::file_info,
             commands::identity_generate,

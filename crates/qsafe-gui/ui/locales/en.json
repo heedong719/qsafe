@@ -197,5 +197,11 @@
   "error.init_home_fallback": "Home fallback also failed",
   "status.ready": "Ready",
   "status.fallback_home": "Fallback to home",
-  "result.external_archive": "📦 External archive: {format} — {count} entries"
+  "result.external_archive": "📦 External archive: {format} — {count} entries",
+  "modal.about.check_update": "🔄 Check for updates",
+  "modal.about.checking": "Checking…",
+  "modal.about.up_to_date": "✅ You are up to date (v{version})",
+  "modal.about.update_available": "🆕 New version available: v{current} → v{latest}",
+  "modal.about.open_release": "Open release page",
+  "modal.about.check_failed": "Update check failed"
 }
