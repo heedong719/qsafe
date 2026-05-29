@@ -1,9 +1,11 @@
 {
-  "_meta": { "code": "fr", "name": "French", "native": "Français" },
-
+  "_meta": {
+    "code": "fr",
+    "name": "French",
+    "native": "Français"
+  },
   "app.title": "qsafe — compression post-quantique",
   "app.subtitle": "Compression et chiffrement de fichiers post-quantique",
-
   "toolbar.back": "⬅️ Retour",
   "toolbar.up": "⬆️ Dossier parent",
   "toolbar.home": "🏠 Accueil",
@@ -15,7 +17,6 @@
   "toolbar.identity": "🔑 Clés",
   "toolbar.mnemonic": "📝 BIP39",
   "toolbar.lang": "🌐 Langue",
-
   "modal.pack.title": "Compresser",
   "modal.pack.heading": "📦 Compresser le fichier",
   "modal.pack.input": "Fichier source",
@@ -45,7 +46,6 @@
   "modal.pack.start": "Démarrer la compression",
   "modal.pack.cancel": "Annuler",
   "modal.pack.close": "Terminé — Fermer",
-
   "modal.unpack.title": "Décompresser",
   "modal.unpack.heading": "📂 Décompresser le fichier",
   "modal.unpack.input": ".qs source",
@@ -60,25 +60,20 @@
   "modal.unpack.start": "Démarrer la décompression",
   "modal.unpack.cancel": "Annuler",
   "modal.unpack.close": "Terminé — Fermer",
-
   "modal.info.title": "Infos de l'archive",
   "modal.info.unpack": "📂 Décompresser",
   "modal.info.close": "Fermer",
-
   "modal.lang.title": "🌐 Langue / Language",
   "modal.lang.apply": "Appliquer",
   "modal.lang.cancel": "Annuler",
-
   "result.success": "✅ Terminé",
   "result.fail": "❌ Échec",
-
   "modal.key.heading": "🔑 Identité numérique (paire de clés)",
   "modal.key.help": "Paire de clés hybride X25519+ML-KEM-768 pour échanger des fichiers en toute sécurité (post-quantique).",
   "modal.key.path": "Emplacement",
   "modal.key.generate": "🔑 Créer une nouvelle paire",
   "modal.key.show": "Voir la clé existante",
   "modal.key.close": "Fermer",
-
   "modal.mnemonic.heading": "📝 Mots de sauvegarde BIP39",
   "modal.mnemonic.help": "Notez les mots sur papier pour pouvoir récupérer même si le fichier de clé est perdu.",
   "modal.mnemonic.count": "Nombre de mots",
@@ -87,7 +82,6 @@
   "modal.mnemonic.count.12": "12 mots",
   "modal.mnemonic.generate": "Générer",
   "modal.mnemonic.close": "Fermer",
-
   "modal.about.title": "À propos de qsafe",
   "modal.about.tagline": "Compression et chiffrement post-quantique",
   "modal.about.version": "Version",
@@ -98,7 +92,28 @@
   "modal.about.copyright": "© 2026 heedong719 · MIT ou Apache-2.0",
   "modal.about.repo": "GitHub",
   "modal.about.close": "Fermer",
-
   "error.title": "Erreur",
-  "error.wrong_password": "Mot de passe incorrect"
+  "error.wrong_password": "Mot de passe incorrect",
+  "error.loading": "Chargement…",
+  "error.open_folder": "Échec d'ouverture du dossier",
+  "error.open_file": "Échec d'ouverture du fichier",
+  "error.up_failed": "Échec du dossier parent",
+  "error.pick_failed": "Échec de la sélection",
+  "error.extract_single": "Échec de l'extraction individuelle",
+  "error.extract_external": "Échec de l'extraction de l'archive externe",
+  "error.drop_failed": "Échec du glisser-déposer",
+  "error.mnemonic": "Erreur de mnémonique",
+  "error.lang_load": "Échec du chargement de la liste des langues",
+  "error.write_in_progress": "Impossible d'annuler — écriture en cours",
+  "error.write_start": "Échec du démarrage d'écriture",
+  "error.write_failed": "Échec d'écriture",
+  "error.init_invoke": "Étape 1 échouée : API invoke indisponible",
+  "error.init_about": "Étape 2 (about) échouée",
+  "error.init_sidebar": "Étape 3 (buildSidebar) échouée",
+  "error.init_currdir": "Étape 4 (current_dir) échouée",
+  "error.init_navigate": "Étape 5 (navigateTo) échouée",
+  "error.init_home_fallback": "Repli accueil aussi échoué",
+  "status.ready": "Prêt",
+  "status.fallback_home": "Repli vers accueil",
+  "result.external_archive": "📦 Archive externe : {format} — {count} entrées"
 }

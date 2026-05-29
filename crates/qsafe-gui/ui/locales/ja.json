@@ -1,9 +1,11 @@
 {
-  "_meta": { "code": "ja", "name": "Japanese", "native": "日本語" },
-
+  "_meta": {
+    "code": "ja",
+    "name": "Japanese",
+    "native": "日本語"
+  },
   "app.title": "qsafe — 量子安全圧縮",
   "app.subtitle": "量子安全ファイル圧縮・暗号化",
-
   "toolbar.back": "⬅️ 戻る",
   "toolbar.up": "⬆️ 上へ",
   "toolbar.home": "🏠 ホーム",
@@ -15,7 +17,6 @@
   "toolbar.identity": "🔑 鍵管理",
   "toolbar.mnemonic": "📝 BIP39",
   "toolbar.lang": "🌐 言語",
-
   "modal.pack.title": "圧縮",
   "modal.pack.heading": "📦 ファイル圧縮",
   "modal.pack.input": "元ファイル",
@@ -46,7 +47,6 @@
   "modal.pack.cancel": "キャンセル",
   "modal.pack.close": "完了 — 閉じる",
   "modal.pack.running": "圧縮中…",
-
   "modal.unpack.title": "解凍",
   "modal.unpack.heading": "📂 ファイル解凍",
   "modal.unpack.input": "元 .qs",
@@ -62,25 +62,20 @@
   "modal.unpack.cancel": "キャンセル",
   "modal.unpack.close": "完了 — 閉じる",
   "modal.unpack.running": "解凍中…",
-
   "modal.info.title": "圧縮ファイル情報",
   "modal.info.unpack": "📂 解凍",
   "modal.info.close": "閉じる",
-
   "modal.lang.title": "🌐 言語 / Language",
   "modal.lang.apply": "適用",
   "modal.lang.cancel": "キャンセル",
-
   "result.success": "✅ 完了",
   "result.fail": "❌ 失敗",
-
   "modal.key.heading": "🔑 デジタルアイデンティティ (鍵ペア) 管理",
   "modal.key.help": "友達と安全にファイルをやり取りするための X25519+ML-KEM-768 ハイブリッド鍵ペア (量子安全)。",
   "modal.key.path": "保存先",
   "modal.key.generate": "🔑 新しい鍵ペア作成",
   "modal.key.show": "既存の鍵を確認",
   "modal.key.close": "閉じる",
-
   "modal.mnemonic.heading": "📝 BIP39 紙バックアップ単語",
   "modal.mnemonic.help": "鍵ファイルが壊れても復元できるよう、単語を紙に書き留めてください。",
   "modal.mnemonic.count": "単語数",
@@ -89,7 +84,6 @@
   "modal.mnemonic.count.12": "12 単語",
   "modal.mnemonic.generate": "生成",
   "modal.mnemonic.close": "閉じる",
-
   "modal.about.title": "qsafe について",
   "modal.about.tagline": "量子安全圧縮・暗号化",
   "modal.about.version": "バージョン",
@@ -100,7 +94,28 @@
   "modal.about.copyright": "© 2026 heedong719 · MIT または Apache-2.0",
   "modal.about.repo": "GitHub",
   "modal.about.close": "閉じる",
-
   "error.title": "エラー",
-  "error.wrong_password": "パスワードが違います"
+  "error.wrong_password": "パスワードが違います",
+  "error.loading": "読み込み中…",
+  "error.open_folder": "フォルダを開けません",
+  "error.open_file": "ファイルを開けません",
+  "error.up_failed": "上の階層へ移動できません",
+  "error.pick_failed": "選択に失敗",
+  "error.extract_single": "個別抽出に失敗",
+  "error.extract_external": "外部アーカイブの解凍に失敗",
+  "error.drop_failed": "ドロップ処理に失敗",
+  "error.mnemonic": "ニーモニックエラー",
+  "error.lang_load": "言語一覧の読み込みに失敗",
+  "error.write_in_progress": "書き込み中はキャンセルできません",
+  "error.write_start": "書き込み開始に失敗",
+  "error.write_failed": "書き込みに失敗",
+  "error.init_invoke": "ステップ1失敗: invoke API なし",
+  "error.init_about": "ステップ2 (about) 失敗",
+  "error.init_sidebar": "ステップ3 (buildSidebar) 失敗",
+  "error.init_currdir": "ステップ4 (current_dir) 失敗",
+  "error.init_navigate": "ステップ5 (navigateTo) 失敗",
+  "error.init_home_fallback": "ホームフォールバックも失敗",
+  "status.ready": "準備完了",
+  "status.fallback_home": "ホームへフォールバック",
+  "result.external_archive": "📦 外部アーカイブ: {format} — {count} 個"
 }

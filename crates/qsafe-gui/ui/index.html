@@ -616,7 +616,7 @@
         el.classList.toggle("active", el.dataset.path === currentPath);
       });
     } catch (e) {
-      showErr("폴더 열기 실패: " + (e.message || e));
+      showErr(qsafeI18n.tErr("error.open_folder", e));
     }
   }
 
@@ -677,7 +677,7 @@
     } else {
       // 연결된 프로그램으로 열기 (Windows: start, Mac: open, Linux: xdg-open)
       invoke("open_with_associated", { path: e.path }).catch(function(err) {
-        showErr("파일 열기 실패: " + (err.message || err));
+        showErr(qsafeI18n.tErr("error.open_file", err));
       });
     }
   }
@@ -724,7 +724,7 @@
     try {
       const listing = await invoke("list_directory", { path: currentPath });
       if (listing.parent_path) navigateTo(listing.parent_path);
-    } catch (e) { showErr("상위로 이동 실패: " + (e.message || e)); }
+    } catch (e) { showErr(qsafeI18n.tErr("error.up_failed", e)); }
   });
   document.getElementById("btn-home").addEventListener("click", async () => {
     navigateTo(await invoke("home_dir"));
@@ -744,7 +744,7 @@
     infoCurrent.kind = null;
     document.getElementById("m-info-list").innerHTML = "";
     document.getElementById("btn-info-unpack").disabled = true;
-    setResult("m-info-summary", "로딩 중…", "ok");
+    setResult("m-info-summary", qsafeI18n.t("error.loading"), "ok");
     openModal("modal-info");
     try {
       const info = await invoke("qsafe_info", { path });
@@ -802,7 +802,7 @@
               infoTempDirs.push(r.temp_dir);
               await invoke("open_with_associated", { path: r.extracted_path });
             } catch (e) {
-              showErr("단일 추출 실패: " + (e.message || e));
+              showErr(qsafeI18n.tErr("error.extract_single", e));
             } finally {
               row.style.background = "";
             }
@@ -847,7 +847,7 @@
           closeModal("modal-info");
           navigateTo(parent, false);
         })
-        .catch(err => showErr("외부 아카이브 풀기 실패: " + (err.message || err)));
+        .catch(err => showErr(qsafeI18n.tErr("error.extract_external", err)));
     }
   });
 
@@ -886,13 +886,13 @@
     try {
       const r = await pickSave({ title: "저장 위치", defaultPath: document.getElementById("pack-output").value, filters: [{ name: "qsafe", extensions: ["qs"] }] });
       if (r) document.getElementById("pack-output").value = r;
-    } catch (e) { showErr("선택 실패: " + (e.message || e)); }
+    } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
   document.getElementById("btn-pack-pk-pick").addEventListener("click", async () => {
     try {
       const r = await pickFile({ title: "친구의 공개키", filters: [{ name: "public key", extensions: ["json"] }] });
       if (r) document.getElementById("m-pack-pk").value = r;
-    } catch (e) { showErr("선택 실패: " + (e.message || e)); }
+    } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
   document.getElementById("btn-pack-cancel").addEventListener("click", () => closeModal("modal-pack"));
   document.getElementById("btn-pack-go").addEventListener("click", async () => {
@@ -990,13 +990,13 @@
     try {
       const r = await pickSave({ title: "복원 저장 위치", defaultPath: document.getElementById("unpack-output").value });
       if (r) document.getElementById("unpack-output").value = r;
-    } catch (e) { showErr("선택 실패: " + (e.message || e)); }
+    } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
   document.getElementById("btn-unpack-id-pick").addEventListener("click", async () => {
     try {
       const r = await pickFile({ title: "내 비밀키 파일", filters: [{ name: "identity", extensions: ["json"] }] });
       if (r) document.getElementById("m-unpack-id").value = r;
-    } catch (e) { showErr("선택 실패: " + (e.message || e)); }
+    } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
   document.getElementById("btn-unpack-cancel").addEventListener("click", () => closeModal("modal-unpack"));
   document.getElementById("btn-unpack-go").addEventListener("click", async () => {
@@ -1089,7 +1089,7 @@
     try {
       const r = await pickSave({ title: "키 파일 저장 위치", defaultPath: document.getElementById("m-key-path").value, filters: [{ name: "identity", extensions: ["json"] }] });
       if (r) document.getElementById("m-key-path").value = r;
-    } catch (e) { showErr("선택: " + (e.message || e)); }
+    } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
   document.getElementById("btn-key-gen-go").addEventListener("click", async () => {
     const path = document.getElementById("m-key-path").value.trim();
@@ -1147,7 +1147,7 @@
       }
       html += '</div>';
       document.getElementById("m-mn-result").innerHTML = html;
-    } catch (e) { showErr("니모닉: " + (e.message || e)); }
+    } catch (e) { showErr(qsafeI18n.tErr("error.mnemonic", e)); }
     finally { document.getElementById("btn-mn-go").disabled = false; }
   });
   document.getElementById("btn-mn-close").addEventListener("click", () => closeModal("modal-mnemonic"));
@@ -1252,7 +1252,7 @@
             document.getElementById("m-pack-prog").style.display = "none";
             openModal("modal-pack");
           } catch (e) {
-            showErr("드롭 처리 실패: " + (e.message || e));
+            showErr(qsafeI18n.tErr("error.drop_failed", e));
           }
         }
       };
@@ -1464,7 +1464,7 @@
   document.getElementById("btn-usb-cancel").addEventListener("click", () => {
     if (usbState.writing) {
       // 진행 중에는 cancel 불가 (안전 — dd 중간 중단 = 디스크 손상)
-      showErr("쓰기 진행 중에는 취소할 수 없습니다");
+      showErr(qsafeI18n.t("error.write_in_progress"));
       return;
     }
     closeModal("modal-usb");
@@ -1489,7 +1489,7 @@
       });
       // 즉시 반환 — 진행은 iso-write-progress 이벤트로
     } catch (e) {
-      showErr("쓰기 시작 실패: " + (e.message || e));
+      showErr(qsafeI18n.tErr("error.write_start", e));
       usbState.writing = false;
       document.getElementById("btn-usb-cancel").disabled = false;
     }
@@ -1517,7 +1517,7 @@
         } else if (p.stage === "error") {
           usbState.writing = false;
           document.getElementById("btn-usb-cancel").disabled = false;
-          showErr(p.message || "쓰기 실패");
+          showErr(p.message || qsafeI18n.t("error.write_failed"));
         }
       });
     } catch (e) {
@@ -1535,29 +1535,29 @@
   }
   async function init() {
     setStatus("1/5 invoke 검사…");
-    if (!invoke) { showErr("단계 1 실패: invoke API 없음"); return; }
+    if (!invoke) { showErr(qsafeI18n.t("error.init_invoke")); return; }
     setStatus("2/5 about 호출…");
     try {
       const info = await invoke("about");
       document.getElementById("version").textContent = "v" + info.version;
-    } catch (e) { showErr("단계 2 (about) 실패: " + (e.message || e)); return; }
+    } catch (e) { showErr(qsafeI18n.tErr("error.init_about", e)); return; }
     setStatus("3/5 사이드바 구성…");
     try { await buildSidebar(); }
-    catch (e) { showErr("단계 3 (buildSidebar) 실패: " + (e.message || e)); return; }
+    catch (e) { showErr(qsafeI18n.tErr("error.init_sidebar", e)); return; }
     setStatus("4/5 시작 폴더 가져오기…");
     let start;
     try { start = await invoke("current_dir"); }
-    catch (e) { showErr("단계 4 (current_dir) 실패: " + (e.message || e)); return; }
+    catch (e) { showErr(qsafeI18n.tErr("error.init_currdir", e)); return; }
     setStatus("5/5 폴더 열기: " + start);
-    try { await navigateTo(start); setStatus("준비 완료"); }
+    try { await navigateTo(start); setStatus(qsafeI18n.t("status.ready")); }
     catch (e) {
-      showErr("단계 5 (navigateTo " + start + ") 실패: " + (e.message || e));
+      showErr(qsafeI18n.t("error.init_navigate") + " " + start + ": " + (e.message || e));
       // 실패 시 홈으로 fallback
       try {
         const h = await invoke("home_dir");
-        setStatus("홈으로 fallback: " + h);
+        setStatus(qsafeI18n.t("status.fallback_home") + ": " + h);
         await navigateTo(h);
-      } catch (e2) { showErr("홈 fallback도 실패: " + (e2.message || e2)); }
+      } catch (e2) { showErr(qsafeI18n.tErr("error.init_home_fallback", e2)); }
     }
     // OS 통합: 우클릭 메뉴 / 더블 클릭으로 호출된 경우, argv로 받은 액션을 자동 실행.
     try {
@@ -1627,7 +1627,7 @@
       }
       openModal("modal-lang");
     } catch (e) {
-      showErr("언어 목록 로드 실패: " + (e.message || e));
+      showErr(qsafeI18n.tErr("error.lang_load", e));
     }
   });
   document.getElementById("btn-lang-cancel").addEventListener("click", () => closeModal("modal-lang"));

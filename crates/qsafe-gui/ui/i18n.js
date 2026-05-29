@@ -128,5 +128,14 @@
     return currentLocale;
   }
 
-  window.qsafeI18n = { init, setLocale, available, current, t, applyDom };
+  // 에러 메시지 + 에러 객체 결합 헬퍼.
+  //   qsafeI18n.tErr("error.pick_failed", e)
+  //   -> "선택 실패: <e.message>" (ko) / "Pick failed: <e.message>" (en)
+  function tErr(key, e, vars) {
+    const prefix = t(key, vars);
+    const msg = e && (e.message || e.toString && e.toString()) || String(e || "");
+    return prefix + ": " + msg;
+  }
+
+  window.qsafeI18n = { init, setLocale, available, current, t, tErr, applyDom };
 })();

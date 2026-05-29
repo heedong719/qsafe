@@ -1,9 +1,11 @@
 {
-  "_meta": { "code": "de", "name": "German", "native": "Deutsch" },
-
+  "_meta": {
+    "code": "de",
+    "name": "German",
+    "native": "Deutsch"
+  },
   "app.title": "qsafe — quantensichere Kompression",
   "app.subtitle": "Quantensichere Dateikompression und Verschlüsselung",
-
   "toolbar.back": "⬅️ Zurück",
   "toolbar.up": "⬆️ Übergeordneter Ordner",
   "toolbar.home": "🏠 Startseite",
@@ -15,7 +17,6 @@
   "toolbar.identity": "🔑 Schlüssel",
   "toolbar.mnemonic": "📝 BIP39",
   "toolbar.lang": "🌐 Sprache",
-
   "modal.pack.title": "Komprimieren",
   "modal.pack.heading": "📦 Datei komprimieren",
   "modal.pack.input": "Quelldatei",
@@ -45,7 +46,6 @@
   "modal.pack.start": "Komprimierung starten",
   "modal.pack.cancel": "Abbrechen",
   "modal.pack.close": "Fertig — Schließen",
-
   "modal.unpack.title": "Entpacken",
   "modal.unpack.heading": "📂 Datei entpacken",
   "modal.unpack.input": ".qs-Quelldatei",
@@ -60,25 +60,20 @@
   "modal.unpack.start": "Entpacken starten",
   "modal.unpack.cancel": "Abbrechen",
   "modal.unpack.close": "Fertig — Schließen",
-
   "modal.info.title": "Archiv-Info",
   "modal.info.unpack": "📂 Entpacken",
   "modal.info.close": "Schließen",
-
   "modal.lang.title": "🌐 Sprache / Language",
   "modal.lang.apply": "Anwenden",
   "modal.lang.cancel": "Abbrechen",
-
   "result.success": "✅ Fertig",
   "result.fail": "❌ Fehlgeschlagen",
-
   "modal.key.heading": "🔑 Digitale Identität (Schlüsselpaar)",
   "modal.key.help": "X25519+ML-KEM-768-Hybrid-Schlüsselpaar zum sicheren Dateiaustausch (quantensicher).",
   "modal.key.path": "Speicherort",
   "modal.key.generate": "🔑 Neues Schlüsselpaar erstellen",
   "modal.key.show": "Vorhandenen Schlüssel anzeigen",
   "modal.key.close": "Schließen",
-
   "modal.mnemonic.heading": "📝 BIP39 Papier-Backup-Wörter",
   "modal.mnemonic.help": "Notieren Sie die Wörter auf Papier, damit Sie auch bei Verlust der Schlüsseldatei wiederherstellen können.",
   "modal.mnemonic.count": "Wortanzahl",
@@ -87,7 +82,6 @@
   "modal.mnemonic.count.12": "12 Wörter",
   "modal.mnemonic.generate": "Generieren",
   "modal.mnemonic.close": "Schließen",
-
   "modal.about.title": "Über qsafe",
   "modal.about.tagline": "Quantensichere Kompression und Verschlüsselung",
   "modal.about.version": "Version",
@@ -98,7 +92,28 @@
   "modal.about.copyright": "© 2026 heedong719 · MIT oder Apache-2.0",
   "modal.about.repo": "GitHub",
   "modal.about.close": "Schließen",
-
   "error.title": "Fehler",
-  "error.wrong_password": "Falsches Passwort"
+  "error.wrong_password": "Falsches Passwort",
+  "error.loading": "Lädt…",
+  "error.open_folder": "Ordner konnte nicht geöffnet werden",
+  "error.open_file": "Datei konnte nicht geöffnet werden",
+  "error.up_failed": "Übergeordneter Ordner fehlgeschlagen",
+  "error.pick_failed": "Auswahl fehlgeschlagen",
+  "error.extract_single": "Einzelextraktion fehlgeschlagen",
+  "error.extract_external": "Externes Archiv konnte nicht entpackt werden",
+  "error.drop_failed": "Drag-and-Drop fehlgeschlagen",
+  "error.mnemonic": "Mnemonik-Fehler",
+  "error.lang_load": "Sprachliste konnte nicht geladen werden",
+  "error.write_in_progress": "Abbruch nicht möglich — Schreibvorgang läuft",
+  "error.write_start": "Schreibstart fehlgeschlagen",
+  "error.write_failed": "Schreiben fehlgeschlagen",
+  "error.init_invoke": "Schritt 1 fehlgeschlagen: invoke-API nicht verfügbar",
+  "error.init_about": "Schritt 2 (about) fehlgeschlagen",
+  "error.init_sidebar": "Schritt 3 (buildSidebar) fehlgeschlagen",
+  "error.init_currdir": "Schritt 4 (current_dir) fehlgeschlagen",
+  "error.init_navigate": "Schritt 5 (navigateTo) fehlgeschlagen",
+  "error.init_home_fallback": "Home-Fallback ebenfalls fehlgeschlagen",
+  "status.ready": "Bereit",
+  "status.fallback_home": "Fallback zur Startseite",
+  "result.external_archive": "📦 Externes Archiv: {format} — {count} Einträge"
 }

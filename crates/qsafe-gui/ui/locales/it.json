@@ -1,9 +1,11 @@
 {
-  "_meta": { "code": "it", "name": "Italian", "native": "Italiano" },
-
+  "_meta": {
+    "code": "it",
+    "name": "Italian",
+    "native": "Italiano"
+  },
   "app.title": "qsafe — compressione quantum-safe",
   "app.subtitle": "Compressione e cifratura file quantum-safe",
-
   "toolbar.back": "⬅️ Indietro",
   "toolbar.up": "⬆️ Su",
   "toolbar.home": "🏠 Home",
@@ -15,7 +17,6 @@
   "toolbar.identity": "🔑 Chiavi",
   "toolbar.mnemonic": "📝 BIP39",
   "toolbar.lang": "🌐 Lingua",
-
   "modal.pack.title": "Comprimi",
   "modal.pack.heading": "📦 Comprimi file",
   "modal.pack.input": "File originale",
@@ -45,7 +46,6 @@
   "modal.pack.start": "Avvia compressione",
   "modal.pack.cancel": "Annulla",
   "modal.pack.close": "Fatto — Chiudi",
-
   "modal.unpack.title": "Decomprimi",
   "modal.unpack.heading": "📂 Decomprimi file",
   "modal.unpack.input": ".qs originale",
@@ -60,25 +60,20 @@
   "modal.unpack.start": "Avvia decompressione",
   "modal.unpack.cancel": "Annulla",
   "modal.unpack.close": "Fatto — Chiudi",
-
   "modal.info.title": "Info archivio",
   "modal.info.unpack": "📂 Decomprimi",
   "modal.info.close": "Chiudi",
-
   "modal.lang.title": "🌐 Lingua / Language",
   "modal.lang.apply": "Applica",
   "modal.lang.cancel": "Annulla",
-
   "result.success": "✅ Fatto",
   "result.fail": "❌ Errore",
-
   "modal.key.heading": "🔑 Identità digitale (coppia di chiavi)",
   "modal.key.help": "Coppia di chiavi ibrida X25519+ML-KEM-768 per scambiare file in modo sicuro (quantum-safe).",
   "modal.key.path": "Percorso di salvataggio",
   "modal.key.generate": "🔑 Crea nuova coppia",
   "modal.key.show": "Mostra chiave esistente",
   "modal.key.close": "Chiudi",
-
   "modal.mnemonic.heading": "📝 Parole di backup BIP39",
   "modal.mnemonic.help": "Scrivete le parole su carta per poter recuperare anche se il file della chiave si perde.",
   "modal.mnemonic.count": "Numero di parole",
@@ -87,7 +82,6 @@
   "modal.mnemonic.count.12": "12 parole",
   "modal.mnemonic.generate": "Genera",
   "modal.mnemonic.close": "Chiudi",
-
   "modal.about.title": "Informazioni su qsafe",
   "modal.about.tagline": "Compressione e cifratura quantum-safe",
   "modal.about.version": "Versione",
@@ -98,7 +92,28 @@
   "modal.about.copyright": "© 2026 heedong719 · MIT o Apache-2.0",
   "modal.about.repo": "GitHub",
   "modal.about.close": "Chiudi",
-
   "error.title": "Errore",
-  "error.wrong_password": "Password errata"
+  "error.wrong_password": "Password errata",
+  "error.loading": "Caricamento…",
+  "error.open_folder": "Apertura cartella fallita",
+  "error.open_file": "Apertura file fallita",
+  "error.up_failed": "Apertura cartella superiore fallita",
+  "error.pick_failed": "Selezione fallita",
+  "error.extract_single": "Estrazione singola fallita",
+  "error.extract_external": "Estrazione archivio esterno fallita",
+  "error.drop_failed": "Gestione drag-and-drop fallita",
+  "error.mnemonic": "Errore mnemonica",
+  "error.lang_load": "Caricamento elenco lingue fallito",
+  "error.write_in_progress": "Impossibile annullare — scrittura in corso",
+  "error.write_start": "Avvio scrittura fallito",
+  "error.write_failed": "Scrittura fallita",
+  "error.init_invoke": "Passo 1 fallito: API invoke non disponibile",
+  "error.init_about": "Passo 2 (about) fallito",
+  "error.init_sidebar": "Passo 3 (buildSidebar) fallito",
+  "error.init_currdir": "Passo 4 (current_dir) fallito",
+  "error.init_navigate": "Passo 5 (navigateTo) fallito",
+  "error.init_home_fallback": "Fallback home anche fallito",
+  "status.ready": "Pronto",
+  "status.fallback_home": "Fallback alla home",
+  "result.external_archive": "📦 Archivio esterno: {format} — {count} voci"
 }

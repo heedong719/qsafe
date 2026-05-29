@@ -1,9 +1,11 @@
 {
-  "_meta": { "code": "en", "name": "English", "native": "English" },
-
+  "_meta": {
+    "code": "en",
+    "name": "English",
+    "native": "English"
+  },
   "app.title": "qsafe — quantum-safe compression",
   "app.subtitle": "Quantum-safe file compression & encryption",
-
   "toolbar.back": "⬅️ Back",
   "toolbar.up": "⬆️ Up",
   "toolbar.home": "🏠 Home",
@@ -15,29 +17,23 @@
   "toolbar.identity": "🔑 Keys",
   "toolbar.mnemonic": "📝 BIP39",
   "toolbar.lang": "🌐 Language",
-
   "addressbar.placeholder": "Enter path (Enter)",
   "addressbar.go": "Go",
-
   "sidebar.places": "Places",
   "sidebar.home": "Home",
   "sidebar.drives": "Drives",
-
   "filelist.col.name": "Name",
   "filelist.col.size": "Size",
   "filelist.col.kind": "Kind",
   "filelist.col.modified": "Date modified",
   "filelist.empty": "(This folder is empty)",
   "filelist.error": "Cannot read folder",
-
   "kind.dir": "Folder",
   "kind.qsafe": "qsafe archive",
   "kind.archive": "Archive (extractable with qsafe)",
   "kind.file": "File",
-
   "status.items": "{count} items",
   "status.selection": "Selected: {name} ({size})",
-
   "modal.pack.title": "Pack",
   "modal.pack.input": "Source",
   "modal.pack.output": "Destination",
@@ -71,7 +67,6 @@
   "modal.pack.cancel": "Cancel",
   "modal.pack.close": "Done — Close",
   "modal.pack.running": "Packing…",
-
   "modal.unpack.heading": "📂 Unpack file",
   "modal.unpack.browse": "📁 Change…",
   "modal.unpack.mode.open": "🌐 No password (qsafe-open)",
@@ -88,7 +83,6 @@
   "modal.unpack.cancel": "Cancel",
   "modal.unpack.close": "Done — Close",
   "modal.unpack.running": "Unpacking…",
-
   "modal.info.title": "Archive info",
   "modal.info.summary.loading": "Loading…",
   "modal.info.list.empty": "(This format does not support entry preview. Only RAR is supported.)",
@@ -96,32 +90,27 @@
   "modal.info.unpack": "📂 Unpack",
   "modal.info.extract_one": "💡 Double-click a file to extract temporarily and run. Files are auto-deleted when the dialog closes.",
   "modal.info.close": "Close",
-
   "modal.identity.title": "🔑 Key management",
   "modal.identity.generate": "Generate keypair",
   "modal.identity.show": "Inspect existing key",
   "modal.identity.export": "Export public key (shareable)",
   "modal.identity.path": "Path",
   "modal.identity.fingerprint": "Fingerprint",
-
   "modal.delete.title": "Confirm deletion",
   "modal.delete.confirm": "Delete this item?",
   "modal.delete.warning": "This action cannot be undone.",
   "modal.delete.button": "Delete",
   "modal.delete.cancel": "Cancel",
-
   "modal.lang.title": "🌐 Language",
   "modal.lang.description": "Choose your display language. The selection is saved automatically.",
   "modal.lang.apply": "Apply",
   "modal.lang.cancel": "Cancel",
-
   "modal.key.heading": "🔑 Digital identity (keypair) management",
   "modal.key.help": "X25519+ML-KEM-768 hybrid keypair for exchanging files securely with friends (quantum-safe).",
   "modal.key.path": "Save path",
   "modal.key.generate": "🔑 Create new keypair",
   "modal.key.show": "Show existing key",
   "modal.key.close": "Close",
-
   "modal.mnemonic.heading": "📝 BIP39 paper backup words",
   "modal.mnemonic.help": "Write the words on paper so you can recover even if the key file is lost.",
   "modal.mnemonic.count": "Word count",
@@ -130,7 +119,6 @@
   "modal.mnemonic.count.12": "12 words",
   "modal.mnemonic.generate": "Generate",
   "modal.mnemonic.close": "Close",
-
   "modal.about.title": "About qsafe",
   "modal.about.tagline": "Quantum-safe compression & encryption",
   "modal.about.version": "Version",
@@ -141,7 +129,6 @@
   "modal.about.copyright": "© 2026 heedong719 · MIT OR Apache-2.0",
   "modal.about.repo": "GitHub",
   "modal.about.close": "Close",
-
   "modal.iso.title": "💿 ISO file",
   "modal.iso.action.mount": "📀 Mount as virtual disc",
   "modal.iso.action.write_usb": "💾 Create bootable USB",
@@ -149,7 +136,6 @@
   "modal.iso.action.close": "Close",
   "modal.iso.mounted": "✓ Mounted at {mount_point}",
   "modal.iso.unmounted": "✓ Unmounted",
-
   "modal.usb.title": "💾 Create bootable USB",
   "modal.usb.iso": "ISO file",
   "modal.usb.select_disk": "Target disk (USB)",
@@ -168,12 +154,10 @@
   "modal.usb.stage.error": "❌ Write failed",
   "modal.usb.elapsed": "Elapsed: {time}",
   "modal.usb.eta": "ETA: {time}",
-
   "progress.preparing": "Preparing…",
   "progress.percent": "{percent}% — {message}",
   "progress.elapsed": "Elapsed: {time}",
   "progress.bytes": "{done} / {total}",
-
   "result.success": "✅ Done",
   "result.fail": "❌ Failed",
   "result.elapsed": "Elapsed",
@@ -184,7 +168,6 @@
   "result.sfx_path": "SFX binary",
   "result.md5_match": "✅ MD5 matches the original — untampered.",
   "result.md5_mismatch": "❌ MD5 mismatch! Expected: {expected} — possibly tampered.",
-
   "error.title": "Error",
   "error.unknown": "Unknown error",
   "error.file_not_found": "File not found: {path}",
@@ -192,5 +175,27 @@
   "error.wrong_password": "Wrong password",
   "error.invalid_format": "Unsupported format",
   "error.system_folder": "Cannot delete system folder",
-  "error.drive_root": "Cannot delete drive root"
+  "error.drive_root": "Cannot delete drive root",
+  "error.loading": "Loading…",
+  "error.open_folder": "Failed to open folder",
+  "error.open_file": "Failed to open file",
+  "error.up_failed": "Failed to go up",
+  "error.pick_failed": "Picker failed",
+  "error.extract_single": "Single-entry extract failed",
+  "error.extract_external": "External archive extract failed",
+  "error.drop_failed": "Drop handling failed",
+  "error.mnemonic": "Mnemonic error",
+  "error.lang_load": "Failed to load language list",
+  "error.write_in_progress": "Cannot cancel — write in progress",
+  "error.write_start": "Failed to start write",
+  "error.write_failed": "Write failed",
+  "error.init_invoke": "Step 1 failed: invoke API unavailable",
+  "error.init_about": "Step 2 (about) failed",
+  "error.init_sidebar": "Step 3 (buildSidebar) failed",
+  "error.init_currdir": "Step 4 (current_dir) failed",
+  "error.init_navigate": "Step 5 (navigateTo) failed",
+  "error.init_home_fallback": "Home fallback also failed",
+  "status.ready": "Ready",
+  "status.fallback_home": "Fallback to home",
+  "result.external_archive": "📦 External archive: {format} — {count} entries"
 }

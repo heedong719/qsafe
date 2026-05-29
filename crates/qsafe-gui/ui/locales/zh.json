@@ -1,9 +1,11 @@
 {
-  "_meta": { "code": "zh", "name": "Chinese (Simplified)", "native": "简体中文" },
-
+  "_meta": {
+    "code": "zh",
+    "name": "Chinese (Simplified)",
+    "native": "简体中文"
+  },
   "app.title": "qsafe — 量子安全压缩",
   "app.subtitle": "量子安全文件压缩与加密",
-
   "toolbar.back": "⬅️ 返回",
   "toolbar.up": "⬆️ 上级",
   "toolbar.home": "🏠 主页",
@@ -15,7 +17,6 @@
   "toolbar.identity": "🔑 密钥",
   "toolbar.mnemonic": "📝 BIP39",
   "toolbar.lang": "🌐 语言",
-
   "modal.pack.title": "压缩",
   "modal.pack.heading": "📦 文件压缩",
   "modal.pack.input": "原文件",
@@ -46,7 +47,6 @@
   "modal.pack.cancel": "取消",
   "modal.pack.close": "完成 — 关闭",
   "modal.pack.running": "压缩中…",
-
   "modal.unpack.title": "解压",
   "modal.unpack.heading": "📂 文件解压",
   "modal.unpack.input": "原 .qs",
@@ -62,25 +62,20 @@
   "modal.unpack.cancel": "取消",
   "modal.unpack.close": "完成 — 关闭",
   "modal.unpack.running": "解压中…",
-
   "modal.info.title": "压缩文件信息",
   "modal.info.unpack": "📂 解压",
   "modal.info.close": "关闭",
-
   "modal.lang.title": "🌐 语言 / Language",
   "modal.lang.apply": "应用",
   "modal.lang.cancel": "取消",
-
   "result.success": "✅ 完成",
   "result.fail": "❌ 失败",
-
   "modal.key.heading": "🔑 数字身份 (密钥对) 管理",
   "modal.key.help": "用于和朋友安全交换文件的 X25519+ML-KEM-768 混合密钥对 (量子安全)。",
   "modal.key.path": "保存路径",
   "modal.key.generate": "🔑 创建新密钥对",
   "modal.key.show": "查看已有密钥",
   "modal.key.close": "关闭",
-
   "modal.mnemonic.heading": "📝 BIP39 纸质备份单词",
   "modal.mnemonic.help": "请将单词记录在纸上，以便密钥文件损坏时仍可恢复。",
   "modal.mnemonic.count": "单词数量",
@@ -89,7 +84,6 @@
   "modal.mnemonic.count.12": "12 个单词",
   "modal.mnemonic.generate": "生成",
   "modal.mnemonic.close": "关闭",
-
   "modal.about.title": "关于 qsafe",
   "modal.about.tagline": "量子安全压缩与加密",
   "modal.about.version": "版本",
@@ -100,7 +94,28 @@
   "modal.about.copyright": "© 2026 heedong719 · MIT 或 Apache-2.0",
   "modal.about.repo": "GitHub",
   "modal.about.close": "关闭",
-
   "error.title": "错误",
-  "error.wrong_password": "密码错误"
+  "error.wrong_password": "密码错误",
+  "error.loading": "加载中…",
+  "error.open_folder": "无法打开文件夹",
+  "error.open_file": "无法打开文件",
+  "error.up_failed": "无法返回上级",
+  "error.pick_failed": "选择失败",
+  "error.extract_single": "单文件提取失败",
+  "error.extract_external": "外部归档解压失败",
+  "error.drop_failed": "拖放处理失败",
+  "error.mnemonic": "助记词错误",
+  "error.lang_load": "语言列表加载失败",
+  "error.write_in_progress": "写入中无法取消",
+  "error.write_start": "写入启动失败",
+  "error.write_failed": "写入失败",
+  "error.init_invoke": "步骤1失败: invoke API 不可用",
+  "error.init_about": "步骤2 (about) 失败",
+  "error.init_sidebar": "步骤3 (buildSidebar) 失败",
+  "error.init_currdir": "步骤4 (current_dir) 失败",
+  "error.init_navigate": "步骤5 (navigateTo) 失败",
+  "error.init_home_fallback": "主页回退也失败",
+  "status.ready": "就绪",
+  "status.fallback_home": "回退到主页",
+  "result.external_archive": "📦 外部归档: {format} — {count} 个"
 }

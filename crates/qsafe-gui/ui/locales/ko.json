@@ -1,9 +1,11 @@
 {
-  "_meta": { "code": "ko", "name": "한국어", "native": "한국어" },
-
+  "_meta": {
+    "code": "ko",
+    "name": "한국어",
+    "native": "한국어"
+  },
   "app.title": "qsafe — 양자 안전 압축",
   "app.subtitle": "양자 안전 파일 압축·암호화",
-
   "toolbar.back": "⬅️ 뒤로",
   "toolbar.up": "⬆️ 위로",
   "toolbar.home": "🏠 홈",
@@ -15,29 +17,23 @@
   "toolbar.identity": "🔑 키 관리",
   "toolbar.mnemonic": "📝 BIP39",
   "toolbar.lang": "🌐 언어",
-
   "addressbar.placeholder": "경로 입력 (Enter)",
   "addressbar.go": "이동",
-
   "sidebar.places": "위치",
   "sidebar.home": "홈",
   "sidebar.drives": "드라이브",
-
   "filelist.col.name": "이름",
   "filelist.col.size": "크기",
   "filelist.col.kind": "종류",
   "filelist.col.modified": "수정 날짜",
   "filelist.empty": "(이 폴더는 비어 있습니다)",
   "filelist.error": "폴더를 읽을 수 없습니다",
-
   "kind.dir": "폴더",
   "kind.qsafe": "qsafe 압축 파일",
   "kind.archive": "압축 파일 (qsafe로 풀기 가능)",
   "kind.file": "파일",
-
   "status.items": "{count} 항목",
   "status.selection": "선택: {name} ({size})",
-
   "modal.pack.title": "압축",
   "modal.pack.input": "원본",
   "modal.pack.output": "결과",
@@ -71,7 +67,6 @@
   "modal.pack.cancel": "취소",
   "modal.pack.close": "완료 — 닫기",
   "modal.pack.running": "압축 중…",
-
   "modal.unpack.heading": "📂 파일 풀기",
   "modal.unpack.browse": "📁 변경…",
   "modal.unpack.mode.open": "🌐 암호 없음 (qsafe-open)",
@@ -88,7 +83,6 @@
   "modal.unpack.cancel": "취소",
   "modal.unpack.close": "완료 — 닫기",
   "modal.unpack.running": "푸는 중…",
-
   "modal.info.title": "압축 파일 정보",
   "modal.info.summary.loading": "로딩 중…",
   "modal.info.list.empty": "(이 포맷은 상세 목록 미리보기를 지원하지 않습니다. RAR만 가능합니다.)",
@@ -96,32 +90,27 @@
   "modal.info.unpack": "📂 압축 풀기",
   "modal.info.extract_one": "💡 파일을 더블 클릭하면 임시로 풀어 실행합니다. 창을 닫으면 자동 삭제됩니다.",
   "modal.info.close": "닫기",
-
   "modal.identity.title": "🔑 키 관리",
   "modal.identity.generate": "새 키쌍 생성",
   "modal.identity.show": "기존 키 검사",
   "modal.identity.export": "공개키 추출 (공유용)",
   "modal.identity.path": "경로",
   "modal.identity.fingerprint": "지문",
-
   "modal.delete.title": "삭제 확인",
   "modal.delete.confirm": "정말 삭제하시겠습니까?",
   "modal.delete.warning": "이 작업은 되돌릴 수 없습니다.",
   "modal.delete.button": "삭제",
   "modal.delete.cancel": "취소",
-
   "modal.lang.title": "🌐 언어 / Language",
   "modal.lang.description": "표시 언어를 선택하세요. 선택은 자동 저장됩니다.",
   "modal.lang.apply": "적용",
   "modal.lang.cancel": "취소",
-
   "modal.key.heading": "🔑 디지털 신원 (키쌍) 관리",
   "modal.key.help": "친구와 안전하게 파일을 주고받기 위한 X25519+ML-KEM-768 하이브리드 키쌍입니다 (양자 안전).",
   "modal.key.path": "저장 경로",
   "modal.key.generate": "🔑 새 키쌍 만들기",
   "modal.key.show": "기존 키 확인",
   "modal.key.close": "닫기",
-
   "modal.mnemonic.heading": "📝 BIP39 종이 백업 단어",
   "modal.mnemonic.help": "키 파일이 망가져도 복구할 수 있도록 단어를 종이에 적어두세요.",
   "modal.mnemonic.count": "단어 개수",
@@ -130,7 +119,6 @@
   "modal.mnemonic.count.12": "12단어",
   "modal.mnemonic.generate": "생성",
   "modal.mnemonic.close": "닫기",
-
   "modal.about.title": "qsafe 정보",
   "modal.about.tagline": "양자 안전 압축·암호화",
   "modal.about.version": "버전",
@@ -141,7 +129,6 @@
   "modal.about.copyright": "© 2026 heedong719 · MIT 또는 Apache-2.0",
   "modal.about.repo": "GitHub",
   "modal.about.close": "닫기",
-
   "modal.iso.title": "💿 ISO 파일",
   "modal.iso.action.mount": "📀 가상 마운트 (CD 삽입처럼)",
   "modal.iso.action.write_usb": "💾 USB 부팅 디스크 만들기",
@@ -149,7 +136,6 @@
   "modal.iso.action.close": "닫기",
   "modal.iso.mounted": "✓ {mount_point} 에 마운트됨",
   "modal.iso.unmounted": "✓ 마운트 해제 완료",
-
   "modal.usb.title": "💾 USB 부팅 디스크 만들기",
   "modal.usb.iso": "ISO 파일",
   "modal.usb.select_disk": "대상 디스크 (USB)",
@@ -168,12 +154,10 @@
   "modal.usb.stage.error": "❌ 쓰기 실패",
   "modal.usb.elapsed": "경과: {time}",
   "modal.usb.eta": "남은 시간: {time}",
-
   "progress.preparing": "준비 중…",
   "progress.percent": "{percent}% — {message}",
   "progress.elapsed": "경과: {time}",
   "progress.bytes": "{done} / {total}",
-
   "result.success": "✅ 완료",
   "result.fail": "❌ 실패",
   "result.elapsed": "걸린 시간",
@@ -184,7 +168,6 @@
   "result.sfx_path": "SFX 실행파일",
   "result.md5_match": "✅ 원본 MD5와 일치 — 변조 없음!",
   "result.md5_mismatch": "❌ MD5 불일치! 원본: {expected} — 변조 가능성!",
-
   "error.title": "오류",
   "error.unknown": "알 수 없는 오류",
   "error.file_not_found": "파일을 찾을 수 없습니다: {path}",
@@ -192,5 +175,27 @@
   "error.wrong_password": "잘못된 패스워드",
   "error.invalid_format": "지원하지 않는 포맷",
   "error.system_folder": "시스템 폴더는 삭제할 수 없습니다",
-  "error.drive_root": "드라이브 루트는 삭제할 수 없습니다"
+  "error.drive_root": "드라이브 루트는 삭제할 수 없습니다",
+  "error.loading": "로딩 중…",
+  "error.open_folder": "폴더 열기 실패",
+  "error.open_file": "파일 열기 실패",
+  "error.up_failed": "상위로 이동 실패",
+  "error.pick_failed": "선택 실패",
+  "error.extract_single": "단일 추출 실패",
+  "error.extract_external": "외부 아카이브 풀기 실패",
+  "error.drop_failed": "드롭 처리 실패",
+  "error.mnemonic": "니모닉 오류",
+  "error.lang_load": "언어 목록 로드 실패",
+  "error.write_in_progress": "쓰기 진행 중에는 취소할 수 없습니다",
+  "error.write_start": "쓰기 시작 실패",
+  "error.write_failed": "쓰기 실패",
+  "error.init_invoke": "단계 1 실패: invoke API 없음",
+  "error.init_about": "단계 2 (about) 실패",
+  "error.init_sidebar": "단계 3 (buildSidebar) 실패",
+  "error.init_currdir": "단계 4 (current_dir) 실패",
+  "error.init_navigate": "단계 5 (navigateTo) 실패",
+  "error.init_home_fallback": "홈 fallback도 실패",
+  "status.ready": "준비 완료",
+  "status.fallback_home": "홈으로 fallback",
+  "result.external_archive": "📦 외부 아카이브: {format} — {count}개 항목"
 }
