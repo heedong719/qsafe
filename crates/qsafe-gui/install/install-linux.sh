@@ -52,14 +52,16 @@ fi
 APPS_DIR="$DATA_DIR/applications"
 MIME_DIR="$DATA_DIR/mime/packages"
 ICON_DIR="$DATA_DIR/icons/hicolor/256x256/apps"
+THUMB_DIR="$DATA_DIR/thumbnailers"
 
 DESKTOP_FILE="$APPS_DIR/qsafe.desktop"
 MIME_FILE="$MIME_DIR/qsafe.xml"
 ICON_FILE="$ICON_DIR/qsafe.png"
+THUMB_FILE="$THUMB_DIR/qsafe.thumbnailer"
 
 if [ "$UNINSTALL" = "1" ]; then
     echo "qsafe 데스크톱 통합 제거 중…"
-    rm -f "$DESKTOP_FILE" "$MIME_FILE" "$ICON_FILE"
+    rm -f "$DESKTOP_FILE" "$MIME_FILE" "$ICON_FILE" "$THUMB_FILE"
     rm -f "$BIN_DIR/qsafe" "$BIN_DIR/qsafe-stub" "$BIN_DIR/qsafe-gui"
     update-mime-database "$DATA_DIR/mime" 2>/dev/null || true
     update-desktop-database "$APPS_DIR" 2>/dev/null || true
@@ -112,7 +114,12 @@ else
     echo "  ⚠ icon.png 미발견 — 기본 아이콘 사용"
 fi
 
-# 5) 캐시 갱신
+# 5) 썸네일러 (Nautilus / Dolphin / Thunar 가 .qs 파일에 자동 호출)
+mkdir -p "$THUMB_DIR"
+cp "$SCRIPT_DIR/qsafe.thumbnailer" "$THUMB_FILE"
+echo "  ✓ $THUMB_FILE"
+
+# 6) 캐시 갱신
 update-mime-database "$DATA_DIR/mime" 2>/dev/null && echo "  ✓ update-mime-database" || true
 update-desktop-database "$APPS_DIR" 2>/dev/null && echo "  ✓ update-desktop-database" || true
 gtk-update-icon-cache "$DATA_DIR/icons/hicolor" 2>/dev/null && echo "  ✓ gtk-update-icon-cache" || true

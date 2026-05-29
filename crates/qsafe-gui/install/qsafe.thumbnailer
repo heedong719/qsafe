@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=qsafe
+Exec=qsafe thumbnail %i %o --size %s
+MimeType=application/x-qsafe;

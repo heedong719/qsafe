@@ -19,6 +19,7 @@ sh install-linux.sh --uninstall
 - `~/.local/share/applications/qsafe.desktop` — 데스크톱 엔트리, 8개 언어 GenericName/Comment
 - `~/.local/share/mime/packages/qsafe.xml` — `application/x-qsafe` MIME (magic bytes `QSAFE001` 자동 감지)
 - `~/.local/share/icons/hicolor/256x256/apps/qsafe.png` — 아이콘 (hicolor 표준)
+- `~/.local/share/thumbnailers/qsafe.thumbnailer` — Nautilus/Dolphin/Thunar 가 `.qs` 파일 썸네일을 자동 생성 (`qsafe thumbnail %i %o --size %s` hook)
 - `update-mime-database` / `update-desktop-database` / `gtk-update-icon-cache` 자동 호출
 
 **검증**:
@@ -84,7 +85,7 @@ sh install-macos.sh --uninstall
 | 우클릭 "압축" | (Action) | ✗ (Services 별도) | ✓ |
 | 우클릭 "풀기" | (Action) | ✗ | ✓ |
 | Quick Look 미리보기 | ✗ | (별도 .qlgenerator) | ✗ |
-| 썸네일 | (썸네일러 등록 가능) | (별도 thumbnailer) | (별도 ThumbnailProvider) |
+| 썸네일 | ✓ (qsafe.thumbnailer + `qsafe thumbnail` hook) | (별도 thumbnailer) | (별도 ThumbnailProvider) |
 
 위 표의 ✗ / 별도 항목은 후속 사이클에서 OS별 추가 작업.
 

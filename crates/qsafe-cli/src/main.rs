@@ -222,6 +222,21 @@ enum Cmd {
         #[command(subcommand)]
         cmd: IdentityCmd,
     },
+    /// 파일 매니저 썸네일 생성 — Linux `.thumbnailer` 통합용 (XDG 표준).
+    ///
+    /// Nautilus / Dolphin / Thunar 등이 .qs 파일에 대해 자동 호출하는 hook.
+    /// 입력이 valid qsafe 헤더면 우리 lock 아이콘을, 아니면 broken 아이콘을 출력.
+    /// 크기 인자는 받아두지만 우리는 임베드된 256x256 PNG 를 그대로 씀
+    /// (Nautilus 등이 표시 시 자동 resize).
+    Thumbnail {
+        /// 입력 .qs 파일
+        input: PathBuf,
+        /// 출력 PNG 경로
+        output: PathBuf,
+        /// 요청된 크기 (Nautilus 가 전달, 우리는 무시)
+        #[arg(short, long, default_value_t = 256)]
+        size: u32,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -454,6 +469,11 @@ fn run(cmd: Cmd) -> Result<()> {
         } => cmd_migrate(input, output, old_password, new_password),
         Cmd::Bench { size_mb, data } => cmd_bench(size_mb, data),
         Cmd::Identity { cmd } => cmd_identity(cmd),
+        Cmd::Thumbnail {
+            input,
+            output,
+            size,
+        } => cmd_thumbnail(input, output, size),
     }
 }
 
@@ -2613,9 +2633,77 @@ fn secure_delete(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// 256x256 lock 아이콘 — qsafe-gui/icons/icon.png 와 동일한 자산.
+/// Linux 파일 매니저(Nautilus/Dolphin/Thunar)가 `qsafe thumbnail` hook을 부를 때 사용.
+const THUMBNAIL_ICON_PNG: &[u8] = include_bytes!("../../qsafe-gui/icons/icon.png");
+
+fn cmd_thumbnail(input: PathBuf, output: PathBuf, _size: u32) -> Result<()> {
+    // 입력이 valid qsafe 헤더인지 magic bytes로 검증 (전체 디코드는 비싸고 불필요).
+    // 헤더가 valid 면 lock 아이콘을, 아니면 에러로 종료해서 파일 매니저가 generic 아이콘으로 fallback 하게 함.
+    let mut buf = [0u8; 8];
+    let mut f = fs::File::open(&input).with_context(|| format!("open {}", input.display()))?;
+    use std::io::Read as _;
+    f.read_exact(&mut buf)
+        .with_context(|| format!("read magic from {}", input.display()))?;
+    if &buf != qsafe_core::format::MAGIC {
+        anyhow::bail!(
+            "유효한 qsafe 파일 아님 (magic 불일치) — 파일 매니저가 generic 아이콘으로 fallback"
+        );
+    }
+
+    // 아이콘을 그대로 출력에 write (Linux .thumbnailer는 PNG의 정확한 size를 요구하지 않음.
+    // Nautilus / Dolphin 등이 표시 시 자동 resize).
+    let parent = output
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("output path 에 디렉토리 없음"))?;
+    if !parent.as_os_str().is_empty() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("create_dir_all {}", parent.display()))?;
+    }
+    fs::write(&output, THUMBNAIL_ICON_PNG)
+        .with_context(|| format!("write {}", output.display()))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn thumbnail_rejects_non_qsafe() {
+        let mut tmp_in = std::env::temp_dir();
+        tmp_in.push(format!("qsafe-thumb-test-in-{}.bin", std::process::id()));
+        std::fs::write(&tmp_in, b"not a qsafe file at all").unwrap();
+        let mut tmp_out = std::env::temp_dir();
+        tmp_out.push(format!("qsafe-thumb-test-out-{}.png", std::process::id()));
+        let r = cmd_thumbnail(tmp_in.clone(), tmp_out.clone(), 256);
+        assert!(r.is_err());
+        assert!(!tmp_out.exists(), "fail 시 output 가 생성되어선 안 됨");
+        let _ = std::fs::remove_file(&tmp_in);
+    }
+
+    #[test]
+    fn thumbnail_writes_png_for_valid_qsafe() {
+        // 최소 valid 헤더: MAGIC 8B + 더미 — cmd_thumbnail은 magic만 검사함
+        let mut tmp_in = std::env::temp_dir();
+        tmp_in.push(format!("qsafe-thumb-valid-{}.qs", std::process::id()));
+        let mut content = qsafe_core::format::MAGIC.to_vec();
+        content.extend_from_slice(&[0u8; 32]); // 패딩
+        std::fs::write(&tmp_in, &content).unwrap();
+
+        let mut tmp_out = std::env::temp_dir();
+        tmp_out.push(format!("qsafe-thumb-valid-out-{}.png", std::process::id()));
+
+        let r = cmd_thumbnail(tmp_in.clone(), tmp_out.clone(), 256);
+        assert!(r.is_ok(), "{:?}", r);
+
+        let bytes = std::fs::read(&tmp_out).unwrap();
+        assert_eq!(&bytes[..8], b"\x89PNG\r\n\x1a\n", "PNG 시그니처");
+        assert!(bytes.len() > 100, "icon 데이터 가 너무 작음");
+
+        let _ = std::fs::remove_file(&tmp_in);
+        let _ = std::fs::remove_file(&tmp_out);
+    }
 
     #[test]
     fn sanitize_strips_escape_codes() {
