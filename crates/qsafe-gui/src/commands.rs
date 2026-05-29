@@ -112,6 +112,10 @@ pub fn version_at_least(current: &str, latest: &str) -> bool {
     true
 }
 
+/// R22 hardening: 응답 본문 최대 256 KB. GitHub Releases 응답은 보통 < 50 KB.
+/// 악의적/실수로 큰 응답이 와도 메모리 폭발 방지.
+const UPDATE_RESPONSE_MAX_BYTES: u64 = 256 * 1024;
+
 #[tauri::command]
 pub fn check_for_update() -> Result<UpdateCheck, String> {
     let current = env!("CARGO_PKG_VERSION").to_string();
@@ -121,11 +125,26 @@ pub fn check_for_update() -> Result<UpdateCheck, String> {
     let resp = ureq::get("https://api.github.com/repos/heedong719/qsafe/releases/latest")
         .set("User-Agent", &format!("qsafe-gui/{}", current))
         .set("Accept", "application/vnd.github+json")
+        .set("Accept-Encoding", "identity") // 압축 응답 비활성 — take(N) 가 압축 해제 후 크기에 적용되게
         .timeout(std::time::Duration::from_secs(8))
         .call()
         .map_err(|e| format!("network: {}", e))?;
 
-    let body: serde_json::Value = resp.into_json().map_err(|e| format!("json parse: {}", e))?;
+    // 응답 크기 제한된 reader → JSON parse
+    use std::io::Read;
+    let mut buf = Vec::with_capacity(8 * 1024);
+    resp.into_reader()
+        .take(UPDATE_RESPONSE_MAX_BYTES)
+        .read_to_end(&mut buf)
+        .map_err(|e| format!("read body: {}", e))?;
+    if buf.len() as u64 == UPDATE_RESPONSE_MAX_BYTES {
+        return Err(format!(
+            "response too large (>={} bytes)",
+            UPDATE_RESPONSE_MAX_BYTES
+        ));
+    }
+    let body: serde_json::Value =
+        serde_json::from_slice(&buf).map_err(|e| format!("json parse: {}", e))?;
 
     let latest = body
         .get("tag_name")
@@ -783,6 +802,11 @@ pub struct PackUnpackProgress {
     pub percent: u32,
 }
 
+/// R22 hardening 상수. qsafe-cli 의 stderr 는 정상적으로 작은 사이즈지만,
+/// 자식이 망가지거나 누군가가 PATH 의 다른 'qsafe' 를 spawn 시킬 경우 메모리 폭발 방지.
+const STDERR_LINE_MAX_BYTES: usize = 8 * 1024; // 라인 1개당 8 KB 캡
+const STDERR_TOTAL_MAX_BYTES: usize = 256 * 1024; // 누적 256 KB 캡 (이후 라인은 폐기)
+
 fn spawn_with_progress(
     cmd: &mut std::process::Command,
     app: Option<&tauri::AppHandle>,
@@ -805,10 +829,21 @@ fn spawn_with_progress(
     let mut collected = String::new();
     let reader = BufReader::new(stderr);
     for line in reader.lines() {
-        let line = match line {
+        let mut line = match line {
             Ok(l) => l,
             Err(_) => continue,
         };
+        // R22: 라인이 비정상적으로 길면 truncate (DoS 가드)
+        if line.len() > STDERR_LINE_MAX_BYTES {
+            // char boundary 보존 — UTF-8 안전
+            let cap = STDERR_LINE_MAX_BYTES;
+            let safe_end = (0..=cap)
+                .rev()
+                .find(|&i| line.is_char_boundary(i))
+                .unwrap_or(0);
+            line.truncate(safe_end);
+            line.push_str("…(truncated)");
+        }
         if let Some(rest) = line.strip_prefix("PROGRESS\t") {
             let parts: Vec<&str> = rest.split('\t').collect();
             if parts.len() == 3 {
@@ -828,9 +863,11 @@ fn spawn_with_progress(
                 continue;
             }
         }
-        // PROGRESS 가 아닌 라인은 모두 보관 — 실패 시 사용자 메시지
-        collected.push_str(&line);
-        collected.push('\n');
+        // PROGRESS 가 아닌 라인은 보관 — 단, 누적 256 KB 초과 시 폐기 (silent drop)
+        if collected.len() < STDERR_TOTAL_MAX_BYTES {
+            collected.push_str(&line);
+            collected.push('\n');
+        }
     }
 
     let status = child
