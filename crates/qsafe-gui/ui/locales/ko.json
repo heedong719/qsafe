@@ -230,5 +230,7 @@
   "info.label": "라벨",
   "info.created": "생성",
   "info.none": "없음",
-  "info.unknown_format": "❌ 알 수 없는 포맷"
+  "info.unknown_format": "❌ 알 수 없는 포맷",
+  "info.list_unsupported": "(이 포맷은 상세 목록 미리보기를 지원하지 않습니다. RAR만 가능합니다.)",
+  "toolbar.about_tip": "정보"
 }

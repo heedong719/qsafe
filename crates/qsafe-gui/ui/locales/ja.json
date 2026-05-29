@@ -150,5 +150,7 @@
   "info.label": "ラベル",
   "info.created": "作成日時",
   "info.none": "なし",
-  "info.unknown_format": "❌ 不明なフォーマット"
+  "info.unknown_format": "❌ 不明なフォーマット",
+  "info.list_unsupported": "(このフォーマットは詳細リストプレビューをサポートしません。RAR のみ可能です。)",
+  "toolbar.about_tip": "情報"
 }

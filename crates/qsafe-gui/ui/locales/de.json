@@ -148,5 +148,7 @@
   "info.label": "Etikett",
   "info.created": "Erstellt",
   "info.none": "keine",
-  "info.unknown_format": "❌ Unbekanntes Format"
+  "info.unknown_format": "❌ Unbekanntes Format",
+  "info.list_unsupported": "(Dieses Format unterstützt keine Eintragsliste — nur RAR.)",
+  "toolbar.about_tip": "Info"
 }

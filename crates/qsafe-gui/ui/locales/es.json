@@ -148,5 +148,7 @@
   "info.label": "Etiqueta",
   "info.created": "Creado",
   "info.none": "ninguno",
-  "info.unknown_format": "❌ Formato desconocido"
+  "info.unknown_format": "❌ Formato desconocido",
+  "info.list_unsupported": "(Este formato no admite vista previa de lista — solo RAR.)",
+  "toolbar.about_tip": "Acerca de"
 }

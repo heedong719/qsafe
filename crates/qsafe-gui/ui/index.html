@@ -255,7 +255,7 @@
     <button id="btn-mnemonic" data-i18n="toolbar.mnemonic">📝 단어 백업</button>
     <button id="btn-lang" data-i18n="toolbar.lang">🌐 언어</button>
     <div class="spacer"></div>
-    <button id="btn-about" class="secondary" title="정보">ℹ️</button>
+    <button id="btn-about" class="secondary" data-i18n-title="toolbar.about_tip" title="정보">ℹ️</button>
   </div>
 
   <div class="addressbar">
@@ -900,12 +900,12 @@
     } catch (e) { /* fall through */ }
     try {
       const lst = await invoke("list_external_archive", { path });
-      setResult("m-info-summary", "📦 외부 아카이브: " + lst.format + " — " + lst.entries.length + "개 항목", "ok");
+      setResult("m-info-summary", qsafeI18n.t("result.external_archive", { format: lst.format, count: lst.entries.length }), "ok");
       infoCurrent.kind = "external";
       document.getElementById("btn-info-unpack").disabled = false;
       const listEl = document.getElementById("m-info-list");
       if (lst.entries.length === 0) {
-        listEl.innerHTML = '<div style="color:#666; padding:10px;">(이 포맷은 상세 목록 미리보기를 지원하지 않습니다. RAR만 가능합니다.)</div>';
+        listEl.innerHTML = '<div style="color:#666; padding:10px;">' + qsafeI18n.t("info.list_unsupported") + '</div>';
       } else {
         listEl.innerHTML = lst.entries.map(function(e, idx) {
           var ico = e.is_dir ? "📁" : "📄";
