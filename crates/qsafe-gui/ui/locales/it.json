@@ -150,5 +150,8 @@
   "info.none": "nessuno",
   "info.unknown_format": "❌ Formato sconosciuto",
   "info.list_unsupported": "(Questo formato non supporta l'anteprima della lista — solo RAR.)",
-  "toolbar.about_tip": "Info"
+  "toolbar.about_tip": "Info",
+  "filter.placeholder": "Cerca nella cartella corrente…",
+  "status.empty_folder": "(cartella vuota)",
+  "status.no_match": "Nessuna corrispondenza per '{query}'"
 }

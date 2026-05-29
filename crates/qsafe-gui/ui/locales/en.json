@@ -232,5 +232,8 @@
   "info.none": "none",
   "info.unknown_format": "❌ Unknown format",
   "info.list_unsupported": "(This format does not support entry listing — RAR only.)",
-  "toolbar.about_tip": "About"
+  "toolbar.about_tip": "About",
+  "filter.placeholder": "Search current folder…",
+  "status.empty_folder": "(empty folder)",
+  "status.no_match": "No match for '{query}'"
 }

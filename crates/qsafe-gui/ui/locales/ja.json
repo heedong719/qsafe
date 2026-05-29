@@ -152,5 +152,8 @@
   "info.none": "なし",
   "info.unknown_format": "❌ 不明なフォーマット",
   "info.list_unsupported": "(このフォーマットは詳細リストプレビューをサポートしません。RAR のみ可能です。)",
-  "toolbar.about_tip": "情報"
+  "toolbar.about_tip": "情報",
+  "filter.placeholder": "このフォルダを検索…",
+  "status.empty_folder": "(空のフォルダ)",
+  "status.no_match": "'{query}' に一致なし"
 }

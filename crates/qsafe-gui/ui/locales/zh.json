@@ -152,5 +152,8 @@
   "info.none": "无",
   "info.unknown_format": "❌ 未知格式",
   "info.list_unsupported": "(此格式不支持详细列表预览，仅 RAR 可用。)",
-  "toolbar.about_tip": "关于"
+  "toolbar.about_tip": "关于",
+  "filter.placeholder": "搜索当前文件夹…",
+  "status.empty_folder": "(空文件夹)",
+  "status.no_match": "无匹配 '{query}'"
 }

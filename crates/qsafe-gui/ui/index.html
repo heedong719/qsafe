@@ -260,7 +260,10 @@
 
   <div class="addressbar">
     <span style="color:#888;">📁</span>
-    <input type="text" id="addr" data-i18n-placeholder="addressbar.placeholder" placeholder="경로" />
+    <input type="text" id="addr" data-i18n-placeholder="addressbar.placeholder" placeholder="경로" style="flex:1;" />
+    <span style="color:#888; margin-left:6px;">🔍</span>
+    <input type="text" id="filter" data-i18n-placeholder="filter.placeholder" placeholder="현재 폴더 검색…" style="width:200px;" />
+    <span id="filter-count" style="color:#888; font-size:11px; min-width:48px; text-align:right;"></span>
   </div>
 
   <div class="body">
@@ -652,6 +655,12 @@
   let histIdx = -1;
   let entries = [];
   let selectedIdx = -1;
+  let filterQuery = "";
+
+  function matchesFilter(e) {
+    if (!filterQuery) return true;
+    return e.name.toLowerCase().includes(filterQuery);
+  }
 
   // ===== 탐색 핵심 =====
   async function navigateTo(path, pushHistory = true) {
@@ -681,12 +690,16 @@
   function renderFileList() {
     const body = document.getElementById("filelist-body");
     if (entries.length === 0) {
-      body.innerHTML = '<div class="filelist-empty">(빈 폴더)</div>';
+      body.innerHTML = '<div class="filelist-empty">' + qsafeI18n.t("status.empty_folder") + '</div>';
+      updateFilterCount(0);
       return;
     }
     var rows = [];
+    var shown = 0;
     for (var i = 0; i < entries.length; i++) {
       var e = entries[i];
+      if (!matchesFilter(e)) continue;
+      shown++;
       var ico = "📄";
       var icoClass = "";
       if (e.is_dir) { ico = "📁"; icoClass = "dir"; }
@@ -702,7 +715,13 @@
         '</div>'
       );
     }
+    if (shown === 0 && filterQuery) {
+      body.innerHTML = '<div class="filelist-empty">' + qsafeI18n.t("status.no_match", { query: filterQuery }) + '</div>';
+      updateFilterCount(0);
+      return;
+    }
     body.innerHTML = rows.join("");
+    updateFilterCount(shown);
     body.querySelectorAll(".filelist-row").forEach(row => {
       row.addEventListener("click", () => selectRow(parseInt(row.dataset.idx, 10)));
       row.addEventListener("dblclick", () => activateRow(parseInt(row.dataset.idx, 10)));
@@ -728,6 +747,37 @@
     updateToolbarState();
     updateStatus();
   }
+  // R24: 검색/필터
+  function updateFilterCount(shown) {
+    const el = document.getElementById("filter-count");
+    if (!el) return;
+    if (filterQuery) {
+      el.textContent = shown + " / " + entries.length;
+      el.style.display = "inline";
+    } else {
+      el.textContent = "";
+    }
+  }
+  (function setupFilter() {
+    const inp = document.getElementById("filter");
+    if (!inp) return;
+    inp.addEventListener("input", (e) => {
+      filterQuery = e.target.value.trim().toLowerCase();
+      selectedIdx = -1;
+      renderFileList();
+      updateToolbarState();
+      updateStatus();
+    });
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        inp.value = "";
+        filterQuery = "";
+        renderFileList();
+        inp.blur();
+      }
+    });
+  })();
+
   // R19: 우클릭 컨텍스트 메뉴
   function showContextMenu(x, y, entry) {
     if (!entry) return;
@@ -1383,6 +1433,13 @@
       e.preventDefault();
       const pack = document.getElementById("btn-pack");
       if (pack && !pack.disabled) pack.click();
+      return;
+    }
+    // R24: Cmd/Ctrl + F → 필터 입력 포커스
+    if (mod && (e.key === "f" || e.key === "F")) {
+      e.preventDefault();
+      const f = document.getElementById("filter");
+      if (f) { f.focus(); f.select(); }
       return;
     }
   });
