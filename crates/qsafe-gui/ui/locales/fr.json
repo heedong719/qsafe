@@ -250,5 +250,18 @@
   "modal.shortcuts.multi_toggle": "Basculer la sélection (multiple)",
   "modal.shortcuts.multi_range": "Sélection de plage (depuis l'ancre)",
   "modal.pack.multi_input": "📦 {count} éléments (en un seul .qs)",
-  "modal.pack.zip_multi_unsupported": "❌ Le mode ZIP standard ne prend en charge qu'un seul élément."
+  "modal.pack.zip_multi_unsupported": "❌ Le mode ZIP standard ne prend en charge qu'un seul élément.",
+  "info.entry_tip": "Double-cliquer : extraire temp + exécuter",
+  "info.encrypted": "Chiffré",
+  "info.single_extract_unavailable": "extraction individuelle indisponible",
+  "dialog.save_to": "Enregistrer dans",
+  "dialog.friend_pubkey": "Clé publique de l'ami",
+  "result.pack_success": "✅ Compression réussie ! (durée : {elapsed})",
+  "result.kind_folder": "📁 Dossier ({count} fichiers)",
+  "result.kind_file": "📄 Fichier",
+  "result.kind_label": "Type source",
+  "result.source_size": "Taille source",
+  "result.packed_size": "Taille compressée",
+  "result.output_path": "Chemin de sortie",
+  "result.saved_amount": "{amount} économisé"
 }

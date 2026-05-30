@@ -1006,8 +1006,8 @@
           var clickable = !e.is_dir && !e.is_encrypted;
           var cursor = clickable ? "cursor:pointer;" : "cursor:default; opacity:0.7;";
           var title = clickable
-            ? 'title="더블 클릭: 임시 추출 + 실행"'
-            : 'title="' + (e.is_dir ? "디렉토리" : "암호 보호") + ' — 단일 추출 불가"';
+            ? 'title="' + qsafeI18n.t("info.entry_tip") + '"'
+            : 'title="' + (e.is_dir ? qsafeI18n.t("kind.dir") : qsafeI18n.t("info.encrypted")) + ' — ' + qsafeI18n.t("info.single_extract_unavailable") + '"';
           return '<div class="info-entry" data-idx="' + idx + '" data-name="' +
             escapeHtml(e.name) + '" data-clickable="' + clickable +
             '" ' + title + ' style="display:flex; gap:8px; padding:4px 8px; border-bottom:1px solid #2a2a2a;' + cursor + '">' +
@@ -1128,13 +1128,13 @@
   });
   document.getElementById("btn-pack-pick").addEventListener("click", async () => {
     try {
-      const r = await pickSave({ title: "저장 위치", defaultPath: document.getElementById("pack-output").value, filters: [{ name: "qsafe", extensions: ["qs"] }] });
+      const r = await pickSave({ title: qsafeI18n.t("dialog.save_to"), defaultPath: document.getElementById("pack-output").value, filters: [{ name: "qsafe", extensions: ["qs"] }] });
       if (r) document.getElementById("pack-output").value = r;
     } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
   document.getElementById("btn-pack-pk-pick").addEventListener("click", async () => {
     try {
-      const r = await pickFile({ title: "친구의 공개키", filters: [{ name: "public key", extensions: ["json"] }] });
+      const r = await pickFile({ title: qsafeI18n.t("dialog.friend_pubkey"), filters: [{ name: "public key", extensions: ["json"] }] });
       if (r) document.getElementById("m-pack-pk").value = r;
     } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
@@ -1196,21 +1196,25 @@
           r = await invoke("pack_path_ext", { input: realInput, output, password, pubkeys, noPassword, force: true, openMode, compression: comp, profile: profile, sfx: sfx, label: labelVal, includeMd5 });
         }
       }
-      var kindLabel = r.source_kind === "directory" ? ("📁 폴더 (" + r.file_count + "개 파일)") : "📄 파일";
+      var kindLabel = r.source_kind === "directory"
+        ? qsafeI18n.t("result.kind_folder", { count: r.file_count })
+        : qsafeI18n.t("result.kind_file");
       var ratioStr = r.ratio_percent.toFixed(1) + "%";
       var savedStr = "";
-      if (r.source_size > 0 && r.packed_size < r.source_size) savedStr = " — " + fmtBytes(r.source_size - r.packed_size) + " 절약";
+      if (r.source_size > 0 && r.packed_size < r.source_size) {
+        savedStr = " — " + qsafeI18n.t("result.saved_amount", { amount: fmtBytes(r.source_size - r.packed_size) });
+      }
       var elapsedStr = ((Date.now() - packStartTs) / 1000).toFixed(1) + "s";
       var extraInfo = "";
       if (r.md5) extraInfo += "\nMD5         : " + r.md5;
-      if (r.md5_file_path) extraInfo += "\nMD5 사이드카 : " + r.md5_file_path;
+      if (r.md5_file_path) extraInfo += "\n" + qsafeI18n.t("result.md5_sidecar") + " : " + r.md5_file_path;
       if (r.sfx_path) extraInfo += "\n📦 SFX         : " + r.sfx_path;
       setResult("m-pack-result",
-        "✅ 압축 성공! (걸린 시간: " + elapsedStr + ")\n\n" +
-        "원본 종류  : " + kindLabel + "\n" +
-        "원본 크기  : " + fmtBytes(r.source_size) + "\n" +
-        "압축 크기  : " + fmtBytes(r.packed_size) + " (" + ratioStr + ")" + savedStr + "\n" +
-        "저장 위치  : " + r.output_path + extraInfo, "ok");
+        qsafeI18n.t("result.pack_success", { elapsed: elapsedStr }) + "\n\n" +
+        qsafeI18n.t("result.kind_label") + "  : " + kindLabel + "\n" +
+        qsafeI18n.t("result.source_size") + "  : " + fmtBytes(r.source_size) + "\n" +
+        qsafeI18n.t("result.packed_size") + "  : " + fmtBytes(r.packed_size) + " (" + ratioStr + ")" + savedStr + "\n" +
+        qsafeI18n.t("result.output_path") + "  : " + r.output_path + extraInfo, "ok");
       navigateTo(currentPath, false);
       document.getElementById("m-pack-prog").style.display = "none";
       var goBtn = document.getElementById("btn-pack-go");

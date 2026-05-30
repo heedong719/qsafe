@@ -250,5 +250,18 @@
   "modal.shortcuts.multi_toggle": "切换项目选择 (多选)",
   "modal.shortcuts.multi_range": "范围选择 (从锚点)",
   "modal.pack.multi_input": "📦 {count} 项 (打包为单一 .qs)",
-  "modal.pack.zip_multi_unsupported": "❌ 标准 ZIP 模式仅支持单一项目"
+  "modal.pack.zip_multi_unsupported": "❌ 标准 ZIP 模式仅支持单一项目",
+  "info.entry_tip": "双击: 临时解压并运行",
+  "info.encrypted": "加密保护",
+  "info.single_extract_unavailable": "无法单独提取",
+  "dialog.save_to": "保存到",
+  "dialog.friend_pubkey": "朋友的公钥",
+  "result.pack_success": "✅ 压缩成功! (用时: {elapsed})",
+  "result.kind_folder": "📁 文件夹 ({count} 个文件)",
+  "result.kind_file": "📄 文件",
+  "result.kind_label": "源类型",
+  "result.source_size": "原始大小",
+  "result.packed_size": "压缩大小",
+  "result.output_path": "保存位置",
+  "result.saved_amount": "节省 {amount}"
 }

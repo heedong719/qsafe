@@ -250,5 +250,18 @@
   "modal.shortcuts.multi_toggle": "Alternar selección (múltiple)",
   "modal.shortcuts.multi_range": "Selección de rango (desde ancla)",
   "modal.pack.multi_input": "📦 {count} elementos (en un solo .qs)",
-  "modal.pack.zip_multi_unsupported": "❌ El modo ZIP estándar solo admite un elemento."
+  "modal.pack.zip_multi_unsupported": "❌ El modo ZIP estándar solo admite un elemento.",
+  "info.entry_tip": "Doble clic: extraer temp + ejecutar",
+  "info.encrypted": "Cifrado",
+  "info.single_extract_unavailable": "extracción individual no disponible",
+  "dialog.save_to": "Guardar en",
+  "dialog.friend_pubkey": "Clave pública del amigo",
+  "result.pack_success": "✅ ¡Compresión exitosa! (tiempo: {elapsed})",
+  "result.kind_folder": "📁 Carpeta ({count} archivos)",
+  "result.kind_file": "📄 Archivo",
+  "result.kind_label": "Tipo de origen",
+  "result.source_size": "Tamaño original",
+  "result.packed_size": "Tamaño comprimido",
+  "result.output_path": "Ruta de salida",
+  "result.saved_amount": "{amount} ahorrado"
 }

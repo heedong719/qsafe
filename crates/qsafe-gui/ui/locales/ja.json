@@ -250,5 +250,18 @@
   "modal.shortcuts.multi_toggle": "項目選択を切替 (複数)",
   "modal.shortcuts.multi_range": "範囲選択 (アンカーから)",
   "modal.pack.multi_input": "📦 {count} 項目 (単一 .qs にまとめる)",
-  "modal.pack.zip_multi_unsupported": "❌ 標準 ZIP モードは単一項目のみ対応"
+  "modal.pack.zip_multi_unsupported": "❌ 標準 ZIP モードは単一項目のみ対応",
+  "info.entry_tip": "ダブルクリック: 一時抽出 + 実行",
+  "info.encrypted": "暗号保護",
+  "info.single_extract_unavailable": "単一抽出不可",
+  "dialog.save_to": "保存先",
+  "dialog.friend_pubkey": "相手の公開鍵",
+  "result.pack_success": "✅ 圧縮成功! (経過: {elapsed})",
+  "result.kind_folder": "📁 フォルダ ({count} ファイル)",
+  "result.kind_file": "📄 ファイル",
+  "result.kind_label": "元の種類",
+  "result.source_size": "元のサイズ",
+  "result.packed_size": "圧縮サイズ",
+  "result.output_path": "保存先",
+  "result.saved_amount": "{amount} 節約"
 }

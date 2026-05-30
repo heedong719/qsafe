@@ -250,5 +250,18 @@
   "modal.shortcuts.multi_toggle": "Auswahl umschalten (mehrfach)",
   "modal.shortcuts.multi_range": "Bereichsauswahl (ab Anker)",
   "modal.pack.multi_input": "📦 {count} Elemente (in einem .qs gebündelt)",
-  "modal.pack.zip_multi_unsupported": "❌ Standard-ZIP-Modus unterstützt nur ein Element."
+  "modal.pack.zip_multi_unsupported": "❌ Standard-ZIP-Modus unterstützt nur ein Element.",
+  "info.entry_tip": "Doppelklick: Temp-Extraktion + Ausführen",
+  "info.encrypted": "Verschlüsselt",
+  "info.single_extract_unavailable": "Einzelextraktion nicht verfügbar",
+  "dialog.save_to": "Speichern unter",
+  "dialog.friend_pubkey": "Öffentlicher Schlüssel des Freundes",
+  "result.pack_success": "✅ Komprimierung erfolgreich! (Dauer: {elapsed})",
+  "result.kind_folder": "📁 Ordner ({count} Dateien)",
+  "result.kind_file": "📄 Datei",
+  "result.kind_label": "Quelltyp",
+  "result.source_size": "Quellgröße",
+  "result.packed_size": "Komprimierte Größe",
+  "result.output_path": "Ausgabepfad",
+  "result.saved_amount": "{amount} gespart"
 }

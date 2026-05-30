@@ -250,5 +250,18 @@
   "modal.shortcuts.multi_toggle": "항목 선택 토글 (다중)",
   "modal.shortcuts.multi_range": "범위 선택 (이전 앵커부터)",
   "modal.pack.multi_input": "📦 {count}개 항목 (단일 .qs 로 묶음)",
-  "modal.pack.zip_multi_unsupported": "❌ 표준 ZIP 모드는 단일 항목만 지원합니다."
+  "modal.pack.zip_multi_unsupported": "❌ 표준 ZIP 모드는 단일 항목만 지원합니다.",
+  "info.entry_tip": "더블 클릭: 임시 추출 + 실행",
+  "info.encrypted": "암호 보호",
+  "info.single_extract_unavailable": "단일 추출 불가",
+  "dialog.save_to": "저장 위치",
+  "dialog.friend_pubkey": "친구의 공개키",
+  "result.pack_success": "✅ 압축 성공! (걸린 시간: {elapsed})",
+  "result.kind_folder": "📁 폴더 ({count}개 파일)",
+  "result.kind_file": "📄 파일",
+  "result.kind_label": "원본 종류",
+  "result.source_size": "원본 크기",
+  "result.packed_size": "압축 크기",
+  "result.output_path": "저장 위치",
+  "result.saved_amount": "{amount} 절약"
 }

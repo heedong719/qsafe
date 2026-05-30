@@ -250,5 +250,18 @@
   "modal.shortcuts.multi_toggle": "Toggle item selection (multi)",
   "modal.shortcuts.multi_range": "Range select (from anchor)",
   "modal.pack.multi_input": "📦 {count} items (bundled into a single .qs)",
-  "modal.pack.zip_multi_unsupported": "❌ Standard ZIP mode supports only a single item."
+  "modal.pack.zip_multi_unsupported": "❌ Standard ZIP mode supports only a single item.",
+  "info.entry_tip": "Double-click: extract to temp + run",
+  "info.encrypted": "Encrypted",
+  "info.single_extract_unavailable": "single-extract unavailable",
+  "dialog.save_to": "Save to",
+  "dialog.friend_pubkey": "Friend's public key",
+  "result.pack_success": "✅ Pack success! (elapsed: {elapsed})",
+  "result.kind_folder": "📁 Folder ({count} files)",
+  "result.kind_file": "📄 File",
+  "result.kind_label": "Source kind",
+  "result.source_size": "Source size",
+  "result.packed_size": "Packed size",
+  "result.output_path": "Output path",
+  "result.saved_amount": "saved {amount}"
 }
