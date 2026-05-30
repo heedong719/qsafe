@@ -1,6 +1,6 @@
 # 다음 사이클 — 무한 반복 분석 재개 지점
 
-다른 컴퓨터 / 다음 세션에서 이 파일을 읽고 바로 R29 부터 이어서 진행.
+다른 컴퓨터 / 다음 세션에서 이 파일을 읽고 바로 R34 부터 이어서 진행.
 
 ## 즉시 재개 명령
 
@@ -20,11 +20,11 @@ cargo run --release -p qsafe-gui
 # "무한 반복 분석 계속 진행해"
 ```
 
-## 현재 상태 스냅샷 (R28 종료 시점)
+## 현재 상태 스냅샷 (R33 종료 시점)
 
 | 항목 | 값 |
 |---|---|
-| 최신 commit | `4414a37` (i18n locale audit) |
+| 최신 commit | `6c565cd` (R32 다중 pack) + R33 docs sync |
 | 워크스페이스 버전 | **0.1.9** (Cargo.toml + tauri.conf.json) |
 | Workspace tests | **145 / 0** |
 | 8 locale i18n 키 / locale | **236+ 균일** (R28 audit 통과) |
@@ -70,9 +70,14 @@ cargo run --release -p qsafe-gui
 12. **외부 보안 감사** — Trail of Bits / NCC Group (v1.0 전)
 13. **자체 빌드 시스템 점검** — 매 release에서 `cargo deny` + supply chain audit
 
-## 최근 누적 사이클 (R1~R28)
+## 최근 누적 사이클 (R1~R33)
 
 ```
+6c565cd R32  다중 pack (pack_multiple_to_qsafe)
+494b6bd R31  Multi-select + 다중 삭제
+ec9fa36 R30  cancel 버튼 (pack/unpack)
+da5ccd8 R29  키보드 navigation
+2058756      R28 docs sync
 4414a37 R28  i18n locale 일관성 audit (6 locale × 79 키 native)
 cc03b5f      transcript snapshot
 f56d668 R27  v0.1.9 release cut + CHANGELOG R22-R26

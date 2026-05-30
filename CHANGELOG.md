@@ -12,6 +12,34 @@
 - 누락 원인: R11 이전에 추가된 키들 (addressbar / sidebar / status / modal-delete / modal-identity / modal-iso / modal-usb / progress / result / filelist.col / error) 이 secondary locale 에서 en fallback 만 의존.
 - 검증: cargo fmt / clippy / deny / test (145) / 8 locale json valid 모두 clean. HTML/JS 참조 169 키 모두 정의됨.
 
+### 추가 — R29 (da5ccd8) 키보드 navigation
+- ↑/↓ Arrow / Home / End / PageUp / PageDown / Enter — 파일 리스트 전용. input/textarea 포커스 + 모달 열림 시 비활성.
+- visible[] = matchesFilter (R24) 통과 인덱스 → filter 와 직교. scrollIntoView({block:'nearest'}).
+- F1 cheatsheet 에 3 행 추가 (modal.shortcuts.nav_arrow / nav_edge / nav_page) × 8 locale.
+
+### 추가 — R30 (ec9fa36) pack/unpack cancel 버튼
+- `RunningJob(Mutex<Option<u32>>)` 상태 + `JobGuard` RAII → spawn 시 PID 등록, drop 시 자동 해제.
+- `cancel_running_job` Tauri command: Unix `libc::kill(pid, SIGTERM)` / Windows `taskkill /PID N /T /F`. ESRCH (이미 죽음) silent.
+- 기존 btn-pack-cancel / btn-unpack-cancel — 진행 중일 때만 cancel_running_job 호출 후 closeModal.
+- 새 dep: libc 0.2 (target.'cfg(unix)' only).
+
+### 추가 — R31 (494b6bd) 다중 선택 + 다중 삭제
+- `selectedSet: Set<int>` + `selectedIdx` (anchor) — Cmd/Ctrl+Click 토글, Shift+Click 범위 (R24 filter 통과 행만), 일반 Click 단일.
+- statusbar: 2+ 선택 시 `status.multi_selection` ({count} + {size} 합).
+- modal-delete: 1개 → 기존 dialog, 2+ → 'N개 영구 삭제' + 10개 미리보기. 일부 실패 → 'N건 실패' + 첫 5개 에러.
+- cheatsheet 2 행 추가 (multi_toggle / multi_range).
+- 6 신규 i18n 키 × 8 locale.
+
+### 추가 — R32 (6c565cd) 다중 pack
+- `create_tar_multi(srcs, dst)` — append_dir_all / append_file 분기, follow_symlinks(false).
+- `pack_multiple_to_qsafe` Tauri command — 임시 tar 묶고 pack_path_ext_impl 재사용. 임시 tar 종료 시 자동 삭제.
+- UI: selectedSet.size > 1 시 자동 분기. ZIP 모드는 multi 미지원 — 명시적 에러.
+- 2 신규 i18n 키 × 8 locale.
+
+### v0.1.9 → 다음 release 누적 (Unreleased)
+- 신규 사용자 가시 기능: 키보드 nav / pack-cancel / multi-select / multi-delete / multi-pack
+- 신규 i18n 키 (R29~R32): 11 × 8 locale = 88 native 번역
+
 ---
 
 ## [0.1.9] — 2026-05-30 (Polish Cycle III — Security Hardening + UX Discovery, R22~R26)
