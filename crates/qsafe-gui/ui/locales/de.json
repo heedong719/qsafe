@@ -272,5 +272,7 @@
   "dialog.my_secret": "Meine private Schlüsseldatei",
   "dialog.key_save_to": "Schlüsseldatei speichern unter",
   "modal.key.overwrite_confirm": "Eine gleichnamige Datei existiert. Überschreiben?",
-  "filelist.sort_tip": "Sortieren"
+  "filelist.sort_tip": "Sortieren",
+  "modal.shortcuts.multi_kbd": "Bereichsauswahl per Tastatur erweitern",
+  "modal.shortcuts.select_all": "Alles im aktuellen Ordner auswählen (gefiltert)"
 }

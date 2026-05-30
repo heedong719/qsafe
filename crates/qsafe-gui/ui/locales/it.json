@@ -272,5 +272,7 @@
   "dialog.my_secret": "Mio file chiave privata",
   "dialog.key_save_to": "Salva chiave in",
   "modal.key.overwrite_confirm": "Esiste un file con lo stesso nome. Sovrascrivere?",
-  "filelist.sort_tip": "Ordina"
+  "filelist.sort_tip": "Ordina",
+  "modal.shortcuts.multi_kbd": "Estendi selezione da tastiera",
+  "modal.shortcuts.select_all": "Seleziona tutto nella cartella (filtrato)"
 }

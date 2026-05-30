@@ -272,5 +272,7 @@
   "dialog.my_secret": "Mon fichier de clé privée",
   "dialog.key_save_to": "Enregistrer la clé dans",
   "modal.key.overwrite_confirm": "Un fichier portant le même nom existe. Écraser ?",
-  "filelist.sort_tip": "Trier"
+  "filelist.sort_tip": "Trier",
+  "modal.shortcuts.multi_kbd": "Étendre la sélection au clavier",
+  "modal.shortcuts.select_all": "Tout sélectionner dans le dossier (filtré)"
 }

@@ -502,6 +502,8 @@
       <kbd>PgUp / PgDn</kbd> <span data-i18n="modal.shortcuts.nav_page">한 페이지 (10 항목) 이동</span>
       <kbd>Cmd / Ctrl + Click</kbd> <span data-i18n="modal.shortcuts.multi_toggle">항목 선택 토글 (다중)</span>
       <kbd>Shift + Click</kbd> <span data-i18n="modal.shortcuts.multi_range">범위 선택 (이전 앵커부터)</span>
+      <kbd>Shift + ↑ / ↓ / Home / End</kbd> <span data-i18n="modal.shortcuts.multi_kbd">키보드로 범위 선택 확장</span>
+      <kbd>Cmd / Ctrl + A</kbd> <span data-i18n="modal.shortcuts.select_all">현재 폴더 전체 선택 (필터 통과 행)</span>
     </div>
     <p class="help" style="margin-top:14px;" data-i18n="modal.shortcuts.dnd">💡 폴더 / 파일을 창에 드래그-드롭하면 압축 모달이 자동으로 열립니다 (.qs / .iso 는 자동 라우팅).</p>
     <div class="actions">
@@ -1564,6 +1566,19 @@
           if (matchesFilter(entries[i])) visible.push(i);
         }
         if (visible.length === 0) return;
+        // R39: Cmd/Ctrl + A → 전체 선택 (필터 통과 행 전부)
+        if (mod && (e.key === "a" || e.key === "A")) {
+          e.preventDefault();
+          selectedSet.clear();
+          for (const i of visible) selectedSet.add(i);
+          if (visible.length > 0) selectedIdx = visible[visible.length - 1];
+          document.querySelectorAll(".filelist-row").forEach(r => {
+            r.classList.toggle("selected", selectedSet.has(parseInt(r.dataset.idx, 10)));
+          });
+          updateToolbarState();
+          updateStatus();
+          return;
+        }
         // 현재 selectedIdx의 visible 위치
         let pos = visible.indexOf(selectedIdx);
         if (pos < 0) pos = -1;
@@ -1582,7 +1597,36 @@
         }
         if (newPos !== null && newPos >= 0 && newPos !== pos) {
           e.preventDefault();
-          selectRow(visible[newPos]);
+          // R39: Shift 키 누른 상태 → 범위 확장. 그렇지 않으면 단일 (기존 R29 동작).
+          if (e.shiftKey) {
+            // 앵커 = selectedSet 의 첫 항목 또는 selectedIdx
+            const anchor = (selectedSet.size > 0)
+              ? (function() {
+                  // 가장 멀리 떨어진 선택을 앵커로
+                  let best = selectedIdx, bestDist = -1;
+                  selectedSet.forEach(idx => {
+                    const p = visible.indexOf(idx);
+                    if (p >= 0) {
+                      const d = Math.abs(p - newPos);
+                      if (d > bestDist) { bestDist = d; best = idx; }
+                    }
+                  });
+                  return best;
+                })()
+              : selectedIdx;
+            const anchorPos = Math.max(0, visible.indexOf(anchor));
+            const lo = Math.min(anchorPos, newPos), hi = Math.max(anchorPos, newPos);
+            selectedSet.clear();
+            for (let k = lo; k <= hi; k++) selectedSet.add(visible[k]);
+            selectedIdx = visible[newPos];
+            document.querySelectorAll(".filelist-row").forEach(r => {
+              r.classList.toggle("selected", selectedSet.has(parseInt(r.dataset.idx, 10)));
+            });
+            updateToolbarState();
+            updateStatus();
+          } else {
+            selectRow(visible[newPos]);
+          }
           // 선택된 row 가 viewport 안에 있도록 scroll
           const row = document.querySelector('.filelist-row[data-idx="' + visible[newPos] + '"]');
           if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest", behavior: "instant" });

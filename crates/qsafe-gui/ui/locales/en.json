@@ -272,5 +272,7 @@
   "dialog.my_secret": "My secret key file",
   "dialog.key_save_to": "Save key file to",
   "modal.key.overwrite_confirm": "A file with the same name exists. Overwrite?",
-  "filelist.sort_tip": "Sort"
+  "filelist.sort_tip": "Sort",
+  "modal.shortcuts.multi_kbd": "Extend range selection by keyboard",
+  "modal.shortcuts.select_all": "Select all in current folder (filtered)"
 }
