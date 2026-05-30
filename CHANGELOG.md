@@ -40,6 +40,22 @@
 - 신규 사용자 가시 기능: 키보드 nav / pack-cancel / multi-select / multi-delete / multi-pack
 - 신규 i18n 키 (R29~R32): 11 × 8 locale = 88 native 번역
 
+### R33~R38: 감사 사이클 — "완벽할 때까지" 모드 (사용자 명시 stopping criterion = 3 연속 0 findings)
+- **R33 (038c1fe)** docs sync — CHANGELOG / NEXT_CYCLE.md 에 R29~R32 entries 추가. 발견 1.
+- **R34 (93f75a0)** 13 i18n 키 — pack 결과 표 / 파일 picker 다이얼로그 타이틀 / info-modal 행 tooltip. 발견 1.
+- **R35 (2752962)** 9 i18n 키 — unpack 결과 표 / 3 picker 다이얼로그 / sort header tooltip / overwrite confirm. 사이드: overwrite 검출 grep 에 'exist' 영문 추가 (백엔드 영어화 미래 호환). 발견 1.
+- **R36** 발견 0 (사용자 가시 한국어 모두 처리됨 — grep hit 6 건은 모두 주석/내부 매칭).
+- **R37** 발견 0 (baseline + install scripts + 269 keys × 8 locale parity 모두 clean).
+- **R38** 발견 0 — **3 연속 0 도달, 감사 루프 종료.**
+
+### 최종 상태 (R38 stopping)
+- workspace tests: **145 / 0 fail**
+- 8 locale × **269 keys each**, drift 0
+- cargo fmt / clippy / deny / build: all clean
+- 버전 alignment: Cargo.toml = tauri.conf.json = CHANGELOG = **0.1.9**
+- 사용자 가시 한국어 미국제 텍스트: **0건**
+- install-linux.sh / install-macos.sh: shellcheck syntax clean
+
 ---
 
 ## [0.1.9] — 2026-05-30 (Polish Cycle III — Security Hardening + UX Discovery, R22~R26)
