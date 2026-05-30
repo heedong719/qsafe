@@ -97,7 +97,8 @@
     .filelist-row {
       display: grid; grid-template-columns: 1fr 110px 130px 160px;
       padding: 5px 12px; cursor: pointer; align-items: center;
-      font-size: 12px;
+      font-size: 12px; height: 16px;  /* R40: 가상 스크롤용 고정 행 높이 (5+16+5=26px) */
+      box-sizing: content-box;
     }
     .filelist-row:hover { background: #252525; }
     .filelist-row.selected { background: #1a3a5a; color: #cef; }
@@ -695,51 +696,40 @@
     }
   }
 
-  function renderFileList() {
-    const body = document.getElementById("filelist-body");
-    if (entries.length === 0) {
-      body.innerHTML = '<div class="filelist-empty">' + qsafeI18n.t("status.empty_folder") + '</div>';
-      updateFilterCount(0);
-      return;
-    }
-    var rows = [];
-    var shown = 0;
-    for (var i = 0; i < entries.length; i++) {
-      var e = entries[i];
-      if (!matchesFilter(e)) continue;
-      shown++;
-      var ico = "📄";
-      var icoClass = "";
-      if (e.is_dir) { ico = "📁"; icoClass = "dir"; }
-      else if (e.is_qsafe) { ico = "🔐"; icoClass = "qsafe"; }
-      else if (e.is_archive) { ico = "📦"; icoClass = "archive"; }
-      var kind = e.is_dir ? qsafeI18n.t("kind.folder")
-        : e.is_qsafe ? qsafeI18n.t("kind.qsafe")
-        : e.is_archive ? qsafeI18n.t("kind.archive")
-        : qsafeI18n.t("kind.file");
-      rows.push(
-        '<div class="filelist-row" data-idx="' + i + '">' +
-          '<div class="name"><span class="ico ' + icoClass + '">' + ico + '</span>' + escapeHtml(e.name) + '</div>' +
-          '<div class="size">' + (e.is_dir ? "—" : fmtBytes(e.size)) + '</div>' +
-          '<div class="kind">' + kind + '</div>' +
-          '<div class="modified">' + fmtTime(e.modified_unix) + '</div>' +
-        '</div>'
-      );
-    }
-    if (shown === 0 && filterQuery) {
-      body.innerHTML = '<div class="filelist-empty">' + qsafeI18n.t("status.no_match", { query: filterQuery }) + '</div>';
-      updateFilterCount(0);
-      return;
-    }
-    body.innerHTML = rows.join("");
-    updateFilterCount(shown);
+  // R40: 가상 스크롤 — visible[] (필터 통과 + 정렬된 entries index) 캐시.
+  // 200행 초과시 보이는 영역 + OVERSCAN 만 DOM 에 render.
+  const ROW_HEIGHT = 26;
+  const VIRTUAL_THRESHOLD = 200;
+  const OVERSCAN = 10;
+  let visibleEntries = []; // entries[] 인덱스 배열
+  let scrollHandlerAttached = false;
+
+  function buildRowHTML(i) {
+    const e = entries[i];
+    let ico = "📄", icoClass = "";
+    if (e.is_dir) { ico = "📁"; icoClass = "dir"; }
+    else if (e.is_qsafe) { ico = "🔐"; icoClass = "qsafe"; }
+    else if (e.is_archive) { ico = "📦"; icoClass = "archive"; }
+    const kind = e.is_dir ? qsafeI18n.t("kind.folder")
+      : e.is_qsafe ? qsafeI18n.t("kind.qsafe")
+      : e.is_archive ? qsafeI18n.t("kind.archive")
+      : qsafeI18n.t("kind.file");
+    const selCls = selectedSet.has(i) ? " selected" : "";
+    return '<div class="filelist-row' + selCls + '" data-idx="' + i + '">' +
+      '<div class="name"><span class="ico ' + icoClass + '">' + ico + '</span>' + escapeHtml(e.name) + '</div>' +
+      '<div class="size">' + (e.is_dir ? "—" : fmtBytes(e.size)) + '</div>' +
+      '<div class="kind">' + kind + '</div>' +
+      '<div class="modified">' + fmtTime(e.modified_unix) + '</div>' +
+      '</div>';
+  }
+
+  function attachRowListeners(body) {
     body.querySelectorAll(".filelist-row").forEach(row => {
       row.addEventListener("click", (ev) => selectRow(
         parseInt(row.dataset.idx, 10),
         { toggle: ev.metaKey || ev.ctrlKey, range: ev.shiftKey }
       ));
       row.addEventListener("dblclick", () => activateRow(parseInt(row.dataset.idx, 10)));
-      // R19: 우클릭 컨텍스트 메뉴
       row.addEventListener("contextmenu", (ev) => {
         ev.preventDefault();
         const idx = parseInt(row.dataset.idx, 10);
@@ -747,6 +737,64 @@
         showContextMenu(ev.clientX, ev.clientY, entries[idx]);
       });
     });
+  }
+
+  function renderVirtualWindow() {
+    const body = document.getElementById("filelist-body");
+    if (!body || visibleEntries.length === 0) return;
+    const scrollTop = body.scrollTop;
+    const viewport = body.clientHeight;
+    const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+    const end = Math.min(visibleEntries.length, Math.ceil((scrollTop + viewport) / ROW_HEIGHT) + OVERSCAN);
+    const topPad = start * ROW_HEIGHT;
+    const bottomPad = (visibleEntries.length - end) * ROW_HEIGHT;
+    let html = '<div style="height:' + topPad + 'px;"></div>';
+    for (let k = start; k < end; k++) html += buildRowHTML(visibleEntries[k]);
+    html += '<div style="height:' + bottomPad + 'px;"></div>';
+    body.innerHTML = html;
+    attachRowListeners(body);
+  }
+
+  function renderFileList() {
+    const body = document.getElementById("filelist-body");
+    if (entries.length === 0) {
+      body.innerHTML = '<div class="filelist-empty">' + qsafeI18n.t("status.empty_folder") + '</div>';
+      updateFilterCount(0);
+      visibleEntries = [];
+      return;
+    }
+    // visible 캐시 재구축
+    visibleEntries = [];
+    for (let i = 0; i < entries.length; i++) {
+      if (matchesFilter(entries[i])) visibleEntries.push(i);
+    }
+    if (visibleEntries.length === 0 && filterQuery) {
+      body.innerHTML = '<div class="filelist-empty">' + qsafeI18n.t("status.no_match", { query: filterQuery }) + '</div>';
+      updateFilterCount(0);
+      return;
+    }
+    updateFilterCount(visibleEntries.length);
+    if (visibleEntries.length <= VIRTUAL_THRESHOLD) {
+      // 비가상 모드 — 모든 행 한 번에 (기존 동작)
+      const html = visibleEntries.map(buildRowHTML).join("");
+      body.innerHTML = html;
+      attachRowListeners(body);
+      return;
+    }
+    // 가상 모드
+    if (!scrollHandlerAttached) {
+      let raf = 0;
+      body.addEventListener("scroll", () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          renderVirtualWindow();
+        });
+      });
+      scrollHandlerAttached = true;
+    }
+    body.scrollTop = 0;
+    renderVirtualWindow();
   }
   function escapeHtml(s) {
     return String(s)
@@ -774,10 +822,15 @@
       selectedSet.add(i);
       selectedIdx = i;
     }
-    document.querySelectorAll(".filelist-row").forEach(r => {
-      const idx = parseInt(r.dataset.idx, 10);
-      r.classList.toggle("selected", selectedSet.has(idx));
-    });
+    // R40: 가상 모드는 보이는 행만 DOM 에 있으므로 partial-update 후 다음 render 에 의존.
+    if (visibleEntries.length > VIRTUAL_THRESHOLD) {
+      renderVirtualWindow();
+    } else {
+      document.querySelectorAll(".filelist-row").forEach(r => {
+        const idx = parseInt(r.dataset.idx, 10);
+        r.classList.toggle("selected", selectedSet.has(idx));
+      });
+    }
     updateToolbarState();
     updateStatus();
   }
