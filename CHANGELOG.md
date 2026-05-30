@@ -56,6 +56,24 @@
 - 사용자 가시 한국어 미국제 텍스트: **0건**
 - install-linux.sh / install-macos.sh: shellcheck syntax clean
 
+### R39~R46: Polish IV — UX 보강 + 깊은 정적 audit (사용자 재개 후)
+- **R39 (350d05a)** 키보드 multi-select — Shift+Arrow/Home/End/PgUp/PgDn + Cmd-A. 앵커 자동 갱신. cheatsheet 2행 + 2 i18n 키.
+- **R40 (a377403)** 가상 스크롤 — ROW_HEIGHT 26px, threshold 200, OVERSCAN 10. requestAnimationFrame coalesce. 10k+ 폴더 성능.
+- **R41 (153c8b9)** 가상 모드 키보드 nav scroll 보완 — body.scrollTop 직접 조정 (scrollIntoView noop 시 fallback).
+- **R42 (95b77ce) 🔴 silent bug** — column-header sort 의 `typeof renderEntries === "function"` 검사 항상 false (실제 함수명 `renderFileList`). 정렬 결과 UI 미반영 버그가 R2 도입 이후 줄곧 존재했음. R28/R38 audit이 baseline + i18n 만 검사해서 미발견.
+- **R43 (858f98e) 🔴🔴 5건 silent bug** — R5/R19 의 OS 통합 진입점들이 `getElementById("p-input/p-output/u-input")` 호출. HTML 실제 ID는 `pack-input/pack-output/unpack-input`. 우클릭 메뉴 / `qsafe-gui --action=pack file` / `qsafe-gui file` 모두 modal 만 열리고 입력란 비어 있는 상태로 사용자 도착. R43 정적 audit (getElementById ID ⊆ id="…") 으로 검출.
+- **R44** 정적 audit (querySelector / invoke / emit) — 0 mismatch.
+- **R45** Tauri command panic-prone 패턴 — 0 .unwrap()/.expect() 검출.
+- **R46** 종합 audit (fmt/clippy/deny/test + i18n parity + ID matching + invoke matching + typeof + version align) — 0 issues.
+
+### 최종 상태 (R46 stopping — 2회차 3 연속 0)
+- workspace tests: **145 / 0 fail**
+- 8 locale × 271 keys (R39 +2) — drift 0
+- 정적 audit: getElementById ⊆ id=, querySelector ⊆ id=/class=, invoke ⊆ tauri::command, emit ↔ listen 완전 매칭
+- Tauri commands 안 .unwrap()/.expect() 0개
+- 사용자 흐름 R5/R19/R29~R32/R39~R41 모두 검증 완료
+- 가상 스크롤로 10k+ 폴더 지원
+
 ---
 
 ## [0.1.9] — 2026-05-30 (Polish Cycle III — Security Hardening + UX Discovery, R22~R26)

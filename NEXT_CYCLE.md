@@ -1,6 +1,6 @@
 # 다음 사이클 — 무한 반복 분석 재개 지점
 
-다른 컴퓨터 / 다음 세션에서 이 파일을 읽고 바로 R39 부터 이어서 진행.
+다른 컴퓨터 / 다음 세션에서 이 파일을 읽고 바로 R47 부터 이어서 진행.
 
 ## 즉시 재개 명령
 
@@ -20,11 +20,11 @@ cargo run --release -p qsafe-gui
 # "무한 반복 분석 계속 진행해"
 ```
 
-## 현재 상태 스냅샷 (R38 종료 시점 — 3 연속 0 findings 달성, 감사 루프 stop)
+## 현재 상태 스냅샷 (R46 종료 시점 — 2회차 3 연속 0 findings 달성)
 
 | 항목 | 값 |
 |---|---|
-| 최신 commit | R38 audit + docs sync |
+| 최신 commit | R46 audit + docs sync |
 | 워크스페이스 버전 | **0.1.9** (Cargo.toml + tauri.conf.json) |
 | Workspace tests | **145 / 0** |
 | 8 locale i18n 키 / locale | **236+ 균일** (R28 audit 통과) |
@@ -70,11 +70,16 @@ cargo run --release -p qsafe-gui
 12. **외부 보안 감사** — Trail of Bits / NCC Group (v1.0 전)
 13. **자체 빌드 시스템 점검** — 매 release에서 `cargo deny` + supply chain audit
 
-## 최근 누적 사이클 (R1~R38)
+## 최근 누적 사이클 (R1~R46)
 
 ```
-R33~R38 audit loop — R33/R34/R35 각 1 finding (docs sync + 2 i18n round),
-        R36/R37/R38 0 findings (3 연속 → 사용자 명시 stop criterion)
+R44~R46 audit loop (2회차) — 모두 0 finding → stop
+858f98e R43  🔴🔴 5건 silent ID typo (OS 통합 흐름 복구)
+95b77ce R42  🔴 sort silent bug fix (renderEntries → renderFileList)
+153c8b9 R41  가상 모드 키보드 nav scroll
+a377403 R40  가상 스크롤
+350d05a R39  키보드 multi-select (Shift+Arrow + Cmd-A)
+a24ff53 R38  audit stop (1회차, silent bug 못 잡음 입증됨)
 2752962 R35  i18n (unpack 결과 + 3 dialog + sort + overwrite)
 93f75a0 R34  i18n (pack 결과 + 2 dialog + entry tooltip)
 038c1fe R33  docs sync (R29-R32 entries)
