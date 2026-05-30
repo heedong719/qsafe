@@ -248,5 +248,7 @@
   "modal.delete.partial_fail": "{count}건 실패",
   "modal.delete.deleting": "삭제 중…",
   "modal.shortcuts.multi_toggle": "항목 선택 토글 (다중)",
-  "modal.shortcuts.multi_range": "범위 선택 (이전 앵커부터)"
+  "modal.shortcuts.multi_range": "범위 선택 (이전 앵커부터)",
+  "modal.pack.multi_input": "📦 {count}개 항목 (단일 .qs 로 묶음)",
+  "modal.pack.zip_multi_unsupported": "❌ 표준 ZIP 모드는 단일 항목만 지원합니다."
 }

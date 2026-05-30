@@ -248,5 +248,7 @@
   "modal.delete.partial_fail": "{count} failed",
   "modal.delete.deleting": "Deleting…",
   "modal.shortcuts.multi_toggle": "Toggle item selection (multi)",
-  "modal.shortcuts.multi_range": "Range select (from anchor)"
+  "modal.shortcuts.multi_range": "Range select (from anchor)",
+  "modal.pack.multi_input": "📦 {count} items (bundled into a single .qs)",
+  "modal.pack.zip_multi_unsupported": "❌ Standard ZIP mode supports only a single item."
 }

@@ -248,5 +248,7 @@
   "modal.delete.partial_fail": "{count} 件失敗",
   "modal.delete.deleting": "削除中…",
   "modal.shortcuts.multi_toggle": "項目選択を切替 (複数)",
-  "modal.shortcuts.multi_range": "範囲選択 (アンカーから)"
+  "modal.shortcuts.multi_range": "範囲選択 (アンカーから)",
+  "modal.pack.multi_input": "📦 {count} 項目 (単一 .qs にまとめる)",
+  "modal.pack.zip_multi_unsupported": "❌ 標準 ZIP モードは単一項目のみ対応"
 }

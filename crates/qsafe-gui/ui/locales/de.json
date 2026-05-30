@@ -248,5 +248,7 @@
   "modal.delete.partial_fail": "{count} fehlgeschlagen",
   "modal.delete.deleting": "Löschen…",
   "modal.shortcuts.multi_toggle": "Auswahl umschalten (mehrfach)",
-  "modal.shortcuts.multi_range": "Bereichsauswahl (ab Anker)"
+  "modal.shortcuts.multi_range": "Bereichsauswahl (ab Anker)",
+  "modal.pack.multi_input": "📦 {count} Elemente (in einem .qs gebündelt)",
+  "modal.pack.zip_multi_unsupported": "❌ Standard-ZIP-Modus unterstützt nur ein Element."
 }

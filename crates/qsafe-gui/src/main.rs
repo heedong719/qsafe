@@ -44,6 +44,7 @@ fn main() {
             commands::delete_path,
             commands::open_with_associated,
             commands::pack_path_ext,
+            commands::pack_multiple_to_qsafe,
             commands::unpack_qsafe_ext,
             commands::md5_of_file,
             commands::iso_mount,

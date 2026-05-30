@@ -1498,6 +1498,63 @@ pub fn pack_path(
     })
 }
 
+/// R32: 여러 입력 (파일 / 폴더 혼합) 을 단일 tar로 묶음. multi-select pack 의 baseline.
+/// 각 입력은 자신의 basename 으로 tar 에 들어감 — 추출 시 평평한 N개 entry.
+fn create_tar_multi(
+    srcs: &[std::path::PathBuf],
+    dst: &std::path::Path,
+) -> Result<(u64, u64), String> {
+    let file = std::fs::File::create(dst).map_err(|e| format!("tar 파일 생성: {}", e))?;
+    let mut builder = tar::Builder::new(file);
+    builder.follow_symlinks(false);
+    for src in srcs {
+        let base_name = src
+            .file_name()
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| std::path::PathBuf::from("data"));
+        if src.is_dir() {
+            builder
+                .append_dir_all(&base_name, src)
+                .map_err(|e| format!("tar append dir {}: {}", src.display(), e))?;
+        } else if src.is_file() {
+            let mut f = std::fs::File::open(src)
+                .map_err(|e| format!("tar append open {}: {}", src.display(), e))?;
+            builder
+                .append_file(&base_name, &mut f)
+                .map_err(|e| format!("tar append file {}: {}", src.display(), e))?;
+        }
+        // is_symlink 등은 skip — follow_symlinks(false) 로 cycle 방어
+    }
+    builder.finish().map_err(|e| format!("tar finish: {}", e))?;
+    drop(builder);
+    // 총 크기 + 파일 수 산정
+    let mut total_size: u64 = 0;
+    let mut count: u64 = 0;
+    fn walk(p: &std::path::Path, total: &mut u64, count: &mut u64) {
+        if let Ok(rd) = std::fs::read_dir(p) {
+            for e in rd.flatten() {
+                if let Ok(md) = e.metadata() {
+                    if md.is_dir() {
+                        walk(&e.path(), total, count);
+                    } else {
+                        *total += md.len();
+                        *count += 1;
+                    }
+                }
+            }
+        }
+    }
+    for src in srcs {
+        if src.is_dir() {
+            walk(src, &mut total_size, &mut count);
+        } else if let Ok(md) = std::fs::metadata(src) {
+            total_size += md.len();
+            count += 1;
+        }
+    }
+    Ok((total_size, count))
+}
+
 fn create_tar(src: &std::path::Path, dst: &std::path::Path) -> Result<(u64, u64), String> {
     let file = std::fs::File::create(dst).map_err(|e| format!("tar 파일 생성: {}", e))?;
     let mut builder = tar::Builder::new(file);
@@ -3069,6 +3126,68 @@ pub struct PackPathExtResult {
     pub md5: Option<String>,
     pub md5_file_path: Option<String>,
     pub sfx_path: Option<String>,
+}
+
+/// R32: 다중 입력 (파일 / 폴더 혼합) 을 단일 .qs 로 압축. 임시 tar 묶고 pack_path_ext_impl 재사용.
+#[allow(clippy::too_many_arguments)]
+#[tauri::command]
+pub fn pack_multiple_to_qsafe(
+    app: tauri::AppHandle,
+    inputs: Vec<String>,
+    output: String,
+    password: Option<String>,
+    pubkeys: Vec<String>,
+    no_password: bool,
+    force: bool,
+    open_mode: Option<bool>,
+    compression: Option<String>,
+    profile: Option<String>,
+    sfx: Option<bool>,
+    label: Option<String>,
+    include_md5: Option<bool>,
+) -> Result<PackPathExtResult, String> {
+    if inputs.is_empty() {
+        return Err("inputs is empty".into());
+    }
+    let paths: Vec<std::path::PathBuf> = inputs.iter().map(std::path::PathBuf::from).collect();
+    for p in &paths {
+        if !p.exists() {
+            return Err(format!("입력 없음: {}", p.display()));
+        }
+    }
+
+    // 임시 tar 위치 — 첫 입력의 부모, 또는 임시 디렉토리
+    let parent = paths[0]
+        .parent()
+        .filter(|p| p.is_dir())
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(std::env::temp_dir);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let tmp_tar = parent.join(format!(".qsafe-multi-{}-{}.tar", std::process::id(), nanos));
+
+    create_tar_multi(&paths, &tmp_tar)?;
+
+    // tar 를 단일 input 으로 pack
+    let res = pack_path_ext_impl(
+        Some(&app),
+        tmp_tar.to_string_lossy().into_owned(),
+        Some(output),
+        password,
+        pubkeys,
+        no_password,
+        force,
+        open_mode,
+        compression,
+        profile,
+        sfx,
+        label,
+        include_md5,
+    );
+    let _ = std::fs::remove_file(&tmp_tar);
+    res
 }
 
 #[allow(clippy::too_many_arguments)]

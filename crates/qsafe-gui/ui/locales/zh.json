@@ -248,5 +248,7 @@
   "modal.delete.partial_fail": "{count} 项失败",
   "modal.delete.deleting": "删除中…",
   "modal.shortcuts.multi_toggle": "切换项目选择 (多选)",
-  "modal.shortcuts.multi_range": "范围选择 (从锚点)"
+  "modal.shortcuts.multi_range": "范围选择 (从锚点)",
+  "modal.pack.multi_input": "📦 {count} 项 (打包为单一 .qs)",
+  "modal.pack.zip_multi_unsupported": "❌ 标准 ZIP 模式仅支持单一项目"
 }

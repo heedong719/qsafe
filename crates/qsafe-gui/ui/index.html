@@ -1081,11 +1081,26 @@
   });
 
   // ===== 압축 모달 =====
+  // R32: 다중 선택 (selectedSet.size > 1) 시 pack_multiple_to_qsafe 사용 — 임시 tar 로 묶고 압축.
   document.getElementById("btn-pack").addEventListener("click", () => {
+    const multiTargets = selectedSet.size > 1
+      ? Array.from(selectedSet).map(i => entries[i]).filter(Boolean)
+      : null;
     const e = entries[selectedIdx];
-    if (!e) return;
-    document.getElementById("pack-input").value = e.path + (e.is_dir ? "  (📁 폴더 — tar로 묶어 압축됨)" : "");
-    document.getElementById("pack-output").value = e.path + ".qs";
+    if (!e && !multiTargets) return;
+    if (multiTargets && multiTargets.length > 1) {
+      // 다중 선택 — input 표시 + output = 첫 파일 부모/qsafe-multi.qs
+      const first = multiTargets[0];
+      const parent = first.path.replace(/[\\/][^\\/]+$/, "");
+      const display = qsafeI18n.t("modal.pack.multi_input", { count: multiTargets.length });
+      document.getElementById("pack-input").value = display;
+      document.getElementById("pack-input").dataset.multi = "1";
+      document.getElementById("pack-output").value = parent + "/qsafe-bundle.qs";
+    } else {
+      document.getElementById("pack-input").value = e.path + (e.is_dir ? "  (📁 폴더 — tar로 묶어 압축됨)" : "");
+      document.getElementById("pack-input").dataset.multi = "";
+      document.getElementById("pack-output").value = e.path + ".qs";
+    }
     // 기본 = qsafe-open: pw/pk 모두 숨김
     document.querySelector('input[name="m-pack-mode"][value="qsafe-open"]').checked = true;
     document.getElementById("m-pack-pw-row").style.display = "none";
@@ -1153,10 +1168,18 @@
     document.getElementById("m-pack-result").style.display = "none";
     resetProgress("pack");
     try {
+      const isMulti = document.getElementById("pack-input").dataset.multi === "1" && selectedSet.size > 1;
       const e_sel = entries[selectedIdx];
       const realInput = e_sel ? e_sel.path : document.getElementById("pack-input").value;
       let r;
       if (mode === "zip") {
+        // ZIP 모드는 단일만 — 다중 선택 시 첫 항목 사용 또는 에러
+        if (isMulti) {
+          setResult("m-pack-result", qsafeI18n.t("modal.pack.zip_multi_unsupported"), "err");
+          document.getElementById("btn-pack-go").disabled = false;
+          document.getElementById("m-pack-prog").style.display = "none";
+          return;
+        }
         r = await invoke("pack_to_zip", { input: realInput, output, force: true });
       } else {
         const comp = document.getElementById("pack-compression").value;
@@ -1165,8 +1188,13 @@
         const includeMd5 = document.getElementById("pack-md5").checked;
         const addLabel = document.getElementById("pack-add-label").checked;
         const labelVal = addLabel ? (new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19) : null;
-        // SFX는 패스워드 필수 (open도 기본 패스워드라 가능)
-        r = await invoke("pack_path_ext", { input: realInput, output, password, pubkeys, noPassword, force: true, openMode, compression: comp, profile: profile, sfx: sfx, label: labelVal, includeMd5 });
+        if (isMulti) {
+          const inputs = Array.from(selectedSet).map(i => entries[i]).filter(Boolean).map(e => e.path);
+          r = await invoke("pack_multiple_to_qsafe", { inputs, output, password, pubkeys, noPassword, force: true, openMode, compression: comp, profile: profile, sfx: sfx, label: labelVal, includeMd5 });
+        } else {
+          // SFX는 패스워드 필수 (open도 기본 패스워드라 가능)
+          r = await invoke("pack_path_ext", { input: realInput, output, password, pubkeys, noPassword, force: true, openMode, compression: comp, profile: profile, sfx: sfx, label: labelVal, includeMd5 });
+        }
       }
       var kindLabel = r.source_kind === "directory" ? ("📁 폴더 (" + r.file_count + "개 파일)") : "📄 파일";
       var ratioStr = r.ratio_percent.toFixed(1) + "%";

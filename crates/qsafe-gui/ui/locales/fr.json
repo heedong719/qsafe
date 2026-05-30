@@ -248,5 +248,7 @@
   "modal.delete.partial_fail": "{count} échecs",
   "modal.delete.deleting": "Suppression…",
   "modal.shortcuts.multi_toggle": "Basculer la sélection (multiple)",
-  "modal.shortcuts.multi_range": "Sélection de plage (depuis l'ancre)"
+  "modal.shortcuts.multi_range": "Sélection de plage (depuis l'ancre)",
+  "modal.pack.multi_input": "📦 {count} éléments (en un seul .qs)",
+  "modal.pack.zip_multi_unsupported": "❌ Le mode ZIP standard ne prend en charge qu'un seul élément."
 }

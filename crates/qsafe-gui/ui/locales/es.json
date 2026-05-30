@@ -248,5 +248,7 @@
   "modal.delete.partial_fail": "{count} fallidos",
   "modal.delete.deleting": "Eliminando…",
   "modal.shortcuts.multi_toggle": "Alternar selección (múltiple)",
-  "modal.shortcuts.multi_range": "Selección de rango (desde ancla)"
+  "modal.shortcuts.multi_range": "Selección de rango (desde ancla)",
+  "modal.pack.multi_input": "📦 {count} elementos (en un solo .qs)",
+  "modal.pack.zip_multi_unsupported": "❌ El modo ZIP estándar solo admite un elemento."
 }
