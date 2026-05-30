@@ -1345,6 +1345,21 @@
   });
 
   // ===== 풀기 모달 =====
+  // R50: unpack 모달도 R49 와 같은 방식으로 마지막 사용 mode 영구 저장.
+  const UNPACK_PREFS_KEY = "qsafe-unpack-prefs";
+  function loadUnpackPrefs() {
+    try {
+      const raw = localStorage.getItem(UNPACK_PREFS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (_) { return {}; }
+  }
+  function saveUnpackPrefs() {
+    try {
+      const checked = document.querySelector('input[name="m-unpack-mode"]:checked');
+      const prefs = { mode: checked ? checked.value : "open" };
+      localStorage.setItem(UNPACK_PREFS_KEY, JSON.stringify(prefs));
+    } catch (_) {}
+  }
   document.getElementById("btn-unpack").addEventListener("click", () => {
     const e = entries[selectedIdx];
     if (!e || !e.is_qsafe) return;
@@ -1354,11 +1369,16 @@
     document.getElementById("m-unpack-id").value = "";
     document.getElementById("m-unpack-result").style.display = "none";
     document.getElementById("m-unpack-prog").style.display = "none";
-    document.querySelector('input[name="m-unpack-mode"][value="open"]').checked = true;
-    document.getElementById("m-unpack-pw-row").style.display = "none";
-    document.getElementById("m-unpack-id-row").style.display = "none";
+    // R50: 저장된 mode 복원 — open / password / identity
+    const upPrefs = loadUnpackPrefs();
+    const upMode = upPrefs.mode || "open";
+    const upRadio = document.querySelector('input[name="m-unpack-mode"][value="' + upMode + '"]');
+    if (upRadio) upRadio.checked = true;
+    else document.querySelector('input[name="m-unpack-mode"][value="open"]').checked = true;
+    document.getElementById("m-unpack-pw-row").style.display = upMode === "password" ? "" : "none";
+    document.getElementById("m-unpack-id-row").style.display = upMode === "identity" ? "" : "none";
     var ugBtn = document.getElementById("btn-unpack-go");
-    ugBtn.textContent = "🔓 풀기";
+    ugBtn.textContent = qsafeI18n.t("modal.unpack.go");
     ugBtn.onclick = null;
     openModal("modal-unpack");
   });
@@ -1367,6 +1387,7 @@
       const v = r.value;
       document.getElementById("m-unpack-pw-row").style.display = v === "password" ? "" : "none";
       document.getElementById("m-unpack-id-row").style.display = v === "identity" ? "" : "none";
+      saveUnpackPrefs();
     });
   });
   document.getElementById("btn-unpack-pick").addEventListener("click", async () => {
