@@ -6,7 +6,11 @@
 
 ## [Unreleased]
 
-(다음 사이클 — 아직 없음)
+### 추가 — R28 (4414a37) i18n locale 일관성 audit
+- 6개 secondary locale (ja/zh/es/fr/de/it) 에 누락된 79 키 일괄 native 추가.
+- ko ∩ en 기준 236 키 → 모든 8 locale 동등.
+- 누락 원인: R11 이전에 추가된 키들 (addressbar / sidebar / status / modal-delete / modal-identity / modal-iso / modal-usb / progress / result / filelist.col / error) 이 secondary locale 에서 en fallback 만 의존.
+- 검증: cargo fmt / clippy / deny / test (145) / 8 locale json valid 모두 clean. HTML/JS 참조 169 키 모두 정의됨.
 
 ---
 
