@@ -3,6 +3,7 @@
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use tauri::Emitter; // Tauri 2.x: emit는 Emitter trait의 method
+use tauri::Manager; // try_state
 
 fn write_secret_json(path: &Path, data: &[u8]) -> std::io::Result<()> {
     use std::io::Write;
@@ -807,6 +808,60 @@ pub struct PackUnpackProgress {
 const STDERR_LINE_MAX_BYTES: usize = 8 * 1024; // 라인 1개당 8 KB 캡
 const STDERR_TOTAL_MAX_BYTES: usize = 256 * 1024; // 누적 256 KB 캡 (이후 라인은 폐기)
 
+/// R30: 현재 실행 중인 pack/unpack 자식 PID. cancel_running_job 이 SIGTERM 발사.
+/// 단일 동시 작업만 추적 — 새 작업이 시작하면 이전 PID 가 덮어쓰여짐.
+#[derive(Default)]
+pub struct RunningJob(pub std::sync::Mutex<Option<u32>>);
+
+/// 현재 PID 등록. drop 시 자동 해제 (RAII).
+struct JobGuard<'a>(Option<&'a RunningJob>);
+impl Drop for JobGuard<'_> {
+    fn drop(&mut self) {
+        if let Some(j) = self.0 {
+            if let Ok(mut g) = j.0.lock() {
+                *g = None;
+            }
+        }
+    }
+}
+
+#[tauri::command]
+pub fn cancel_running_job(state: tauri::State<'_, RunningJob>) -> Result<bool, String> {
+    let pid = {
+        let g = state.0.lock().map_err(|e| format!("lock: {}", e))?;
+        *g
+    };
+    let pid = match pid {
+        Some(p) => p,
+        None => return Ok(false),
+    };
+    #[cfg(unix)]
+    {
+        // SIGTERM 우선 — child 가 정리할 기회를 줌. spawn_with_progress 의 stderr loop
+        // 가 EOF 받으면 자연스럽게 종료, 외부에서 cleanup_temp_dir 등은 호출자가 처리.
+        let r = unsafe { libc::kill(pid as libc::pid_t, libc::SIGTERM) };
+        if r != 0 {
+            // ESRCH (3) — 이미 죽었음, 정상 응답
+            let err = std::io::Error::last_os_error();
+            if err.raw_os_error() == Some(3) {
+                return Ok(false);
+            }
+            return Err(format!("kill({}) failed: {}", pid, err));
+        }
+    }
+    #[cfg(windows)]
+    {
+        let status = std::process::Command::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .status()
+            .map_err(|e| format!("taskkill spawn: {}", e))?;
+        if !status.success() {
+            return Err(format!("taskkill PID {} returned non-zero", pid));
+        }
+    }
+    Ok(true)
+}
+
 fn spawn_with_progress(
     cmd: &mut std::process::Command,
     app: Option<&tauri::AppHandle>,
@@ -820,6 +875,17 @@ fn spawn_with_progress(
     let mut child = cmd
         .spawn()
         .map_err(|e| format!("qsafe 실행 실패 (spawn): {}", e))?;
+    let child_pid = child.id();
+
+    // R30: PID 를 RunningJob 에 등록 — cancel_running_job 이 SIGTERM/taskkill 가능.
+    let job_state = app.and_then(|a| a.try_state::<RunningJob>());
+    if let Some(ref j) = job_state {
+        if let Ok(mut g) = j.0.lock() {
+            *g = Some(child_pid);
+        }
+    }
+    // 함수 끝에서 자동 해제. job_state 가 None 이면 no-op.
+    let _guard = JobGuard(job_state.as_deref());
 
     let stderr = child
         .stderr

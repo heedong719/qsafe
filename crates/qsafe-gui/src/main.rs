@@ -16,9 +16,11 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(args)
+        .manage(commands::RunningJob::default())
         .invoke_handler(tauri::generate_handler![
             commands::startup_args,
             commands::check_for_update,
+            commands::cancel_running_job,
             commands::about,
             commands::file_info,
             commands::identity_generate,

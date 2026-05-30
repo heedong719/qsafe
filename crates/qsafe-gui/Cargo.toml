@@ -43,3 +43,6 @@ zip = { workspace = true }
 md-5 = "0.10"
 # R16: About 모달의 "업데이트 확인" 버튼 — GitHub Releases API 호출 (blocking, tokio 없음)
 ureq = { version = "2", default-features = false, features = ["tls", "json"] }
+# R30: cancel_running_job 의 SIGTERM 발사 (Unix 전용). Windows 는 taskkill 사용.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

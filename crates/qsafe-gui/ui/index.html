@@ -1087,7 +1087,14 @@
       if (r) document.getElementById("m-pack-pk").value = r;
     } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
-  document.getElementById("btn-pack-cancel").addEventListener("click", () => closeModal("modal-pack"));
+  document.getElementById("btn-pack-cancel").addEventListener("click", async () => {
+    // R30: 진행 중이면 child kill — spawn_with_progress 의 stderr loop 가 EOF 받고 정상 종료.
+    const prog = document.getElementById("m-pack-prog");
+    if (prog && prog.style.display !== "none") {
+      try { await invoke("cancel_running_job"); } catch (_) {}
+    }
+    closeModal("modal-pack");
+  });
   document.getElementById("btn-pack-go").addEventListener("click", async () => {
     const output = document.getElementById("pack-output").value;
     const mode = document.querySelector('input[name="m-pack-mode"]:checked').value;
@@ -1191,7 +1198,13 @@
       if (r) document.getElementById("m-unpack-id").value = r;
     } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
-  document.getElementById("btn-unpack-cancel").addEventListener("click", () => closeModal("modal-unpack"));
+  document.getElementById("btn-unpack-cancel").addEventListener("click", async () => {
+    const prog = document.getElementById("m-unpack-prog");
+    if (prog && prog.style.display !== "none") {
+      try { await invoke("cancel_running_job"); } catch (_) {}
+    }
+    closeModal("modal-unpack");
+  });
   document.getElementById("btn-unpack-go").addEventListener("click", async () => {
     const input = document.getElementById("unpack-input").value;
     const output = document.getElementById("unpack-output").value;

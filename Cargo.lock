@@ -3382,6 +3382,7 @@ dependencies = [
  "anyhow",
  "bip39",
  "hex",
+ "libc",
  "md-5",
  "qsafe-core",
  "qsafe-crypto",
