@@ -274,5 +274,6 @@
   "modal.key.overwrite_confirm": "已存在同名文件。覆盖吗?",
   "filelist.sort_tip": "排序",
   "modal.shortcuts.multi_kbd": "键盘扩展范围选择",
-  "modal.shortcuts.select_all": "选择当前文件夹全部 (过滤后)"
+  "modal.shortcuts.select_all": "选择当前文件夹全部 (过滤后)",
+  "modal.about.auto_check": "启动时自动检查更新 (24 小时节流)"
 }

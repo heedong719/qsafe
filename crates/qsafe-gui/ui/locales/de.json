@@ -274,5 +274,6 @@
   "modal.key.overwrite_confirm": "Eine gleichnamige Datei existiert. Überschreiben?",
   "filelist.sort_tip": "Sortieren",
   "modal.shortcuts.multi_kbd": "Bereichsauswahl per Tastatur erweitern",
-  "modal.shortcuts.select_all": "Alles im aktuellen Ordner auswählen (gefiltert)"
+  "modal.shortcuts.select_all": "Alles im aktuellen Ordner auswählen (gefiltert)",
+  "modal.about.auto_check": "Beim Start automatisch nach Updates suchen (24-h-Throttle)"
 }

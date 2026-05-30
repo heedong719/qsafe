@@ -274,5 +274,6 @@
   "modal.key.overwrite_confirm": "Un fichier portant le même nom existe. Écraser ?",
   "filelist.sort_tip": "Trier",
   "modal.shortcuts.multi_kbd": "Étendre la sélection au clavier",
-  "modal.shortcuts.select_all": "Tout sélectionner dans le dossier (filtré)"
+  "modal.shortcuts.select_all": "Tout sélectionner dans le dossier (filtré)",
+  "modal.about.auto_check": "Vérifier les mises à jour automatiquement au démarrage (limite 24 h)"
 }

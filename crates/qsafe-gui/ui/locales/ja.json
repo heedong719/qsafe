@@ -274,5 +274,6 @@
   "modal.key.overwrite_confirm": "同名ファイルがあります。上書きしますか?",
   "filelist.sort_tip": "並び替え",
   "modal.shortcuts.multi_kbd": "キーボードで範囲選択を拡張",
-  "modal.shortcuts.select_all": "現フォルダ全選択 (フィルタ通過行)"
+  "modal.shortcuts.select_all": "現フォルダ全選択 (フィルタ通過行)",
+  "modal.about.auto_check": "起動時に自動でアップデートを確認 (24 時間スロットル)"
 }

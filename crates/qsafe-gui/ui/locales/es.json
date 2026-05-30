@@ -274,5 +274,6 @@
   "modal.key.overwrite_confirm": "Ya existe un archivo con ese nombre. ¿Sobrescribir?",
   "filelist.sort_tip": "Ordenar",
   "modal.shortcuts.multi_kbd": "Extender selección por teclado",
-  "modal.shortcuts.select_all": "Seleccionar todo en carpeta actual (filtrado)"
+  "modal.shortcuts.select_all": "Seleccionar todo en carpeta actual (filtrado)",
+  "modal.about.auto_check": "Buscar actualizaciones automáticamente al iniciar (cada 24 h)"
 }

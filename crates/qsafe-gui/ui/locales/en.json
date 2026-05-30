@@ -274,5 +274,6 @@
   "modal.key.overwrite_confirm": "A file with the same name exists. Overwrite?",
   "filelist.sort_tip": "Sort",
   "modal.shortcuts.multi_kbd": "Extend range selection by keyboard",
-  "modal.shortcuts.select_all": "Select all in current folder (filtered)"
+  "modal.shortcuts.select_all": "Select all in current folder (filtered)",
+  "modal.about.auto_check": "Auto-check for updates on startup (24 h throttle)"
 }
