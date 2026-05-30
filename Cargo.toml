@@ -18,7 +18,7 @@ members = [
 #   crates/qsafe-shell-*     (OS 통합)
 
 [workspace.package]
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 rust-version = "1.80"
 authors = ["heedong719 <heedong719@gmail.com>"]
