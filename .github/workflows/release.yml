@@ -18,18 +18,33 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # === 64-bit ===
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             ext: ""
+            arch_label: "linux-x86_64"
           - target: aarch64-apple-darwin
             os: macos-latest
             ext: ""
+            arch_label: "macos-arm64"
           - target: x86_64-apple-darwin
             os: macos-latest
             ext: ""
+            arch_label: "macos-x86_64"
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             ext: ".exe"
+            arch_label: "windows-x86_64"
+          # === 32-bit (사용자 요청, R54 추가) ===
+          # macOS 32-bit: OS 차원에서 Catalina (10.15) 이후 미지원 — 대상 제외.
+          - target: i686-unknown-linux-gnu
+            os: ubuntu-latest
+            ext: ""
+            arch_label: "linux-i686"
+          - target: i686-pc-windows-msvc
+            os: windows-latest
+            ext: ".exe"
+            arch_label: "windows-i686"
 
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +56,22 @@ jobs:
 
       # Linux: hidapi (ctap-hid-fido2 transitive)가 libudev를 요구.
       - name: Install Linux deps (libudev for hidapi)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.target == 'x86_64-unknown-linux-gnu'
         run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
+
+      # 32-bit Linux: i386 멀티-arch 활성 + gcc-multilib + 32비트 libudev.
+      - name: Install Linux i686 deps
+        if: runner.os == 'Linux' && matrix.target == 'i686-unknown-linux-gnu'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-multilib \
+            libudev-dev:i386 \
+            pkg-config
+
+      # Windows i686 toolchain (rustup target add 는 dtolnay/rust-toolchain 이 처리).
+      # tauri-bundler 의 cargo build 가 i686 MSVC linker 를 자동 선택.
 
       # qsafe CLI + qsafe-stub 두 binary를 동시에 빌드한다.
       # qsafe-stub은 `qsafe pack --sfx` 출력에 prepend되므로 같은 release에 포함되어야 한다.
@@ -54,6 +83,7 @@ jobs:
       - name: Strip (Unix)
         if: runner.os != 'Windows'
         run: |
+          # i686 32-bit binary 도 strip 됨 (host strip 이 ELF32 지원)
           strip target/${{ matrix.target }}/release/qsafe
           strip target/${{ matrix.target }}/release/qsafe-stub
 
@@ -98,14 +128,21 @@ jobs:
             os: macos-13
             rust_target: x86_64-apple-darwin
             bundle_pattern: "src-tauri/target/${{ '' }}release/bundle/{dmg,macos}/*"
-          - platform: windows
+          - platform: windows-x86_64
             os: windows-latest
             rust_target: x86_64-pc-windows-msvc
             bundle_pattern: "src-tauri/target/${{ '' }}release/bundle/{msi,nsis}/*"
-          - platform: linux
+          - platform: linux-x86_64
             os: ubuntu-22.04
             rust_target: x86_64-unknown-linux-gnu
             bundle_pattern: "src-tauri/target/${{ '' }}release/bundle/{deb,appimage}/*"
+          # R54: 32-bit Windows GUI bundle — i686 MSVC + i686 WebView2
+          # macOS GUI 32-bit: OS 미지원 (제외)
+          # Linux GUI 32-bit: libwebkit2gtk-4.1-dev:i386 가 Ubuntu 22.04 에 없음 → 제외.
+          - platform: windows-i686
+            os: windows-latest
+            rust_target: i686-pc-windows-msvc
+            bundle_pattern: "src-tauri/target/${{ '' }}release/bundle/{msi,nsis}/*"
 
     steps:
       - uses: actions/checkout@v4
