@@ -1162,18 +1162,61 @@
       document.getElementById("pack-input").dataset.multi = "";
       document.getElementById("pack-output").value = e.path + ".qs";
     }
-    // 기본 = qsafe-open: pw/pk 모두 숨김
-    document.querySelector('input[name="m-pack-mode"][value="qsafe-open"]').checked = true;
-    document.getElementById("m-pack-pw-row").style.display = "none";
-    document.getElementById("m-pack-pk-row").style.display = "none";
+    // R49: 저장된 default 복원 — 마지막 사용 값 또는 fall back.
+    const prefs = loadPackPrefs();
+    const mode = prefs.mode || "qsafe-open";
+    const modeRadio = document.querySelector('input[name="m-pack-mode"][value="' + mode + '"]');
+    if (modeRadio) modeRadio.checked = true;
+    else document.querySelector('input[name="m-pack-mode"][value="qsafe-open"]').checked = true;
+    document.getElementById("pack-compression").value = prefs.compression || "auto";
+    document.getElementById("pack-profile").value = prefs.profile || "standard";
+    document.getElementById("pack-sfx").checked = !!prefs.sfx;
+    document.getElementById("pack-md5").checked = !!prefs.md5;
+    document.getElementById("pack-add-label").checked = !!prefs.label;
+    // pw/pk row 가시성 — mode 에 따라
+    document.getElementById("m-pack-pw-row").style.display =
+      (mode === "password" || mode === "both") ? "" : "none";
+    document.getElementById("m-pack-pk-row").style.display =
+      (mode === "pubkey" || mode === "both") ? "" : "none";
     var goBtn = document.getElementById("btn-pack-go");
-    goBtn.textContent = "🚀 시작";
+    goBtn.textContent = qsafeI18n.t("modal.pack.go");
     goBtn.onclick = null;
     document.getElementById("m-pack-pw").value = "";
     document.getElementById("m-pack-pk").value = "";
     document.getElementById("m-pack-result").style.display = "none";
     document.getElementById("m-pack-prog").style.display = "none";
     openModal("modal-pack");
+  });
+
+  // R49: pack 옵션 영구 저장 — 마지막 사용 값을 다음 호출에 자동 복원
+  const PACK_PREFS_KEY = "qsafe-pack-prefs";
+  function loadPackPrefs() {
+    try {
+      const raw = localStorage.getItem(PACK_PREFS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (_) { return {}; }
+  }
+  function savePackPrefs() {
+    try {
+      const checked = document.querySelector('input[name="m-pack-mode"]:checked');
+      const prefs = {
+        mode: checked ? checked.value : "qsafe-open",
+        compression: document.getElementById("pack-compression").value,
+        profile: document.getElementById("pack-profile").value,
+        sfx: document.getElementById("pack-sfx").checked,
+        md5: document.getElementById("pack-md5").checked,
+        label: document.getElementById("pack-add-label").checked,
+      };
+      localStorage.setItem(PACK_PREFS_KEY, JSON.stringify(prefs));
+    } catch (_) {}
+  }
+  // 모든 옵션 element 의 change 이벤트에 savePackPrefs 부착
+  ["pack-compression","pack-profile","pack-sfx","pack-md5","pack-add-label"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", savePackPrefs);
+  });
+  document.querySelectorAll('input[name="m-pack-mode"]').forEach(r => {
+    r.addEventListener("change", savePackPrefs);
   });
   document.querySelectorAll('input[name="m-pack-mode"]').forEach(r => {
     r.addEventListener("change", function() {
