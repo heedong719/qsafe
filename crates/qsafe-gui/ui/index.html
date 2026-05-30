@@ -1868,10 +1868,9 @@
         if (sortState.key === k) sortState.asc = !sortState.asc;
         else { sortState.key = k; sortState.asc = true; }
         sortEntries();
-        // 즉시 re-render
-        if (typeof renderEntries === "function") {
-          try { renderEntries(); } catch (_) {}
-        }
+        // R42: 즉시 re-render — 정확한 함수명은 renderFileList. 이전엔 존재하지 않는 'renderEntries'
+        // 를 검사해서 항상 false → 정렬 결과가 UI 에 반영 안 되는 사일런트 버그였음.
+        try { renderFileList(); } catch (_) {}
       });
     });
   })();
