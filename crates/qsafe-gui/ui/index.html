@@ -1223,7 +1223,10 @@
     document.getElementById("m-pack-result").style.display = "none";
     resetProgress("pack");
     try {
-      const isMulti = document.getElementById("pack-input").dataset.multi === "1" && selectedSet.size > 1;
+      // R47: dataset.multi === "1" 면 다중 (selectedSet 또는 dataset.multiPaths 둘 다 source 가능)
+      const multiPathsAttr = document.getElementById("pack-input").dataset.multiPaths;
+      const isMulti = document.getElementById("pack-input").dataset.multi === "1" &&
+        (selectedSet.size > 1 || !!multiPathsAttr);
       const e_sel = entries[selectedIdx];
       const realInput = e_sel ? e_sel.path : document.getElementById("pack-input").value;
       let r;
@@ -1244,7 +1247,15 @@
         const addLabel = document.getElementById("pack-add-label").checked;
         const labelVal = addLabel ? (new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19) : null;
         if (isMulti) {
-          const inputs = Array.from(selectedSet).map(i => entries[i]).filter(Boolean).map(e => e.path);
+          // selectedSet (R31 mouse + R39 keyboard) 또는 dataset.multiPaths (R47 drop) 에서 inputs 추출
+          let inputs;
+          if (selectedSet.size > 1) {
+            inputs = Array.from(selectedSet).map(i => entries[i]).filter(Boolean).map(e => e.path);
+          } else if (multiPathsAttr) {
+            try { inputs = JSON.parse(multiPathsAttr); } catch (_) { inputs = []; }
+          } else {
+            inputs = [];
+          }
           r = await invoke("pack_multiple_to_qsafe", { inputs, output, password, pubkeys, noPassword, force: true, openMode, compression: comp, profile: profile, sfx: sfx, label: labelVal, includeMd5 });
         } else {
           // SFX는 패스워드 필수 (open도 기본 패스워드라 가능)
@@ -1712,21 +1723,30 @@
         const paths = (ev.payload && ev.payload.paths) || ev.payload || [];
         if (!Array.isArray(paths) || paths.length === 0) return;
         const first = paths[0];
-        // .qs/.qsx/.zip/.rar/.7z 등은 정보 모달, 그 외는 압축 모달 prefill
-        const lower = String(first).toLowerCase();
-        if (lower.endsWith(".qs") || lower.endsWith(".qsx") ||
-            lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".7z") ||
-            lower.endsWith(".tar") || lower.endsWith(".gz") || lower.endsWith(".xz") ||
-            lower.endsWith(".bz2")) {
-          openInfoModal(first);
-        } else if (/\.(iso|img|dmg)$/i.test(first)) {
-          openIsoModal(first);
-        } else {
-          // 일반 파일/폴더 → 압축 모달 prefill (btn-pack의 기존 로직 재사용)
-          // entries에 해당 path가 없을 수도 있으니 직접 prefill
+        const isArchive = (p) => /\.(qs|qsx|zip|rar|7z|tar|gz|xz|bz2)$/i.test(String(p));
+        const isDisc    = (p) => /\.(iso|img|dmg)$/i.test(String(p));
+        // R47: 다중 drop 라우팅 —
+        //  · 1개: 기존 동작 (아카이브/디스크/일반 분기)
+        //  · 2+개 + 첫 항목이 아카이브/디스크: 첫 항목만 처리 (혼합 drop 정책 — 사용자 의도 모호)
+        //  · 2+개 + 모두 일반 파일: multi-pack bundle (R32) — pack-input 표시 + selectedSet 가상 채움
+        if (paths.length === 1) {
+          if (isArchive(first))   { openInfoModal(first); return; }
+          if (isDisc(first))      { openIsoModal(first);  return; }
+        } else if (paths.length > 1) {
+          if (isArchive(first) || isDisc(first)) {
+            // 혼합/특수 형식 다중 — 첫 항목만
+            if (isArchive(first)) openInfoModal(first);
+            else openIsoModal(first);
+            return;
+          }
+          // 모두 일반 파일/폴더 (또는 첫 항목이 그러함) → multi-pack
           try {
-            document.getElementById("pack-input").value = first;
-            document.getElementById("pack-output").value = first + ".qs";
+            const parent = first.replace(/[\\/][^\\/]+$/, "");
+            const display = qsafeI18n.t("modal.pack.multi_input", { count: paths.length });
+            document.getElementById("pack-input").value = display;
+            document.getElementById("pack-input").dataset.multi = "1";
+            document.getElementById("pack-input").dataset.multiPaths = JSON.stringify(paths);
+            document.getElementById("pack-output").value = parent + "/qsafe-bundle.qs";
             document.querySelector('input[name="m-pack-mode"][value="qsafe-open"]').checked = true;
             document.getElementById("m-pack-pw-row").style.display = "none";
             document.getElementById("m-pack-pk-row").style.display = "none";
@@ -1735,9 +1755,27 @@
             document.getElementById("m-pack-result").style.display = "none";
             document.getElementById("m-pack-prog").style.display = "none";
             openModal("modal-pack");
+            return;
           } catch (e) {
             showErr(qsafeI18n.tErr("error.drop_failed", e));
+            return;
           }
+        }
+        // 단일 일반 파일 — 기존 prefill
+        try {
+          document.getElementById("pack-input").value = first;
+          document.getElementById("pack-input").dataset.multi = "";
+          document.getElementById("pack-output").value = first + ".qs";
+          document.querySelector('input[name="m-pack-mode"][value="qsafe-open"]').checked = true;
+          document.getElementById("m-pack-pw-row").style.display = "none";
+          document.getElementById("m-pack-pk-row").style.display = "none";
+          document.getElementById("m-pack-pw").value = "";
+          document.getElementById("m-pack-pk").value = "";
+          document.getElementById("m-pack-result").style.display = "none";
+          document.getElementById("m-pack-prog").style.display = "none";
+          openModal("modal-pack");
+        } catch (e) {
+          showErr(qsafeI18n.tErr("error.drop_failed", e));
         }
       };
       // Tauri 2.x: tauri://drag-drop, 'drop' 둘 다 시도
