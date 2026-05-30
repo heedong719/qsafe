@@ -1,6 +1,18 @@
 # 다음 사이클 — 무한 반복 분석 재개 지점
 
-다른 컴퓨터 / 다음 세션에서 이 파일을 읽고 바로 R47 부터 이어서 진행.
+다른 컴퓨터 / 다음 세션에서 이 파일을 읽고 바로 R54 부터 이어서 진행.
+
+## audit 도구 영구화 (R53 신규)
+
+```bash
+python3 scripts/audit.py
+# 13 차원 정적 audit: i18n parity + HTML 참조 + getElementById + querySelector
+# + invoke + typeof + listen↔emit + version + Tauri unwrap + JSON valid
+# + Cargo.lock + Tauri cmd def↔reg
+# exit 0 = clean, exit 1 = 1+ finding
+```
+
+매 사이클 시작 시 이 명령으로 baseline 확인.
 
 ## 즉시 재개 명령
 

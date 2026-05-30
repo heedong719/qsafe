@@ -66,7 +66,17 @@
 - **R45** Tauri command panic-prone 패턴 — 0 .unwrap()/.expect() 검출.
 - **R46** 종합 audit (fmt/clippy/deny/test + i18n parity + ID matching + invoke matching + typeof + version align) — 0 issues.
 
-### 최종 상태 (R46 stopping — 2회차 3 연속 0)
+### R47~R53: Polish V — UX 확장 + audit infra 영구화
+- **R47 (fc700ef)** drag-drop 다중 파일 → multi-pack (R32 backend 재사용).
+- **R48 (a55c18b)** About 모달 "자동 업데이트 확인" 체크박스 (R17 silent check UI 노출).
+- **R49 (571766c)** modal-pack 옵션 영구 저장 — mode/compression/profile/sfx/md5/label localStorage.
+- **R50 (c413006)** modal-unpack mode 영구 저장 (R49 mirror).
+- **R51** 0 finding (false positive — audit 정규식 `[^)]*` greedy 매칭).
+- **R52** 0 finding (install scripts + JSON + Cargo.lock + git sync 모두 clean).
+- **R53** 0 finding (false positive — `#[tauri::command]` 와 `pub fn` 사이 attribute + 주석 처리 못함).
+- **`scripts/audit.py` 신규** — 13 차원 정적 audit 영구 도구화. 사용: `python3 scripts/audit.py` → 0 exit = clean.
+
+### 최종 상태 (R53 stopping — 3회차 3 연속 0)
 - workspace tests: **145 / 0 fail**
 - 8 locale × 271 keys (R39 +2) — drift 0
 - 정적 audit: getElementById ⊆ id=, querySelector ⊆ id=/class=, invoke ⊆ tauri::command, emit ↔ listen 완전 매칭
