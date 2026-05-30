@@ -1682,7 +1682,19 @@
           }
           // 선택된 row 가 viewport 안에 있도록 scroll
           const row = document.querySelector('.filelist-row[data-idx="' + visible[newPos] + '"]');
-          if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest", behavior: "instant" });
+          if (row && row.scrollIntoView) {
+            row.scrollIntoView({ block: "nearest", behavior: "instant" });
+          } else if (visibleEntries.length > VIRTUAL_THRESHOLD) {
+            // R41: 가상 모드 — 새 cursor 가 DOM 에 없을 수 있음. body.scrollTop 직접 조정.
+            const body = document.getElementById("filelist-body");
+            const target = newPos * ROW_HEIGHT;
+            if (target < body.scrollTop) {
+              body.scrollTop = target;
+            } else if (target + ROW_HEIGHT > body.scrollTop + body.clientHeight) {
+              body.scrollTop = target + ROW_HEIGHT - body.clientHeight;
+            }
+            // scroll 이벤트가 renderVirtualWindow 트리거 — 새 cursor 가 viewport 안에 그려짐.
+          }
           return;
         }
       }
