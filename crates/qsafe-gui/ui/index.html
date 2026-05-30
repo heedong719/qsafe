@@ -497,6 +497,9 @@
       <kbd>Cmd / Ctrl + R</kbd> <span data-i18n="modal.shortcuts.refresh">새로고침 (대안)</span>
       <kbd>Cmd / Ctrl + ,</kbd> <span data-i18n="modal.shortcuts.lang">언어 선택</span>
       <kbd>Cmd / Ctrl + F</kbd> <span data-i18n="modal.shortcuts.find">현재 폴더 검색</span>
+      <kbd>↑ / ↓</kbd> <span data-i18n="modal.shortcuts.nav_arrow">이전 / 다음 항목 선택</span>
+      <kbd>Home / End</kbd> <span data-i18n="modal.shortcuts.nav_edge">첫 / 마지막 항목</span>
+      <kbd>PgUp / PgDn</kbd> <span data-i18n="modal.shortcuts.nav_page">한 페이지 (10 항목) 이동</span>
     </div>
     <p class="help" style="margin-top:14px;" data-i18n="modal.shortcuts.dnd">💡 폴더 / 파일을 창에 드래그-드롭하면 압축 모달이 자동으로 열립니다 (.qs / .iso 는 자동 라우팅).</p>
     <div class="actions">
@@ -1445,6 +1448,42 @@
       const f = document.getElementById("filter");
       if (f) { f.focus(); f.select(); }
       return;
+    }
+    // R29: 파일 리스트 키보드 navigation — Arrow/Home/End/PageUp/PageDown/Enter.
+    // input/textarea 포커스 또는 modal 열림 시 비활성.
+    if (!inInput) {
+      const anyModalOpen = !!document.querySelector(".modal-bg.show");
+      if (!anyModalOpen) {
+        const visible = []; // entries[]의 인덱스 중 filter 통과 + DOM에 표시된 것
+        for (let i = 0; i < entries.length; i++) {
+          if (matchesFilter(entries[i])) visible.push(i);
+        }
+        if (visible.length === 0) return;
+        // 현재 selectedIdx의 visible 위치
+        let pos = visible.indexOf(selectedIdx);
+        if (pos < 0) pos = -1;
+        let newPos = null;
+        const PAGE = 10;
+        switch (e.key) {
+          case "ArrowDown": newPos = Math.min(visible.length - 1, pos + 1); break;
+          case "ArrowUp":   newPos = Math.max(0, pos - 1); break;
+          case "Home":      newPos = 0; break;
+          case "End":       newPos = visible.length - 1; break;
+          case "PageDown":  newPos = Math.min(visible.length - 1, pos + PAGE); break;
+          case "PageUp":    newPos = Math.max(0, pos - PAGE); break;
+          case "Enter":
+            if (selectedIdx >= 0) { e.preventDefault(); activateRow(selectedIdx); return; }
+            break;
+        }
+        if (newPos !== null && newPos >= 0 && newPos !== pos) {
+          e.preventDefault();
+          selectRow(visible[newPos]);
+          // 선택된 row 가 viewport 안에 있도록 scroll
+          const row = document.querySelector('.filelist-row[data-idx="' + visible[newPos] + '"]');
+          if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest", behavior: "instant" });
+          return;
+        }
+      }
     }
   });
 

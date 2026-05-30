@@ -239,5 +239,8 @@
   "sidebar.home": "Startseite",
   "sidebar.places": "Orte",
   "status.items": "{count} Elemente",
-  "status.selection": "Ausgewählt: {name} ({size})"
+  "status.selection": "Ausgewählt: {name} ({size})",
+  "modal.shortcuts.nav_arrow": "Vorheriges / nächstes Element",
+  "modal.shortcuts.nav_edge": "Erstes / letztes Element",
+  "modal.shortcuts.nav_page": "Eine Seite (10 Elemente)"
 }

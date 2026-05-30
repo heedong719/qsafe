@@ -239,5 +239,8 @@
   "sidebar.home": "Home",
   "sidebar.places": "Percorsi",
   "status.items": "{count} elementi",
-  "status.selection": "Selezionato: {name} ({size})"
+  "status.selection": "Selezionato: {name} ({size})",
+  "modal.shortcuts.nav_arrow": "Seleziona precedente / successivo",
+  "modal.shortcuts.nav_edge": "Primo / ultimo elemento",
+  "modal.shortcuts.nav_page": "Una pagina (10 elementi)"
 }

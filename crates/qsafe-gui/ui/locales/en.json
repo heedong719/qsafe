@@ -239,5 +239,8 @@
   "kind.folder": "Folder",
   "modal.shortcuts.find": "Search current folder",
   "modal.pack.pubkey_placeholder": "friend.pub.json",
-  "modal.unpack.identity_placeholder": "my-key.json"
+  "modal.unpack.identity_placeholder": "my-key.json",
+  "modal.shortcuts.nav_arrow": "Select previous / next item",
+  "modal.shortcuts.nav_edge": "First / last item",
+  "modal.shortcuts.nav_page": "Move one page (10 items)"
 }

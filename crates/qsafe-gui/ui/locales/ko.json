@@ -239,5 +239,8 @@
   "kind.folder": "폴더",
   "modal.shortcuts.find": "현재 폴더 검색",
   "modal.pack.pubkey_placeholder": "친구.pub.json",
-  "modal.unpack.identity_placeholder": "내키.json"
+  "modal.unpack.identity_placeholder": "내키.json",
+  "modal.shortcuts.nav_arrow": "이전 / 다음 항목 선택",
+  "modal.shortcuts.nav_edge": "첫 / 마지막 항목",
+  "modal.shortcuts.nav_page": "한 페이지 (10 항목) 이동"
 }

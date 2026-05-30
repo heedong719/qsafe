@@ -239,5 +239,8 @@
   "sidebar.home": "ホーム",
   "sidebar.places": "場所",
   "status.items": "{count} 項目",
-  "status.selection": "選択: {name} ({size})"
+  "status.selection": "選択: {name} ({size})",
+  "modal.shortcuts.nav_arrow": "前 / 次の項目を選択",
+  "modal.shortcuts.nav_edge": "最初 / 最後の項目",
+  "modal.shortcuts.nav_page": "1 ページ (10 項目) 移動"
 }

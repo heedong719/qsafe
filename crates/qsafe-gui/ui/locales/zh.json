@@ -239,5 +239,8 @@
   "sidebar.home": "主页",
   "sidebar.places": "位置",
   "status.items": "{count} 项",
-  "status.selection": "已选: {name} ({size})"
+  "status.selection": "已选: {name} ({size})",
+  "modal.shortcuts.nav_arrow": "选择上一项 / 下一项",
+  "modal.shortcuts.nav_edge": "第一项 / 最后一项",
+  "modal.shortcuts.nav_page": "翻页 (10 项)"
 }

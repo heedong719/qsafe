@@ -239,5 +239,8 @@
   "sidebar.home": "Inicio",
   "sidebar.places": "Lugares",
   "status.items": "{count} elementos",
-  "status.selection": "Seleccionado: {name} ({size})"
+  "status.selection": "Seleccionado: {name} ({size})",
+  "modal.shortcuts.nav_arrow": "Seleccionar anterior / siguiente",
+  "modal.shortcuts.nav_edge": "Primer / último elemento",
+  "modal.shortcuts.nav_page": "Avanzar una página (10)"
 }
