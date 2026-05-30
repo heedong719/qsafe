@@ -263,5 +263,14 @@
   "result.source_size": "Taille source",
   "result.packed_size": "Taille compressée",
   "result.output_path": "Chemin de sortie",
-  "result.saved_amount": "{amount} économisé"
+  "result.saved_amount": "{amount} économisé",
+  "result.unpack_success": "✅ Décompression réussie ! (durée : {elapsed})",
+  "result.untarred": "📁 Restauré dans un dossier ({count} fichiers)",
+  "result.restored_path": "Restauré dans",
+  "result.restored_size": "Taille restaurée",
+  "dialog.restore_to": "Restaurer dans",
+  "dialog.my_secret": "Mon fichier de clé privée",
+  "dialog.key_save_to": "Enregistrer la clé dans",
+  "modal.key.overwrite_confirm": "Un fichier portant le même nom existe. Écraser ?",
+  "filelist.sort_tip": "Trier"
 }

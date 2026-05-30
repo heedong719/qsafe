@@ -1256,13 +1256,13 @@
   });
   document.getElementById("btn-unpack-pick").addEventListener("click", async () => {
     try {
-      const r = await pickSave({ title: "복원 저장 위치", defaultPath: document.getElementById("unpack-output").value });
+      const r = await pickSave({ title: qsafeI18n.t("dialog.restore_to"), defaultPath: document.getElementById("unpack-output").value });
       if (r) document.getElementById("unpack-output").value = r;
     } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
   document.getElementById("btn-unpack-id-pick").addEventListener("click", async () => {
     try {
-      const r = await pickFile({ title: "내 비밀키 파일", filters: [{ name: "identity", extensions: ["json"] }] });
+      const r = await pickFile({ title: qsafeI18n.t("dialog.my_secret"), filters: [{ name: "identity", extensions: ["json"] }] });
       if (r) document.getElementById("m-unpack-id").value = r;
     } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
@@ -1294,24 +1294,24 @@
       var unpackStartTs = Date.now();
       const r = await invoke("unpack_qsafe_ext", { input, output, password, identity, force: true, openMode, computeMd5: true });
       var elapsed = ((Date.now() - unpackStartTs) / 1000).toFixed(1) + "s";
-      var msg = "✅ 풀기 성공! (걸린 시간: " + elapsed + ")\n\n";
+      var msg = qsafeI18n.t("result.unpack_success", { elapsed }) + "\n\n";
       if (r.untarred_dir) {
-        msg += "📁 폴더로 자동 복원 (" + r.file_count + "개 파일)\n";
-        msg += "복원 위치 : " + r.untarred_dir + "\n";
+        msg += qsafeI18n.t("result.untarred", { count: r.file_count }) + "\n";
+        msg += qsafeI18n.t("result.restored_path") + " : " + r.untarred_dir + "\n";
       } else {
-        msg += "복원 위치 : " + r.output_path + "\n";
-        msg += "복원 크기 : " + fmtBytes(r.bytes_written) + "\n";
+        msg += qsafeI18n.t("result.restored_path") + " : " + r.output_path + "\n";
+        msg += qsafeI18n.t("result.restored_size") + " : " + fmtBytes(r.bytes_written) + "\n";
       }
       if (r.restored_md5) msg += "\n🔐 MD5 : " + r.restored_md5;
-      if (r.md5_file_path) msg += "\n   .md5 사이드카 : " + r.md5_file_path;
-      if (r.original_md5_matches === true) msg += "\n\n✅ 원본 MD5와 일치 — 변조 없음!";
-      else if (r.original_md5_matches === false) msg += "\n\n❌ MD5 불일치! 원본: " + r.original_md5_value + " — 변조 가능성!";
+      if (r.md5_file_path) msg += "\n   " + qsafeI18n.t("result.md5_sidecar") + " : " + r.md5_file_path;
+      if (r.original_md5_matches === true) msg += "\n\n" + qsafeI18n.t("result.md5_match");
+      else if (r.original_md5_matches === false) msg += "\n\n" + qsafeI18n.t("result.md5_mismatch", { expected: r.original_md5_value });
       setResult("m-unpack-result", msg, "ok");
       navigateTo(currentPath, false);
       document.getElementById("m-unpack-prog").style.display = "none";
       var ugBtn = document.getElementById("btn-unpack-go");
       ugBtn.disabled = false;
-      ugBtn.textContent = "✅ 완료 — 닫기";
+      ugBtn.textContent = qsafeI18n.t("modal.unpack.close");
       ugBtn.onclick = function() { closeModal("modal-unpack"); };
       return;
     } catch (e) {
@@ -1385,7 +1385,7 @@
   });
   document.getElementById("btn-key-pick").addEventListener("click", async () => {
     try {
-      const r = await pickSave({ title: "키 파일 저장 위치", defaultPath: document.getElementById("m-key-path").value, filters: [{ name: "identity", extensions: ["json"] }] });
+      const r = await pickSave({ title: qsafeI18n.t("dialog.key_save_to"), defaultPath: document.getElementById("m-key-path").value, filters: [{ name: "identity", extensions: ["json"] }] });
       if (r) document.getElementById("m-key-path").value = r;
     } catch (e) { showErr(qsafeI18n.tErr("error.pick_failed", e)); }
   });
@@ -1398,8 +1398,8 @@
       try { s = await invoke("identity_generate", { outputPath: path, force: false }); }
       catch (e) {
         const m = String(e.message || e);
-        if (m.indexOf("이미") !== -1 || m.indexOf("덮어쓰기") !== -1) {
-          if (!confirm("같은 이름의 파일이 있어요. 덮어쓸까요?")) { document.getElementById("btn-key-gen-go").disabled = false; return; }
+        if (m.indexOf("이미") !== -1 || m.indexOf("덮어쓰기") !== -1 || m.toLowerCase().indexOf("exist") !== -1) {
+          if (!confirm(qsafeI18n.t("modal.key.overwrite_confirm"))) { document.getElementById("btn-key-gen-go").disabled = false; return; }
           s = await invoke("identity_generate", { outputPath: path, force: true });
         } else throw e;
       }
@@ -1753,7 +1753,7 @@
     const keys = ["name", "size", "kind", "modified"];
     cols.forEach((col, i) => {
       col.style.cursor = "pointer";
-      col.title = "정렬";
+      col.title = qsafeI18n.t("filelist.sort_tip");
       col.addEventListener("click", () => {
         const k = keys[i];
         if (sortState.key === k) sortState.asc = !sortState.asc;

@@ -263,5 +263,14 @@
   "result.source_size": "원본 크기",
   "result.packed_size": "압축 크기",
   "result.output_path": "저장 위치",
-  "result.saved_amount": "{amount} 절약"
+  "result.saved_amount": "{amount} 절약",
+  "result.unpack_success": "✅ 풀기 성공! (걸린 시간: {elapsed})",
+  "result.untarred": "📁 폴더로 자동 복원 ({count}개 파일)",
+  "result.restored_path": "복원 위치",
+  "result.restored_size": "복원 크기",
+  "dialog.restore_to": "복원 저장 위치",
+  "dialog.my_secret": "내 비밀키 파일",
+  "dialog.key_save_to": "키 파일 저장 위치",
+  "modal.key.overwrite_confirm": "같은 이름의 파일이 있어요. 덮어쓸까요?",
+  "filelist.sort_tip": "정렬"
 }

@@ -263,5 +263,14 @@
   "result.source_size": "Source size",
   "result.packed_size": "Packed size",
   "result.output_path": "Output path",
-  "result.saved_amount": "saved {amount}"
+  "result.saved_amount": "saved {amount}",
+  "result.unpack_success": "✅ Unpack success! (elapsed: {elapsed})",
+  "result.untarred": "📁 Restored to folder ({count} files)",
+  "result.restored_path": "Restored to",
+  "result.restored_size": "Restored size",
+  "dialog.restore_to": "Restore to",
+  "dialog.my_secret": "My secret key file",
+  "dialog.key_save_to": "Save key file to",
+  "modal.key.overwrite_confirm": "A file with the same name exists. Overwrite?",
+  "filelist.sort_tip": "Sort"
 }

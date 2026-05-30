@@ -263,5 +263,14 @@
   "result.source_size": "Dimensione origine",
   "result.packed_size": "Dimensione compressa",
   "result.output_path": "Percorso output",
-  "result.saved_amount": "{amount} risparmiato"
+  "result.saved_amount": "{amount} risparmiato",
+  "result.unpack_success": "✅ Decompressione riuscita! (tempo: {elapsed})",
+  "result.untarred": "📁 Ripristinato in cartella ({count} file)",
+  "result.restored_path": "Ripristinato in",
+  "result.restored_size": "Dimensione ripristinata",
+  "dialog.restore_to": "Ripristina in",
+  "dialog.my_secret": "Mio file chiave privata",
+  "dialog.key_save_to": "Salva chiave in",
+  "modal.key.overwrite_confirm": "Esiste un file con lo stesso nome. Sovrascrivere?",
+  "filelist.sort_tip": "Ordina"
 }

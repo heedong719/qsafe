@@ -263,5 +263,14 @@
   "result.source_size": "Tamaño original",
   "result.packed_size": "Tamaño comprimido",
   "result.output_path": "Ruta de salida",
-  "result.saved_amount": "{amount} ahorrado"
+  "result.saved_amount": "{amount} ahorrado",
+  "result.unpack_success": "✅ ¡Descompresión exitosa! (tiempo: {elapsed})",
+  "result.untarred": "📁 Restaurado a carpeta ({count} archivos)",
+  "result.restored_path": "Restaurado en",
+  "result.restored_size": "Tamaño restaurado",
+  "dialog.restore_to": "Restaurar en",
+  "dialog.my_secret": "Mi archivo de clave privada",
+  "dialog.key_save_to": "Guardar clave en",
+  "modal.key.overwrite_confirm": "Ya existe un archivo con ese nombre. ¿Sobrescribir?",
+  "filelist.sort_tip": "Ordenar"
 }

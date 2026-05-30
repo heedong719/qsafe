@@ -263,5 +263,14 @@
   "result.source_size": "Quellgröße",
   "result.packed_size": "Komprimierte Größe",
   "result.output_path": "Ausgabepfad",
-  "result.saved_amount": "{amount} gespart"
+  "result.saved_amount": "{amount} gespart",
+  "result.unpack_success": "✅ Entpacken erfolgreich! (Dauer: {elapsed})",
+  "result.untarred": "📁 In Ordner wiederhergestellt ({count} Dateien)",
+  "result.restored_path": "Wiederhergestellt in",
+  "result.restored_size": "Wiederhergestellte Größe",
+  "dialog.restore_to": "Wiederherstellen in",
+  "dialog.my_secret": "Meine private Schlüsseldatei",
+  "dialog.key_save_to": "Schlüsseldatei speichern unter",
+  "modal.key.overwrite_confirm": "Eine gleichnamige Datei existiert. Überschreiben?",
+  "filelist.sort_tip": "Sortieren"
 }

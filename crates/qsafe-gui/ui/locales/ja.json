@@ -263,5 +263,14 @@
   "result.source_size": "元のサイズ",
   "result.packed_size": "圧縮サイズ",
   "result.output_path": "保存先",
-  "result.saved_amount": "{amount} 節約"
+  "result.saved_amount": "{amount} 節約",
+  "result.unpack_success": "✅ 解凍成功! (経過: {elapsed})",
+  "result.untarred": "📁 フォルダへ自動復元 ({count} ファイル)",
+  "result.restored_path": "復元先",
+  "result.restored_size": "復元サイズ",
+  "dialog.restore_to": "復元先",
+  "dialog.my_secret": "自分の秘密鍵ファイル",
+  "dialog.key_save_to": "鍵ファイル保存先",
+  "modal.key.overwrite_confirm": "同名ファイルがあります。上書きしますか?",
+  "filelist.sort_tip": "並び替え"
 }

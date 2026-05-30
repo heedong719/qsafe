@@ -263,5 +263,14 @@
   "result.source_size": "原始大小",
   "result.packed_size": "压缩大小",
   "result.output_path": "保存位置",
-  "result.saved_amount": "节省 {amount}"
+  "result.saved_amount": "节省 {amount}",
+  "result.unpack_success": "✅ 解压成功! (用时: {elapsed})",
+  "result.untarred": "📁 自动还原到文件夹 ({count} 个文件)",
+  "result.restored_path": "还原位置",
+  "result.restored_size": "还原大小",
+  "dialog.restore_to": "还原到",
+  "dialog.my_secret": "我的私钥文件",
+  "dialog.key_save_to": "密钥文件保存到",
+  "modal.key.overwrite_confirm": "已存在同名文件。覆盖吗?",
+  "filelist.sort_tip": "排序"
 }
