@@ -242,5 +242,11 @@
   "status.selection": "Ausgewählt: {name} ({size})",
   "modal.shortcuts.nav_arrow": "Vorheriges / nächstes Element",
   "modal.shortcuts.nav_edge": "Erstes / letztes Element",
-  "modal.shortcuts.nav_page": "Eine Seite (10 Elemente)"
+  "modal.shortcuts.nav_page": "Eine Seite (10 Elemente)",
+  "status.multi_selection": "{count} ausgewählt ({size})",
+  "modal.delete.multi_title": "{count} Elemente endgültig löschen",
+  "modal.delete.partial_fail": "{count} fehlgeschlagen",
+  "modal.delete.deleting": "Löschen…",
+  "modal.shortcuts.multi_toggle": "Auswahl umschalten (mehrfach)",
+  "modal.shortcuts.multi_range": "Bereichsauswahl (ab Anker)"
 }

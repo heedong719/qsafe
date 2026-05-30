@@ -500,6 +500,8 @@
       <kbd>↑ / ↓</kbd> <span data-i18n="modal.shortcuts.nav_arrow">이전 / 다음 항목 선택</span>
       <kbd>Home / End</kbd> <span data-i18n="modal.shortcuts.nav_edge">첫 / 마지막 항목</span>
       <kbd>PgUp / PgDn</kbd> <span data-i18n="modal.shortcuts.nav_page">한 페이지 (10 항목) 이동</span>
+      <kbd>Cmd / Ctrl + Click</kbd> <span data-i18n="modal.shortcuts.multi_toggle">항목 선택 토글 (다중)</span>
+      <kbd>Shift + Click</kbd> <span data-i18n="modal.shortcuts.multi_range">범위 선택 (이전 앵커부터)</span>
     </div>
     <p class="help" style="margin-top:14px;" data-i18n="modal.shortcuts.dnd">💡 폴더 / 파일을 창에 드래그-드롭하면 압축 모달이 자동으로 열립니다 (.qs / .iso 는 자동 라우팅).</p>
     <div class="actions">
@@ -730,7 +732,10 @@
     body.innerHTML = rows.join("");
     updateFilterCount(shown);
     body.querySelectorAll(".filelist-row").forEach(row => {
-      row.addEventListener("click", () => selectRow(parseInt(row.dataset.idx, 10)));
+      row.addEventListener("click", (ev) => selectRow(
+        parseInt(row.dataset.idx, 10),
+        { toggle: ev.metaKey || ev.ctrlKey, range: ev.shiftKey }
+      ));
       row.addEventListener("dblclick", () => activateRow(parseInt(row.dataset.idx, 10)));
       // R19: 우클릭 컨텍스트 메뉴
       row.addEventListener("contextmenu", (ev) => {
@@ -746,10 +751,30 @@
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
-  function selectRow(i) {
-    selectedIdx = i;
-    document.querySelectorAll(".filelist-row").forEach((r, idx) => {
-      r.classList.toggle("selected", idx === i);
+  // R31: 다중 선택 — selectedSet 이 정확한 진실. selectedIdx 는 "마지막 선택" (Shift-Click 앵커 + 단일 작업).
+  let selectedSet = new Set();
+  function selectRow(i, mods) {
+    mods = mods || {};
+    if (mods.toggle) {
+      // Cmd/Ctrl+Click — 토글
+      if (selectedSet.has(i)) selectedSet.delete(i); else selectedSet.add(i);
+      selectedIdx = i;
+    } else if (mods.range && selectedIdx >= 0) {
+      // Shift+Click — 마지막 앵커부터 i 까지 범위
+      const lo = Math.min(selectedIdx, i), hi = Math.max(selectedIdx, i);
+      for (let k = lo; k <= hi; k++) {
+        if (matchesFilter(entries[k])) selectedSet.add(k);
+      }
+      selectedIdx = i;
+    } else {
+      // 일반 클릭 — 단일 선택
+      selectedSet.clear();
+      selectedSet.add(i);
+      selectedIdx = i;
+    }
+    document.querySelectorAll(".filelist-row").forEach(r => {
+      const idx = parseInt(r.dataset.idx, 10);
+      r.classList.toggle("selected", selectedSet.has(idx));
     });
     updateToolbarState();
     updateStatus();
@@ -879,10 +904,21 @@
     document.getElementById("btn-back").disabled = histIdx <= 0;
   }
   function updateStatus() {
-    document.getElementById("status-count").textContent = entries.length + " 항목";
-    const e = selectedIdx >= 0 ? entries[selectedIdx] : null;
-    document.getElementById("status-selection").textContent =
-      e ? "선택: " + e.name + (e.is_dir ? "" : " (" + fmtBytes(e.size) + ")") : "";
+    document.getElementById("status-count").textContent = qsafeI18n.t("status.items", { count: entries.length });
+    const sel = document.getElementById("status-selection");
+    if (selectedSet.size > 1) {
+      let totalSize = 0;
+      selectedSet.forEach(i => {
+        const e = entries[i];
+        if (e && !e.is_dir) totalSize += e.size || 0;
+      });
+      sel.textContent = qsafeI18n.t("status.multi_selection", { count: selectedSet.size, size: fmtBytes(totalSize) });
+    } else if (selectedIdx >= 0) {
+      const e = entries[selectedIdx];
+      sel.textContent = e ? qsafeI18n.t("status.selection", { name: e.name, size: e.is_dir ? "—" : fmtBytes(e.size) }) : "";
+    } else {
+      sel.textContent = "";
+    }
   }
 
   // ===== 사이드바 =====
@@ -1258,30 +1294,54 @@
     openInfoModal(e.path);
   });
 
-  // ===== 삭제 핸들러 =====
+  // ===== 삭제 핸들러 (R31: 다중 선택 지원) =====
+  function targetsForDelete() {
+    if (selectedSet.size > 0) {
+      return Array.from(selectedSet).map(i => entries[i]).filter(Boolean);
+    } else if (selectedIdx >= 0 && entries[selectedIdx]) {
+      return [entries[selectedIdx]];
+    }
+    return [];
+  }
   document.getElementById("btn-delete").addEventListener("click", () => {
-    var e = entries[selectedIdx];
-    if (!e) return;
-    var kindLabel = e.is_dir ? "📁 폴더" : (e.is_qsafe ? "🔐 .qs 파일" : (e.is_archive ? "📦 압축 파일" : "📄 파일"));
-    var txt = kindLabel + ": " + e.name + "\n경로: " + e.path;
-    if (e.is_dir) txt += "\n⚠️ 폴더 내 모든 파일이 함께 삭제됩니다!";
+    const targets = targetsForDelete();
+    if (targets.length === 0) return;
+    let txt;
+    if (targets.length === 1) {
+      const e = targets[0];
+      const kindLabel = e.is_dir ? qsafeI18n.t("kind.folder") : (e.is_qsafe ? qsafeI18n.t("kind.qsafe") : (e.is_archive ? qsafeI18n.t("kind.archive") : qsafeI18n.t("kind.file")));
+      txt = kindLabel + ": " + e.name + "\n" + e.path;
+      if (e.is_dir) txt += "\n\n⚠️ " + qsafeI18n.t("modal.delete.warning");
+    } else {
+      txt = qsafeI18n.t("modal.delete.multi_title", { count: targets.length }) + "\n\n";
+      const sample = targets.slice(0, 10).map(e => "  • " + e.name).join("\n");
+      txt += sample;
+      if (targets.length > 10) txt += "\n  • … +" + (targets.length - 10);
+    }
     document.getElementById("m-delete-target").textContent = txt;
     openModal("modal-delete");
   });
   document.getElementById("btn-delete-cancel").addEventListener("click", () => closeModal("modal-delete"));
   document.getElementById("btn-delete-go").addEventListener("click", async () => {
-    var e = entries[selectedIdx];
-    if (!e) { closeModal("modal-delete"); return; }
-    var btn = document.getElementById("btn-delete-go");
-    btn.disabled = true; btn.textContent = "삭제 중…";
-    try {
-      var r = await invoke("delete_path", { path: e.path });
+    const targets = targetsForDelete();
+    if (targets.length === 0) { closeModal("modal-delete"); return; }
+    const btn = document.getElementById("btn-delete-go");
+    btn.disabled = true;
+    btn.textContent = qsafeI18n.t("modal.delete.deleting") || "…";
+    const failed = [];
+    for (const e of targets) {
+      try { await invoke("delete_path", { path: e.path }); }
+      catch (err) { failed.push(e.name + " — " + (err.message || err)); }
+    }
+    btn.disabled = false;
+    btn.textContent = qsafeI18n.t("modal.delete.button");
+    if (failed.length === 0) {
       closeModal("modal-delete");
+      selectedSet.clear();
       navigateTo(currentPath, false);
-    } catch (err) {
-      document.getElementById("m-delete-target").textContent += "\n\n❌ 실패: " + (err.message || err);
-    } finally {
-      btn.disabled = false; btn.textContent = "🗑️ 영구 삭제";
+    } else {
+      document.getElementById("m-delete-target").textContent +=
+        "\n\n❌ " + qsafeI18n.t("modal.delete.partial_fail", { count: failed.length }) + "\n" + failed.slice(0, 5).join("\n");
     }
   });
 

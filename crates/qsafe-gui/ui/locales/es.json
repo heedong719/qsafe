@@ -242,5 +242,11 @@
   "status.selection": "Seleccionado: {name} ({size})",
   "modal.shortcuts.nav_arrow": "Seleccionar anterior / siguiente",
   "modal.shortcuts.nav_edge": "Primer / último elemento",
-  "modal.shortcuts.nav_page": "Avanzar una página (10)"
+  "modal.shortcuts.nav_page": "Avanzar una página (10)",
+  "status.multi_selection": "{count} seleccionados ({size})",
+  "modal.delete.multi_title": "Eliminar {count} elementos",
+  "modal.delete.partial_fail": "{count} fallidos",
+  "modal.delete.deleting": "Eliminando…",
+  "modal.shortcuts.multi_toggle": "Alternar selección (múltiple)",
+  "modal.shortcuts.multi_range": "Selección de rango (desde ancla)"
 }

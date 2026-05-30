@@ -242,5 +242,11 @@
   "status.selection": "已选: {name} ({size})",
   "modal.shortcuts.nav_arrow": "选择上一项 / 下一项",
   "modal.shortcuts.nav_edge": "第一项 / 最后一项",
-  "modal.shortcuts.nav_page": "翻页 (10 项)"
+  "modal.shortcuts.nav_page": "翻页 (10 项)",
+  "status.multi_selection": "已选 {count} 项 ({size})",
+  "modal.delete.multi_title": "永久删除 {count} 项",
+  "modal.delete.partial_fail": "{count} 项失败",
+  "modal.delete.deleting": "删除中…",
+  "modal.shortcuts.multi_toggle": "切换项目选择 (多选)",
+  "modal.shortcuts.multi_range": "范围选择 (从锚点)"
 }

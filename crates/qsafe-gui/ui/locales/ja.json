@@ -242,5 +242,11 @@
   "status.selection": "選択: {name} ({size})",
   "modal.shortcuts.nav_arrow": "前 / 次の項目を選択",
   "modal.shortcuts.nav_edge": "最初 / 最後の項目",
-  "modal.shortcuts.nav_page": "1 ページ (10 項目) 移動"
+  "modal.shortcuts.nav_page": "1 ページ (10 項目) 移動",
+  "status.multi_selection": "{count} 件選択 ({size})",
+  "modal.delete.multi_title": "{count} 件を完全削除",
+  "modal.delete.partial_fail": "{count} 件失敗",
+  "modal.delete.deleting": "削除中…",
+  "modal.shortcuts.multi_toggle": "項目選択を切替 (複数)",
+  "modal.shortcuts.multi_range": "範囲選択 (アンカーから)"
 }

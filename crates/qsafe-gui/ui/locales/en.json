@@ -242,5 +242,11 @@
   "modal.unpack.identity_placeholder": "my-key.json",
   "modal.shortcuts.nav_arrow": "Select previous / next item",
   "modal.shortcuts.nav_edge": "First / last item",
-  "modal.shortcuts.nav_page": "Move one page (10 items)"
+  "modal.shortcuts.nav_page": "Move one page (10 items)",
+  "status.multi_selection": "{count} selected ({size})",
+  "modal.delete.multi_title": "Delete {count} items permanently",
+  "modal.delete.partial_fail": "{count} failed",
+  "modal.delete.deleting": "Deleting…",
+  "modal.shortcuts.multi_toggle": "Toggle item selection (multi)",
+  "modal.shortcuts.multi_range": "Range select (from anchor)"
 }

@@ -242,5 +242,11 @@
   "modal.unpack.identity_placeholder": "내키.json",
   "modal.shortcuts.nav_arrow": "이전 / 다음 항목 선택",
   "modal.shortcuts.nav_edge": "첫 / 마지막 항목",
-  "modal.shortcuts.nav_page": "한 페이지 (10 항목) 이동"
+  "modal.shortcuts.nav_page": "한 페이지 (10 항목) 이동",
+  "status.multi_selection": "{count}개 선택 ({size})",
+  "modal.delete.multi_title": "{count}개 항목을 영구 삭제합니다",
+  "modal.delete.partial_fail": "{count}건 실패",
+  "modal.delete.deleting": "삭제 중…",
+  "modal.shortcuts.multi_toggle": "항목 선택 토글 (다중)",
+  "modal.shortcuts.multi_range": "범위 선택 (이전 앵커부터)"
 }

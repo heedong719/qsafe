@@ -242,5 +242,11 @@
   "status.selection": "Sélectionné : {name} ({size})",
   "modal.shortcuts.nav_arrow": "Sélectionner précédent / suivant",
   "modal.shortcuts.nav_edge": "Premier / dernier élément",
-  "modal.shortcuts.nav_page": "Page suivante / précédente (10)"
+  "modal.shortcuts.nav_page": "Page suivante / précédente (10)",
+  "status.multi_selection": "{count} sélectionnés ({size})",
+  "modal.delete.multi_title": "Supprimer {count} éléments",
+  "modal.delete.partial_fail": "{count} échecs",
+  "modal.delete.deleting": "Suppression…",
+  "modal.shortcuts.multi_toggle": "Basculer la sélection (multiple)",
+  "modal.shortcuts.multi_range": "Sélection de plage (depuis l'ancre)"
 }
